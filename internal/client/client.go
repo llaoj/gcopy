@@ -20,6 +20,7 @@ import (
 	"github.com/llaoj/gcopy/internal/host"
 	"github.com/llaoj/gcopy/internal/host/darwin"
 	"github.com/llaoj/gcopy/internal/host/windows"
+	"github.com/llaoj/gcopy/pkg/utils/file"
 )
 
 var (
@@ -63,8 +64,8 @@ func NewClient(log *logrus.Logger) (*Client, error) {
 	default:
 		c.log.Fatal("unsupported os")
 	}
-	HostContentFilePath = StoragePath + "host"
-	ServerContentFilePath = StoragePath + "server"
+	HostContentFilePath = StoragePath + "hostContent"
+	ServerContentFilePath = StoragePath + "serverContent"
 
 	if err := os.MkdirAll(StoragePath, 0750); err != nil {
 		return nil, err
@@ -96,7 +97,6 @@ func (c *Client) Run(wg *sync.WaitGroup) {
 }
 
 func (c *Client) watchServerClipboard() {
-	c.log.Debug("requesting server clipboard")
 	cfg := config.Get()
 
 	for {
@@ -145,12 +145,16 @@ func (c *Client) watchServerClipboard() {
 			ContentFilePath: ServerContentFilePath,
 			CopiedFileName:  copiedFileName,
 		}
-		c.log.Debugf("downloaded new server content: %+v", c.serverCb)
+		c.log.Debugf("downloaded server clipboard: %+v", c.serverCb)
 	}
 }
 
 func (c *Client) getServerClipboard() error {
 	if c.serverCb == nil {
+		return nil
+	}
+
+	if file.Empty(c.serverCb.ContentFilePath) {
 		return nil
 	}
 
@@ -181,6 +185,10 @@ func (c *Client) updateServerClipboard() error {
 		return nil
 	}
 
+	if file.Empty(out.ContentFilePath) {
+		return nil
+	}
+
 	url := fmt.Sprintf("http://%s/apis/v1/clipboard?token=%s", cfg.Server, cfg.Token)
 	req, err := fileUploadRequest(url, out.ContentFilePath)
 	if err != nil {
@@ -193,20 +201,21 @@ func (c *Client) updateServerClipboard() error {
 		return err
 	}
 
-	if resp.StatusCode != http.StatusOK {
-		defer resp.Body.Close()
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return err
-		}
-		c.log.Warnf("new host clipboard upload failed: %s", body)
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode == http.StatusOK {
+		c.log.Infof("%s", body)
+	} else {
+		c.log.Errorf("%s", body)
 	}
 
 	// update the clipboard index
 	index, _ := strconv.Atoi(resp.Header.Get("X-Index"))
 	out.Index = index
 	c.cb = &out
-	c.log.Debugf("new host clipboard uploaded, current: %+v", c.cb)
 
 	return nil
 }

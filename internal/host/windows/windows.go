@@ -88,19 +88,23 @@ func (h *HostClipboardManager) Get(cb *clipboard.Clipboard) error {
 		cmd := "$ms = New-Object System.IO.MemoryStream; (Get-Clipboard -Format Image).Save($ms, [System.Drawing.Imaging.ImageFormat]::Png); $ms.ToArray() -join \"\""
 		out, err := exec.Command(h.powershellPath, "-Command", cmd).CombinedOutput()
 		if err != nil {
-			return err
+			return fmt.Errorf("%s: %s", err, out)
 		}
 		contentHash = hash.HashText(string(out))
 	case clipboard.ContentTypeFile:
 		cmd := fmt.Sprintf("Set-Content -Encoding utf8 -Path \"%s\" -Value ((Get-Clipboard -Format FileDropList)[0].FullName)", cb.ContentFilePath)
-		if err := exec.Command(h.powershellPath, "-Command", cmd).Run(); err != nil {
-			return err
+		out, err := exec.Command(h.powershellPath, "-Command", cmd).CombinedOutput()
+		if err != nil {
+			return fmt.Errorf("%s: %s", err, out)
 		}
-		out, err := os.ReadFile(cb.ContentFilePath)
+		out, err = os.ReadFile(cb.ContentFilePath)
 		if err != nil {
 			return err
 		}
 		out = clipOutput(out)
+		if file.IsDir(string(out)) {
+			return errors.New("folders are not supported")
+		}
 		cb.ContentFilePath = string(out)
 		contentHash, err = hash.HashFile(cb.ContentFilePath)
 		if err != nil {
@@ -117,8 +121,9 @@ func (h *HostClipboardManager) Get(cb *clipboard.Clipboard) error {
 	switch cb.ContentType {
 	case clipboard.ContentTypeText:
 		cmd := fmt.Sprintf("Set-Content -Encoding utf8 -Path \"%s\" -Value (Get-Clipboard -Raw)", cb.ContentFilePath)
-		if err := exec.Command(h.powershellPath, "-Command", cmd).Run(); err != nil {
-			return err
+		out, err := exec.Command(h.powershellPath, "-Command", cmd).CombinedOutput()
+		if err != nil {
+			return fmt.Errorf("%s: %s", err, out)
 		}
 		output, err := os.ReadFile(cb.ContentFilePath)
 		if err != nil {
@@ -127,7 +132,11 @@ func (h *HostClipboardManager) Get(cb *clipboard.Clipboard) error {
 		return os.WriteFile(cb.ContentFilePath, clipOutput(output), os.ModePerm)
 	case clipboard.ContentTypeScreenshot:
 		cmd := fmt.Sprintf("(Get-CLipboard -Format Image).Save(\"%s\")", cb.ContentFilePath)
-		return exec.Command(h.powershellPath, "-Command", cmd).Run()
+		out, err := exec.Command(h.powershellPath, "-Command", cmd).CombinedOutput()
+		if err != nil {
+			return fmt.Errorf("%s: %s", err, out)
+		}
+		return nil
 	}
 
 	return nil
@@ -136,12 +145,20 @@ func (h *HostClipboardManager) Get(cb *clipboard.Clipboard) error {
 func (h *HostClipboardManager) Set(cb *clipboard.Clipboard) error {
 	if cb.ContentType == clipboard.ContentTypeText {
 		cmd := fmt.Sprintf("Set-Clipboard -Value (Get-Content -Encoding utf8 -Path \"%s\")", cb.ContentFilePath)
-		return exec.Command(h.powershellPath, "-Command", cmd).Run()
+		out, err := exec.Command(h.powershellPath, "-Command", cmd).CombinedOutput()
+		if err != nil {
+			return fmt.Errorf("%s: %s", err, out)
+		}
+		return nil
 	}
 
 	if cb.ContentType == clipboard.ContentTypeScreenshot {
 		cmd := fmt.Sprintf("Add-Type -Assembly System.Windows.Forms, System.Drawing; [System.Windows.Forms.Clipboard]::SetImage([System.Drawing.Image]::FromFile(\"%s\"))", cb.ContentFilePath)
-		return exec.Command(h.powershellPath, "-Command", cmd).Run()
+		out, err := exec.Command(h.powershellPath, "-Command", cmd).CombinedOutput()
+		if err != nil {
+			return fmt.Errorf("%s: %s", err, out)
+		}
+		return nil
 	}
 
 	if cb.ContentType == clipboard.ContentTypeFile {
@@ -153,7 +170,11 @@ func (h *HostClipboardManager) Set(cb *clipboard.Clipboard) error {
 		if _, err := file.CopyFile(cb.ContentFilePath, tmpFile); err != nil {
 			return err
 		}
-		return exec.Command(h.powershellPath, "-Command", "Set-Clipboard -Path \""+tmpFile+"\"").Run()
+		out, err := exec.Command(h.powershellPath, "-Command", "Set-Clipboard -Path \""+tmpFile+"\"").CombinedOutput()
+		if err != nil {
+			return fmt.Errorf("%s: %s", err, out)
+		}
+		return nil
 	}
 
 	return nil

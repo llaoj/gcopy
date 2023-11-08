@@ -95,6 +95,9 @@ func (h *HostClipboardManager) Get(cb *clipboard.Clipboard) error {
 		}
 		out = clipOutput(out)
 		out = bytes.TrimSuffix(out, []byte("\n"))
+		if file.IsDir(string(out)) {
+			return errors.New("folders are not supported")
+		}
 		cb.ContentFilePath = string(out)
 		contentHash, err = hash.HashFile(cb.ContentFilePath)
 		if err != nil {
@@ -122,8 +125,12 @@ func (h *HostClipboardManager) Get(cb *clipboard.Clipboard) error {
 func (h *HostClipboardManager) Set(cb *clipboard.Clipboard) error {
 	switch cb.ContentType {
 	case clipboard.ContentTypeScreenshot:
-		cmd := fmt.Sprintf("-e set the clipboard to (read \"%s\" as «class PNGf»)", cb.ContentFilePath)
-		return exec.Command(h.osAScriptPath, cmd).Run()
+		cmd := fmt.Sprintf("set the clipboard to (read \"%s\" as «class PNGf»)", cb.ContentFilePath)
+		out, err := exec.Command(h.osAScriptPath, "-e", cmd).CombinedOutput()
+		if err != nil {
+			return fmt.Errorf("%s: %s", err, out)
+		}
+		return nil
 	case clipboard.ContentTypeFile:
 		cacheDir := fmt.Sprintf("%s/cache/", filepath.Dir(cb.ContentFilePath))
 		err := os.RemoveAll(cacheDir)
@@ -135,10 +142,18 @@ func (h *HostClipboardManager) Set(cb *clipboard.Clipboard) error {
 		if err != nil {
 			return err
 		}
-		cmd := fmt.Sprintf("-e set the clipboard to (POSIX file \"%s\")", tmpFile)
-		return exec.Command(h.osAScriptPath, cmd).Run()
+		cmd := fmt.Sprintf("set the clipboard to (POSIX file \"%s\")", tmpFile)
+		out, err := exec.Command(h.osAScriptPath, "-e", cmd).CombinedOutput()
+		if err != nil {
+			return fmt.Errorf("%s: %s", err, out)
+		}
+		return nil
 	default:
 		cmd := fmt.Sprintf("set the clipboard to (read \"%s\" as «class utf8»)", cb.ContentFilePath)
-		return exec.Command(h.osAScriptPath, "-e", cmd).Run()
+		out, err := exec.Command(h.osAScriptPath, "-e", cmd).CombinedOutput()
+		if err != nil {
+			return fmt.Errorf("%s: %s", err, out)
+		}
+		return nil
 	}
 }

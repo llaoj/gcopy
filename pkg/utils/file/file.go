@@ -1,6 +1,7 @@
 package file
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"os"
@@ -35,4 +36,24 @@ func CopyFile(src, dst string) (int64, error) {
 	defer destination.Close()
 	nBytes, err := io.Copy(destination, source)
 	return nBytes, err
+}
+
+func IsDir(path string) bool {
+	s, err := os.Stat(path)
+	if err != nil {
+		return false
+	}
+	return s.IsDir()
+}
+
+func Empty(path string) bool {
+	out, err := os.ReadFile(path)
+	if err != nil || len(out) == 0 {
+		return true
+	}
+	out = bytes.TrimPrefix(out, []byte("\ufeff"))
+	out = bytes.ReplaceAll(out, []byte("\r\n"), nil)
+	out = bytes.ReplaceAll(out, []byte("\n"), nil)
+
+	return len(out) == 0
 }
