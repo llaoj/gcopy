@@ -131,11 +131,10 @@ func (s *Server) updateClipboardHandler(c *gin.Context) {
 		CopiedFileName:  copiedFileName,
 	}
 	s.cb = &new
+	s.ps.Publish()
 
 	c.Header("X-Index", fmt.Sprintf("%v", s.cb.Index))
 	c.String(http.StatusOK, fmt.Sprintf("clipboard uploaded: %+v", s.cb))
-
-	s.ps.Publish()
 }
 
 func (s *Server) getClipboardHandler(c *gin.Context) {
