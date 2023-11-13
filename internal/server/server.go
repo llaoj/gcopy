@@ -25,8 +25,6 @@ type Server struct {
 	cb  *clipboard.Clipboard
 	log *logrus.Entry
 	ps  *pubsub.PubSub
-
-	mu sync.Mutex
 }
 
 var ContentFilePath string
@@ -103,16 +101,17 @@ func (s *Server) updateClipboardHandler(c *gin.Context) {
 		return
 	}
 
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
 	// save the uploaded file
 	file, err := c.FormFile("f")
 	if err != nil {
 		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}
-	c.SaveUploadedFile(file, ContentFilePath)
+
+	if err := c.SaveUploadedFile(file, ContentFilePath); err != nil {
+		c.String(http.StatusInternalServerError, err.Error())
+		return
+	}
 
 	contentHash, err := hash.HashFile(ContentFilePath)
 	if err != nil {
@@ -132,11 +131,10 @@ func (s *Server) updateClipboardHandler(c *gin.Context) {
 		CopiedFileName:  copiedFileName,
 	}
 	s.cb = &new
+	s.ps.Publish()
 
 	c.Header("X-Index", fmt.Sprintf("%v", s.cb.Index))
 	c.String(http.StatusOK, fmt.Sprintf("clipboard uploaded: %+v", s.cb))
-
-	s.ps.Publish()
 }
 
 func (s *Server) getClipboardHandler(c *gin.Context) {

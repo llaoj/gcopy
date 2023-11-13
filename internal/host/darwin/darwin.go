@@ -95,6 +95,9 @@ func (h *HostClipboardManager) Get(cb *clipboard.Clipboard) error {
 		}
 		out = clipOutput(out)
 		out = bytes.TrimSuffix(out, []byte("\n"))
+		if file.IsDir(string(out)) {
+			return errors.New("folders are not supported")
+		}
 		cb.ContentFilePath = string(out)
 		contentHash, err = hash.HashFile(cb.ContentFilePath)
 		if err != nil {
