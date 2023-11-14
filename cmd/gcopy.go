@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/llaoj/gcopy/internal/client"
 	"github.com/llaoj/gcopy/internal/config"
@@ -40,6 +41,7 @@ func main() {
 		}
 		wg.Add(1)
 		go srv.Run(&wg)
+		time.Sleep(time.Second)
 	}
 
 	if strings.Contains(cfg.Role, "client") {

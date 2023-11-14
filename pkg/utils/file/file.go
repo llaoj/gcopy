@@ -1,6 +1,7 @@
 package file
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"os"
@@ -43,4 +44,16 @@ func IsDir(path string) bool {
 		return false
 	}
 	return s.IsDir()
+}
+
+func Empty(path string) bool {
+	out, err := os.ReadFile(path)
+	if err != nil || len(out) == 0 {
+		return true
+	}
+	out = bytes.TrimPrefix(out, []byte("\ufeff"))
+	out = bytes.ReplaceAll(out, []byte("\r\n"), nil)
+	out = bytes.ReplaceAll(out, []byte("\n"), nil)
+
+	return len(out) == 0
 }

@@ -1,6 +1,8 @@
 package pubsub
 
-import "sync"
+import (
+	"sync"
+)
 
 // https://medium.com/@mhrlife/long-polling-with-golang-158f73474cbc
 
@@ -40,7 +42,11 @@ func (p *PubSub) Publish() {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
 
+	// continue if the channel is full
 	for _, channel := range p.channels {
-		channel <- struct{}{}
+		select {
+		case channel <- struct{}{}:
+		default:
+		}
 	}
 }

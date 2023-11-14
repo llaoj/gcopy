@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/llaoj/gcopy/internal/config"
 	"github.com/llaoj/gcopy/pkg/pubsub"
@@ -22,7 +23,8 @@ import (
 )
 
 type Server struct {
-	cb  *clipboard.Clipboard
+	cb *clipboard.Clipboard
+
 	log *logrus.Entry
 	ps  *pubsub.PubSub
 }
@@ -123,47 +125,69 @@ func (s *Server) updateClipboardHandler(c *gin.Context) {
 		return
 	}
 
-	new := clipboard.Clipboard{
+	fileData, err := os.ReadFile(ContentFilePath)
+	if err != nil {
+		c.String(http.StatusInternalServerError, fmt.Sprintf("error: %s", err))
+		return
+	}
+
+	s.cb = &clipboard.Clipboard{
 		Index:           s.cb.Index + 1,
 		ContentHash:     contentHash,
 		ContentType:     contentType,
 		ContentFilePath: ContentFilePath,
+		ContentFileData: fileData,
 		CopiedFileName:  copiedFileName,
 	}
-	s.cb = &new
 	s.ps.Publish()
 
 	c.Header("X-Index", fmt.Sprintf("%v", s.cb.Index))
-	c.String(http.StatusOK, fmt.Sprintf("clipboard uploaded: %+v", s.cb))
+	c.String(http.StatusOK, fmt.Sprintf("clipboard(%v) uploaded", s.cb.Index))
 }
 
 func (s *Server) getClipboardHandler(c *gin.Context) {
 	index, _ := strconv.Atoi(c.Query("index"))
-	s.log.Debugf("get server clipboard, query index: %v, clipboard: %+v", index, s.cb)
+	s.log.Debugf("get clipboard(%v), index: %+v", s.cb.Index, index)
 
-	ch, close := s.ps.Subscribe()
-	defer close()
+	ch, cancel := s.ps.Subscribe()
+	defer cancel()
 
-	if s.cb.Index > 0 && index != s.cb.Index {
-		s.responseClipboard(c)
-		return
-	}
+	stop := make(chan struct{}, 1)
+	go func() {
+		if s.cb.Index > 0 && index != s.cb.Index {
+			s.responseClipboard(c, stop)
+			return
+		}
+		if _, ok := <-ch; ok {
+			s.responseClipboard(c, stop)
+		}
+	}()
 
 	select {
-	case <-ch:
-		s.responseClipboard(c)
-		return
+	case <-stop:
+	case <-time.After(time.Second * 300):
+		if !c.Writer.Written() {
+			c.String(http.StatusRequestTimeout, "timeout")
+		}
 	case <-c.Request.Context().Done():
-		c.String(http.StatusRequestTimeout, "timeout")
-		return
+		c.String(http.StatusBadRequest, "context done")
 	}
 }
 
-func (s *Server) responseClipboard(c *gin.Context) {
+func (s *Server) responseClipboard(c *gin.Context, stop chan struct{}) {
+	if s.cb.ContentFileData == nil {
+		c.String(http.StatusInternalServerError, "empty content file")
+		return
+	}
+
+	fileContentType := http.DetectContentType(s.cb.ContentFileData)
 	c.Header("X-Index", fmt.Sprintf("%v", s.cb.Index))
 	c.Header("X-Content-Type", s.cb.ContentType)
 	c.Header("X-Copied-File-Name", s.cb.CopiedFileName)
-	c.FileAttachment(s.cb.ContentFilePath, filepath.Base(s.cb.ContentFilePath))
+	c.Header("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, filepath.Base(s.cb.ContentFilePath)))
+	c.Data(http.StatusOK, fileContentType, s.cb.ContentFileData)
+
+	close(stop)
 }
 
 // get preferred outbound ip of this machine
