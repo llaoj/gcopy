@@ -15,6 +15,8 @@
 目前, 你可以在Windows电脑与MacOS电脑之间共享剪切板, 支持文字, 截图和文件.
 它对网络没有太高的要求, 不同的设备可以在同一个局域网, 也可以不在.
 
+![](gcopy-usage.gif)
+
 ## 下载和安装
 
 访问 https://github.com/llaoj/gcopy/releases

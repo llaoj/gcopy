@@ -7,61 +7,63 @@
 
 A clipboard synchronization tool that powered by Golang.
 
-**`Text`, `Screenshot`, `File` are supported** 
-
 This is a tool to synchronize clipboards between different operating systems.
 
-Every second, the Client pushes or pulls clipboard content from Server.
+`Text`, `Screenshot` & `File` are supported.
 
-## Simplest usage
+
+![](docs/gcopy-usage.gif)
+
+## Usage
+
+GCopy has two modes, the first mode is more easy to use:
+
+### server&client <> clients
+
+This mode requires one device to simultaneously act as both the server and client. These devices must be on the same LAN and should be able to access each other.
 
 If you have two device, they are in the same LAN.
 
-on first device:
+On first device:
 
 ```
 /path/to/gcopy --role=server,client
 ```
 
-the other:
+On the other devices:
 
 ```
 /path/to/gcopy --role=client --token=<output-token> --server=<server-ip>:3375
 ```
-
-## Tow usage mode
-
-### server&client <-> clients
-
-This mode requires one device to simultaneously act as both the server and client. These clients must be on the same LAN and should be able to access each other.
 
 ![](docs/mode1.png)
 
-Refer to the simplest usage
-
-### clients <-> server <-> clients
+### clients <> server <> clients
 
 In this mode, it is more flexible but requires a minimum of three devices, with one of them serving as the server. Clients do not need to be able to access each other, but it is required that clients can access the server.
 
+On server:
+
+```
+$ /path/to/gcopy --role=server
+
+  __ _  ___ ___  _ __  _   _ 
+ / _  |/ __/ _ \| '_ \| | | |
+| (_| | (_| (_) | |_) | |_| |
+ \__, |\___\___/| .__/ \__, |
+  __/ |         | |     __/ |
+ |___/          |_|    |___/ 
+
+
+The Server has started, start the clients:
+/path/to/gcopy --role=client --server=192.168.137.146:3375 --token=helloworld
+...
+```
+
+The Clients' command will be printed in the outputs. Run them on the Clients.
+
 ![](docs/mode2.png)
 
-server:
-
-```
-/path/to/gcopy --role=server
-```
-
-on first device:
-
-```
-/path/to/gcopy --role=client --token=<output-token> --server=<server-ip>:3375
-```
-
-the other:
-
-```
-/path/to/gcopy --role=client --token=<output-token> --server=<server-ip>:3375
-```
 
 ## Read more
 
@@ -74,7 +76,7 @@ the other:
 
 ## Community
 
-You have questions, need support and or just want to talk about GCopy?
+You have questions, need support or just want to talk about GCopy?
 
 Here are ways to get in touch with the community:
 
