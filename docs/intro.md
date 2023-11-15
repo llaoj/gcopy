@@ -81,9 +81,17 @@ The Server has started, start the clients:
 ...
 ```
 
-服务端启动成功, 并打印出了客户端启动命令, 下面我们在不同的设备上运行这个命令就行啦!
+当然如果你想使用容器启动服务端, 也可以:
 
-## 选项
+```
+$ docker run -d --restart=always --name=gcopy -p 3375:3375 registry.cn-beijing.aliyuncs.com/llaoj/gcopy:v0.1.0
+```
+
+服务端启动成功, 你可能需要一些配置, 比如后台执行, 开机启动等. 我们看到上面的命令打印出了客户端启动命令, 然后我们在不同的设备上运行这个命令就行啦!
+
+## 使用说明
+
+我们执行usage命令看一下:
 
 ```
 /path/to/gcopy --help
@@ -111,3 +119,17 @@ Usage of gcopy:
 - `--listen` 服务端监听地址, 客户端会将该地址配置到`--server`中, 并通过这个地址与服务端交互. GCopy会自动探测当前服务器的IP地址. 通常使用自动发现的IP是好用的, 但如果它不好使, 您可能需要手动指定, 可以使用这个选项.
 - `--token` 服务端和客户端之间身份认证的密钥, 服务端在启动的时候会自动生成, 如果想手动指定, 可以使用这个选项.
 - `--debug` 开启调试模式获取更多日志.
+
+## 最后
+
+这个项目一直在我的电脑上运行, 目前稳定可用. 如果你想用或者有兴趣, 可以联系我一起探讨.
+
+项目地址: https://github.com/llaoj/gcopy
+
+创作不易, 请点Star支持下
+
+邮箱: qustwwy@163.com
+
+微信:
+
+<img width="200" src="wechat-lllaoj.png">

@@ -26,6 +26,11 @@ builds:
       # - arm
       # - arm64
 
+dockers:
+  - image_templates:
+      - "registry.cn-beijing.aliyuncs.com/llaoj/gcopy:{{ .Tag }}"
+    dockerfile: "build/Dockerfile"
+
 archives:
   - format: tar.gz
     # this name template makes the OS and Arch compatible with the results of `uname`.

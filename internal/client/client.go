@@ -2,12 +2,12 @@ package client
 
 import (
 	"bytes"
+	"crypto/tls"
 	"fmt"
 	"io"
-	"mime/multipart"
 	"net/http"
+	"net/url"
 	"os"
-	"path/filepath"
 	"runtime"
 	"strconv"
 	"sync"
@@ -15,8 +15,8 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/llaoj/gcopy/internal/clipboard"
 	"github.com/llaoj/gcopy/internal/config"
+	"github.com/llaoj/gcopy/internal/gcopy"
 	"github.com/llaoj/gcopy/internal/host"
 	"github.com/llaoj/gcopy/internal/host/darwin"
 	"github.com/llaoj/gcopy/internal/host/windows"
@@ -24,21 +24,34 @@ import (
 )
 
 var (
-	StoragePath           string
-	HostContentFilePath   string
-	ServerContentFilePath string
+	StoragePath  string
+	DataFilePath string
 )
 
 type Client struct {
-	cb                   *clipboard.Clipboard
-	serverCb             *clipboard.Clipboard
-	hostClipboardManager host.HostClipboardManager
-	log                  *logrus.Entry
+	cli *http.Client
+	log *logrus.Entry
+
+	mgr host.HostClipboardManager
+	hcb *host.HostClipboard
 }
 
 func NewClient(log *logrus.Logger) (*Client, error) {
-	c := &Client{cb: &clipboard.Clipboard{}}
-	c.log = log.WithField("role", "client")
+	cfg := config.Get()
+	c := &Client{
+		log: log.WithField("role", "client"),
+		hcb: &host.HostClipboard{
+			Clipboard: &gcopy.Clipboard{},
+		},
+		cli: &http.Client{
+			Timeout: time.Minute,
+		},
+	}
+	if cfg.InsecureSkipVerify {
+		c.cli.Transport = &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		}
+	}
 
 	userHomeDir, err := os.UserHomeDir()
 	if err != nil {
@@ -49,24 +62,22 @@ func NewClient(log *logrus.Logger) (*Client, error) {
 	switch os := runtime.GOOS; os {
 	case "darwin":
 		StoragePath += "/.gcopy/client/"
-		hostClipboardManager, err := darwin.NewHostClipboardManager()
+		mgr, err := darwin.NewHostClipboardManager()
 		if err != nil {
 			return nil, err
 		}
-		c.hostClipboardManager = hostClipboardManager
+		c.mgr = mgr
 	case "windows":
 		StoragePath += "\\.gcopy\\client\\"
-		hostClipboardManager, err := windows.NewHostClipboardManager()
+		mgr, err := windows.NewHostClipboardManager()
 		if err != nil {
 			return nil, err
 		}
-		c.hostClipboardManager = hostClipboardManager
+		c.mgr = mgr
 	default:
 		c.log.Fatal("unsupported os")
 	}
-	HostContentFilePath = StoragePath + "hostContent"
-	ServerContentFilePath = StoragePath + "serverContent"
-
+	DataFilePath = StoragePath + "content"
 	if err := os.MkdirAll(StoragePath, 0750); err != nil {
 		return nil, err
 	}
@@ -77,18 +88,12 @@ func NewClient(log *logrus.Logger) (*Client, error) {
 func (c *Client) Run(wg *sync.WaitGroup) {
 	defer wg.Done()
 
-	go c.watchServerClipboard()
-
 	for {
-		// pull latest clipboard from server
-		// set if clipboard changed
-		if err := c.getServerClipboard(); err != nil {
+		if err := c.pullClipboard(); err != nil {
 			c.log.Error(err)
 		}
 
-		// get the current clipboard(local)
-		// upload if changed
-		if err := c.updateServerClipboard(); err != nil {
+		if err := c.pushClipboard(); err != nil {
 			c.log.Error(err)
 		}
 
@@ -96,155 +101,116 @@ func (c *Client) Run(wg *sync.WaitGroup) {
 	}
 }
 
-func (c *Client) watchServerClipboard() {
+func (c *Client) pullClipboard() error {
 	cfg := config.Get()
-
-	for {
-		index := c.cb.Index
-		if c.serverCb != nil {
-			index = c.serverCb.Index
-		}
-		url := fmt.Sprintf("http://%s/apis/v1/clipboard?token=%s&index=%v", cfg.Server, cfg.Token, index)
-		resp, err := http.Get(url)
-		if err != nil {
-			c.log.Error(err)
-			continue
-		}
-
-		// timeout or something
-		if resp.StatusCode != http.StatusOK {
-			continue
-		}
-
-		index, _ = strconv.Atoi(resp.Header.Get("X-Index"))
-		if index == 0 || index == c.cb.Index {
-			continue
-		}
-
-		contentType := resp.Header.Get("X-Content-Type")
-		copiedFileName := resp.Header.Get("X-Copied-File-Name")
-		if contentType == "" || (contentType == clipboard.ContentTypeFile && copiedFileName == "") {
-			c.log.Error(err)
-			continue
-		}
-
-		file, err := os.OpenFile(ServerContentFilePath, os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0644)
-		if err != nil {
-			c.log.Error(err)
-			continue
-		}
-		if _, err := io.Copy(file, resp.Body); err != nil {
-			c.log.Error(err)
-			continue
-		}
-		file.Close()
-		resp.Body.Close()
-		c.serverCb = &clipboard.Clipboard{
-			Index:           index,
-			ContentType:     contentType,
-			ContentFilePath: ServerContentFilePath,
-			CopiedFileName:  copiedFileName,
-		}
-		c.log.Debugf("downloaded server clipboard: %+v", c.serverCb)
-	}
-}
-
-func (c *Client) getServerClipboard() error {
-	if c.serverCb == nil {
-		return nil
-	}
-
-	if file.Empty(c.serverCb.ContentFilePath) {
-		return nil
-	}
-
-	if err := c.hostClipboardManager.Set(c.serverCb); err != nil {
-		return err
-	}
-	c.cb = c.serverCb
-	c.serverCb = nil
-
-	return nil
-}
-
-func (c *Client) updateServerClipboard() error {
-	cfg := config.Get()
-	client := http.DefaultClient
-
-	out := clipboard.Clipboard{ContentFilePath: HostContentFilePath}
-	if err := c.hostClipboardManager.Get(&out); err != nil {
-		return err
-	}
-
-	if c.cb.ContentHash == "" {
-		c.cb.ContentHash = out.ContentHash
-		return nil
-	}
-
-	if out.ContentHash == c.cb.ContentHash {
-		return nil
-	}
-
-	if file.Empty(out.ContentFilePath) {
-		return nil
-	}
-
-	url := fmt.Sprintf("http://%s/apis/v1/clipboard?token=%s", cfg.Server, cfg.Token)
-	req, err := fileUploadRequest(url, out.ContentFilePath)
+	req, err := http.NewRequest(http.MethodGet, config.Get().Server+"/clipboard", nil)
 	if err != nil {
 		return err
 	}
-	req.Header.Set("X-Content-Type", out.ContentType)
-	req.Header.Set("X-Copied-File-Name", out.CopiedFileName)
-	resp, err := client.Do(req)
+	req.SetBasicAuth(cfg.Username, cfg.Password)
+	req.Header.Set("X-Index", strconv.Itoa(c.hcb.Index))
+	resp, err := c.cli.Do(req)
 	if err != nil {
 		return err
 	}
-
+	if resp.StatusCode != http.StatusOK {
+		return nil
+	}
+	xIndex, _ := strconv.Atoi(resp.Header.Get("X-Index"))
+	if xIndex == 0 {
+		return nil
+	}
+	xType := resp.Header.Get("X-Type")
+	if xType == "" {
+		return nil
+	}
+	xFileName := resp.Header.Get("X-FileName")
+	if xType == gcopy.TypeFile && xFileName == "" {
+		return nil
+	}
+	if xFileName != "" {
+		xFileName, err = url.QueryUnescape(xFileName)
+		if err != nil {
+			return err
+		}
+	}
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
 	defer resp.Body.Close()
-	body, err := io.ReadAll(resp.Body)
+	if data == nil {
+		return nil
+	}
+	if err := os.WriteFile(DataFilePath, data, 0755); err != nil {
+		return err
+	}
+	c.hcb = &host.HostClipboard{
+		Clipboard: &gcopy.Clipboard{
+			Index:    xIndex,
+			Type:     xType,
+			FileName: xFileName,
+			Data:     data,
+		},
+		FilePath: DataFilePath,
+	}
+	c.log.Infof("pulled %s(%v)", c.hcb.Type, c.hcb.Index)
+
+	return c.mgr.Set(c.hcb)
+}
+
+func (c *Client) pushClipboard() error {
+	cfg := config.Get()
+	out := host.HostClipboard{
+		Clipboard: &gcopy.Clipboard{},
+		FilePath:  DataFilePath,
+	}
+	if err := c.mgr.Get(&out); err != nil {
+		return err
+	}
+	if c.hcb.Hash == "" {
+		c.hcb.Hash = out.Hash
+		return nil
+	}
+	if out.Hash == c.hcb.Hash || file.Empty(out.FilePath) {
+		return nil
+	}
+
+	fileInfo, err := os.Stat(out.FilePath)
 	if err != nil {
 		return err
 	}
-	if resp.StatusCode == http.StatusOK {
-		c.log.Infof("%s", body)
-	} else {
-		c.log.Errorf("%s", body)
+	if size := fileInfo.Size(); size > 100*1024*1024 {
+		return fmt.Errorf("file being pushed too large: %vMi > 100Mi", size/1024/1024)
 	}
 
-	// update the clipboard index
-	index, _ := strconv.Atoi(resp.Header.Get("X-Index"))
-	out.Index = index
-	c.cb = &out
+	data, err := os.ReadFile(out.FilePath)
+	if err != nil {
+		return err
+	}
+	out.Data = data
+
+	req, err := http.NewRequest(http.MethodPost, config.Get().Server+"/clipboard", bytes.NewReader(out.Data))
+	if err != nil {
+		return err
+	}
+	req.SetBasicAuth(cfg.Username, cfg.Password)
+	req.Header.Set("X-Type", out.Type)
+	req.Header.Set("X-FileName", url.QueryEscape(out.FileName))
+	resp, err := c.cli.Do(req)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil
+	}
+	xIndex, _ := strconv.Atoi(resp.Header.Get("X-Index"))
+	if xIndex == 0 {
+		return nil
+	}
+	out.Index = xIndex
+	c.hcb = &out
+	c.log.Infof("pushed %s(%v)", c.hcb.Type, c.hcb.Index)
 
 	return nil
-}
-
-func fileUploadRequest(url string, path string) (*http.Request, error) {
-	file, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-
-	body := &bytes.Buffer{}
-	writer := multipart.NewWriter(body)
-	part, err := writer.CreateFormFile("f", filepath.Base(path))
-	if err != nil {
-		return nil, err
-	}
-	if _, err = io.Copy(part, file); err != nil {
-		return nil, err
-	}
-
-	if err := writer.Close(); err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest(http.MethodPost, url, body)
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Content-Type", writer.FormDataContentType())
-	return req, nil
 }

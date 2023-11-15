@@ -27,6 +27,7 @@ func main() {
 	log := logrus.New()
 	log.SetOutput(os.Stdout)
 	if cfg.Debug {
+		log.SetReportCaller(true)
 		log.SetLevel(logrus.TraceLevel)
 	} else {
 		log.SetLevel(logrus.InfoLevel)
@@ -35,12 +36,8 @@ func main() {
 
 	var wg sync.WaitGroup
 	if strings.Contains(cfg.Role, "server") {
-		srv, err := server.NewServer(log)
-		if err != nil {
-			log.Fatal(err)
-		}
 		wg.Add(1)
-		go srv.Run(&wg)
+		go server.NewServer(log).Run(&wg)
 		time.Sleep(time.Second)
 	}
 

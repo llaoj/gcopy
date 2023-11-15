@@ -5,6 +5,8 @@
 
 ---
 
+[中文文档](docs/intro.md)
+
 A clipboard synchronization tool that powered by Golang.
 
 This is a tool to synchronize clipboards between different operating systems.
