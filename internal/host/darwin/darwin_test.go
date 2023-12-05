@@ -4,7 +4,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/llaoj/gcopy/internal/clipboard"
+	"github.com/llaoj/gcopy/internal/gcopy"
+	"github.com/llaoj/gcopy/internal/host"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -18,22 +19,24 @@ func TestClipboard(t *testing.T) {
 	}
 
 	// GET
-	cb := clipboard.Clipboard{
-		ContentFilePath: "/Users/weiyangwang/.gcopy/client/content",
+	hcb := host.HostClipboard{
+		FilePath: "/Users/weiyangwang/.gcopy/client/content",
 	}
-	err = h.Get(&cb)
+	err = h.Get(&hcb)
 	if err != nil {
 		t.Errorf("%s", err)
 	}
-	t.Logf("%+v", cb)
+	t.Logf("%+v", hcb)
 
 	// SET
-	cb = clipboard.Clipboard{
-		ContentType:     clipboard.ContentTypeFile,
-		ContentFilePath: "/Users/weiyangwang/.gcopy/client/content",
-		CopiedFileName:  "老 J.png",
+	hcb = host.HostClipboard{
+		Clipboard: &gcopy.Clipboard{
+			Type:     gcopy.TypeFile,
+			FileName: "老 J.png",
+		},
+		FilePath: "/Users/weiyangwang/.gcopy/client/content",
 	}
-	err = h.Set(&cb)
+	err = h.Set(&hcb)
 	if err != nil {
 		t.Errorf("%s", err)
 	}

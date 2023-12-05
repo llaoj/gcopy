@@ -4,7 +4,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/llaoj/gcopy/internal/clipboard"
+	"github.com/llaoj/gcopy/internal/gcopy"
+	"github.com/llaoj/gcopy/internal/host"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -25,12 +26,14 @@ func TestClipboard(t *testing.T) {
 	// }
 	// t.Logf("%+v", cb)
 
-	cb := &clipboard.Clipboard{
-		ContentType:     clipboard.ContentTypeFile,
-		ContentFilePath: "D:\\proj\\gcopy-v2\\.gcopy\\content",
-		CopiedFileName:  "缘 分.txt",
+	hcb := &host.HostClipboard{
+		Clipboard: &gcopy.Clipboard{
+			Type:     gcopy.TypeFile,
+			FileName: "缘 分.txt",
+		},
+		FilePath: "D:\\proj\\gcopy-v2\\.gcopy\\content",
 	}
-	err = h.Set(cb)
+	err = h.Set(hcb)
 	if err != nil {
 		t.Errorf("%s", err)
 	}

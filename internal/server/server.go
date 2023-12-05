@@ -2,201 +2,116 @@ package server
 
 import (
 	"fmt"
-	"net"
+	"io"
 	"net/http"
-	"os"
-	"path/filepath"
-	"runtime"
+	"net/url"
 	"strconv"
-	"strings"
 	"sync"
-	"time"
-
-	"github.com/llaoj/gcopy/internal/config"
-	"github.com/llaoj/gcopy/pkg/pubsub"
-	"github.com/llaoj/gcopy/pkg/utils/hash"
-	"github.com/sirupsen/logrus"
 
 	"github.com/gin-gonic/gin"
-	"github.com/llaoj/gcopy/internal/clipboard"
-	"github.com/llaoj/gcopy/internal/middleware"
+	"github.com/llaoj/gcopy/internal/config"
+	"github.com/llaoj/gcopy/internal/gcopy"
+	"github.com/sirupsen/logrus"
 )
 
 type Server struct {
-	cb *clipboard.Clipboard
+	cb *gcopy.Clipboard
 
 	log *logrus.Entry
-	ps  *pubsub.PubSub
 }
 
-var ContentFilePath string
-
-func NewServer(log *logrus.Logger) (*Server, error) {
-	s := &Server{
-		cb: &clipboard.Clipboard{},
+func NewServer(log *logrus.Logger) *Server {
+	return &Server{
+		cb:  &gcopy.Clipboard{},
+		log: log.WithField("role", "server"),
 	}
-	s.log = log.WithField("role", "server")
-
-	userHomeDir, err := os.UserHomeDir()
-	if err != nil {
-		return nil, err
-	}
-
-	ContentFilePath = userHomeDir
-	switch os := runtime.GOOS; os {
-	case "darwin", "linux":
-		ContentFilePath += "/.gcopy/server/content"
-	case "windows":
-		ContentFilePath += "\\.gcopy\\server\\content"
-	default:
-		s.log.Fatal("unsupported os")
-	}
-	if err := os.MkdirAll(filepath.Dir(ContentFilePath), 0750); err != nil {
-		return nil, err
-	}
-
-	s.ps = pubsub.NewPubSub()
-
-	return s, nil
 }
 
 func (s *Server) Run(wg *sync.WaitGroup) {
 	defer wg.Done()
 	cfg := config.Get()
+	if err := printClientCommand(); err != nil {
+		s.log.Fatal()
+	}
 
 	if cfg.Debug {
 		gin.SetMode(gin.DebugMode)
 	} else {
 		gin.SetMode(gin.ReleaseMode)
 	}
+	r := gin.New()
+	r.Use(gin.Recovery())
+	r.Use(gin.BasicAuth(gin.Accounts{cfg.Username: cfg.Password}))
 
-	router := gin.Default()
-	v1 := router.Group("/apis/v1").Use(middleware.Auth())
-	{
-		v1.GET("/clipboard", s.getClipboardHandler)
-		v1.POST("/clipboard", s.updateClipboardHandler)
+	r.GET("/ping", func(c *gin.Context) { c.String(200, "pong") })
+	r.GET("/clipboard", s.getClipboardHandler)
+	r.POST("/clipboard", s.updateClipboardHandler)
+	r.LoadHTMLGlob("internal/server/templates/*")
+	r.GET("/", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "index.tmpl", gin.H{
+			"title": "GCopy Web Client",
+		})
+	})
+	if cfg.TLS {
+		r.RunTLS(cfg.Listen, cfg.CertFile, cfg.KeyFile)
+	} else {
+		r.Run(cfg.Listen)
 	}
+}
 
-	server := cfg.Listen
-	addr := strings.Split(server, ":")
-	if addr[0] == "" {
-		ip, err := getOutboundIP()
-		if err != nil {
-			s.log.Fatal(err)
-		}
-		server = ip.String() + server
+func printClientCommand() error {
+	cfg := config.Get()
+	server := cfg.Server
+	fmt.Printf("\nThe Server has started!\n")
+	fmt.Printf("Start command cli: /path/to/gcopy --role=client --server=%v --username=%v --password=%v\n",
+		server,
+		cfg.Username,
+		cfg.Password,
+	)
+	fmt.Printf("Visit web cli: %v/\n\n", server)
+
+	return nil
+}
+
+func (s *Server) getClipboardHandler(c *gin.Context) {
+	index, _ := strconv.Atoi(c.Request.Header.Get("X-Index"))
+	c.Header("X-Index", strconv.Itoa(s.cb.Index))
+	c.Status(http.StatusOK)
+	if s.cb.Index == 0 || index == s.cb.Index {
+		return
 	}
-
-	fmt.Printf("\nThe Server has started, start the clients:\n")
-	fmt.Printf("/path/to/gcopy --role=client --server=%v --token=%v\n\n", server, cfg.Token)
-
-	if err := router.Run(cfg.Listen); err != nil {
-		s.log.Fatal(err)
+	c.Header("X-Type", s.cb.Type)
+	c.Header("X-FileName", url.QueryEscape(s.cb.FileName))
+	if _, err := c.Writer.Write(s.cb.Data); err != nil {
+		s.log.Error(err)
 	}
 }
 
 func (s *Server) updateClipboardHandler(c *gin.Context) {
-	contentType := c.GetHeader("X-Content-Type")
-	copiedFileName := c.GetHeader("X-Copied-File-Name")
-	if contentType == "" || (contentType == clipboard.ContentTypeFile && copiedFileName == "") {
-		c.String(http.StatusBadRequest, "invalid argument")
-		return
-	}
-
-	// save the uploaded file
-	file, err := c.FormFile("f")
+	data, err := io.ReadAll(c.Request.Body)
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		s.log.Error(err)
+	}
+	defer c.Request.Body.Close()
+	if data == nil {
+		c.Status(http.StatusBadRequest)
 		return
 	}
 
-	if err := c.SaveUploadedFile(file, ContentFilePath); err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+	xType := c.Request.Header.Get("X-Type")
+	xFileName := c.Request.Header.Get("X-FileName")
+	if xType == "" || (xType == gcopy.TypeFile && xFileName == "") {
+		c.Status(http.StatusBadRequest)
 		return
 	}
 
-	contentHash, err := hash.HashFile(ContentFilePath)
-	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
-		return
+	s.cb = &gcopy.Clipboard{
+		Index:    s.cb.Index + 1,
+		Type:     xType,
+		FileName: xFileName,
+		Data:     data,
 	}
-	if contentHash == s.cb.ContentHash {
-		c.String(http.StatusOK, "duplicate content")
-		return
-	}
-
-	fileData, err := os.ReadFile(ContentFilePath)
-	if err != nil {
-		c.String(http.StatusInternalServerError, fmt.Sprintf("error: %s", err))
-		return
-	}
-
-	s.cb = &clipboard.Clipboard{
-		Index:           s.cb.Index + 1,
-		ContentHash:     contentHash,
-		ContentType:     contentType,
-		ContentFilePath: ContentFilePath,
-		ContentFileData: fileData,
-		CopiedFileName:  copiedFileName,
-	}
-	s.ps.Publish()
-
-	c.Header("X-Index", fmt.Sprintf("%v", s.cb.Index))
-	c.String(http.StatusOK, fmt.Sprintf("clipboard(%v) uploaded", s.cb.Index))
-}
-
-func (s *Server) getClipboardHandler(c *gin.Context) {
-	index, _ := strconv.Atoi(c.Query("index"))
-	s.log.Debugf("get clipboard(%v), index: %+v", s.cb.Index, index)
-
-	ch, cancel := s.ps.Subscribe()
-	defer cancel()
-
-	stop := make(chan struct{}, 1)
-	go func() {
-		if s.cb.Index > 0 && index != s.cb.Index {
-			s.responseClipboard(c, stop)
-			return
-		}
-		if _, ok := <-ch; ok {
-			s.responseClipboard(c, stop)
-		}
-	}()
-
-	select {
-	case <-stop:
-	case <-time.After(time.Second * 300):
-		if !c.Writer.Written() {
-			c.String(http.StatusRequestTimeout, "timeout")
-		}
-	case <-c.Request.Context().Done():
-		c.String(http.StatusBadRequest, "context done")
-	}
-}
-
-func (s *Server) responseClipboard(c *gin.Context, stop chan struct{}) {
-	if s.cb.ContentFileData == nil {
-		c.String(http.StatusInternalServerError, "empty content file")
-		return
-	}
-
-	fileContentType := http.DetectContentType(s.cb.ContentFileData)
-	c.Header("X-Index", fmt.Sprintf("%v", s.cb.Index))
-	c.Header("X-Content-Type", s.cb.ContentType)
-	c.Header("X-Copied-File-Name", s.cb.CopiedFileName)
-	c.Header("Content-Disposition", fmt.Sprintf(`attachment; filename="%s"`, filepath.Base(s.cb.ContentFilePath)))
-	c.Data(http.StatusOK, fileContentType, s.cb.ContentFileData)
-
-	close(stop)
-}
-
-// get preferred outbound ip of this machine
-func getOutboundIP() (net.IP, error) {
-	conn, err := net.Dial("udp", "8.8.8.8:80")
-	if err != nil {
-		return nil, err
-	}
-	defer conn.Close()
-	localAddr := conn.LocalAddr().(*net.UDPAddr)
-	return localAddr.IP, nil
+	s.log.Infof("received %s(%v)", s.cb.Type, s.cb.Index)
+	c.Status(http.StatusOK)
+	c.Header("X-Index", strconv.Itoa(s.cb.Index))
 }

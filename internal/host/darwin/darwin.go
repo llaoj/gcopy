@@ -8,7 +8,8 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"github.com/llaoj/gcopy/internal/clipboard"
+	"github.com/llaoj/gcopy/internal/gcopy"
+	"github.com/llaoj/gcopy/internal/host"
 	"github.com/llaoj/gcopy/pkg/utils/file"
 	"github.com/llaoj/gcopy/pkg/utils/hash"
 )
@@ -51,9 +52,9 @@ func (h *HostClipboardManager) writeScreenshotToFile(file string) error {
 		"-e", "close access target").Run()
 }
 
-func (h *HostClipboardManager) Get(cb *clipboard.Clipboard) error {
-	if cb.ContentFilePath == "" {
-		return errors.New("empty ContentFilePath")
+func (h *HostClipboardManager) Get(hcb *host.HostClipboard) error {
+	if hcb.FilePath == "" {
+		return errors.New("empty FilePath")
 	}
 
 	out, err := exec.Command(h.osAScriptPath, "-e", "clipboard info").CombinedOutput()
@@ -64,31 +65,31 @@ func (h *HostClipboardManager) Get(cb *clipboard.Clipboard) error {
 	for _, line := range lines {
 		if !bytes.Contains(line, []byte("Error")) {
 			if bytes.HasPrefix(line, []byte("«class PNGf»")) {
-				cb.ContentType = clipboard.ContentTypeScreenshot
+				hcb.Type = gcopy.TypeScreenshot
 			} else if bytes.HasPrefix(line, []byte("«class furl»")) {
-				cb.ContentType = clipboard.ContentTypeFile
+				hcb.Type = gcopy.TypeFile
 			} else {
-				cb.ContentType = clipboard.ContentTypeText
+				hcb.Type = gcopy.TypeText
 			}
 			break
 		}
 	}
 
 	contentHash := ""
-	switch cb.ContentType {
-	case clipboard.ContentTypeText:
+	switch hcb.Type {
+	case gcopy.TypeText:
 		out, err := exec.Command(h.osAScriptPath, "-e the clipboard").CombinedOutput()
 		if err != nil {
 			return err
 		}
 		contentHash = hash.HashText(string(out))
-	case clipboard.ContentTypeScreenshot:
+	case gcopy.TypeScreenshot:
 		out, err := exec.Command(h.osAScriptPath, "-e the clipboard as «class PNGf»").CombinedOutput()
 		if err != nil {
 			return err
 		}
 		contentHash = hash.HashText(string(out))
-	case clipboard.ContentTypeFile:
+	case gcopy.TypeFile:
 		out, err := exec.Command(h.osAScriptPath, "-e", "POSIX path of (the clipboard as «class furl»)").CombinedOutput()
 		if err != nil {
 			return err
@@ -98,47 +99,47 @@ func (h *HostClipboardManager) Get(cb *clipboard.Clipboard) error {
 		if file.IsDir(string(out)) {
 			return errors.New("folders are not supported")
 		}
-		cb.ContentFilePath = string(out)
-		contentHash, err = hash.HashFile(cb.ContentFilePath)
+		hcb.FilePath = string(out)
+		contentHash, err = hash.HashFile(hcb.FilePath)
 		if err != nil {
 			return err
 		}
-		cb.CopiedFileName = filepath.Base(cb.ContentFilePath)
+		hcb.FileName = filepath.Base(hcb.FilePath)
 	}
-	cb.ContentHash = contentHash
+	hcb.Hash = contentHash
 	if contentHash == "" || contentHash == h.contentHash {
 		return nil
 	}
 	h.contentHash = contentHash
 
 	// save new clipboard content to file
-	switch cb.ContentType {
-	case clipboard.ContentTypeText:
-		return h.writeTextToFile(cb.ContentFilePath)
-	case clipboard.ContentTypeScreenshot:
-		return h.writeScreenshotToFile(cb.ContentFilePath)
+	switch hcb.Type {
+	case gcopy.TypeText:
+		return h.writeTextToFile(hcb.FilePath)
+	case gcopy.TypeScreenshot:
+		return h.writeScreenshotToFile(hcb.FilePath)
 	}
 
 	return nil
 }
 
-func (h *HostClipboardManager) Set(cb *clipboard.Clipboard) error {
-	switch cb.ContentType {
-	case clipboard.ContentTypeScreenshot:
-		cmd := fmt.Sprintf("set the clipboard to (read \"%s\" as «class PNGf»)", cb.ContentFilePath)
+func (h *HostClipboardManager) Set(hcb *host.HostClipboard) error {
+	switch hcb.Type {
+	case gcopy.TypeScreenshot:
+		cmd := fmt.Sprintf("set the clipboard to (read \"%s\" as «class PNGf»)", hcb.FilePath)
 		out, err := exec.Command(h.osAScriptPath, "-e", cmd).CombinedOutput()
 		if err != nil {
 			return fmt.Errorf("%s: %s", err, out)
 		}
 		return nil
-	case clipboard.ContentTypeFile:
-		cacheDir := fmt.Sprintf("%s/cache/", filepath.Dir(cb.ContentFilePath))
+	case gcopy.TypeFile:
+		cacheDir := fmt.Sprintf("%s/cache/", filepath.Dir(hcb.FilePath))
 		err := os.RemoveAll(cacheDir)
 		if err != nil {
 			return err
 		}
-		tmpFile := cacheDir + cb.CopiedFileName
-		_, err = file.CopyFile(cb.ContentFilePath, tmpFile)
+		tmpFile := cacheDir + hcb.FileName
+		_, err = file.CopyFile(hcb.FilePath, tmpFile)
 		if err != nil {
 			return err
 		}
@@ -148,12 +149,13 @@ func (h *HostClipboardManager) Set(cb *clipboard.Clipboard) error {
 			return fmt.Errorf("%s: %s", err, out)
 		}
 		return nil
-	default:
-		cmd := fmt.Sprintf("set the clipboard to (read \"%s\" as «class utf8»)", cb.ContentFilePath)
+	case gcopy.TypeText:
+		cmd := fmt.Sprintf("set the clipboard to (read \"%s\" as «class utf8»)", hcb.FilePath)
 		out, err := exec.Command(h.osAScriptPath, "-e", cmd).CombinedOutput()
 		if err != nil {
 			return fmt.Errorf("%s: %s", err, out)
 		}
 		return nil
 	}
+	return fmt.Errorf("unspported clipboard type")
 }
