@@ -88,6 +88,7 @@ $ docker run -d --restart=always \
       --name=gcopy-server \
       -p 3375:3375 \
       registry.cn-beijing.aliyuncs.com/llaoj/gcopy:v0.1.0 \
+      --role=server \
       --tls \
       --certFile="/path/to/cert.pem" \
       --keyFile="/path/to/key.pem"
