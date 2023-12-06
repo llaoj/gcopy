@@ -219,6 +219,7 @@
         })
     });
     target.addEventListener("dragover", (event) => {
+        $("#clipboard").html('')
         event.preventDefault();
     });
     target.addEventListener("dragenter", (event) => {
