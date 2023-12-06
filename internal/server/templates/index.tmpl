@@ -23,7 +23,7 @@
         <h6 class="pt-3">Notes</h6>
         <ul class="list-unstyled">
             <li>Click on the page to synchronize the clipboard.</li>
-            <li>Drag and drop a file onto the page.</li>
+            <li>Drag and drop a file into the preview box.</li>
         </ul>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"
@@ -171,6 +171,60 @@
         pushClipboard()
         infoLog("loaded")
     }
+
+    // file drag and drop
+    const target = document.getElementById("clipboard");
+    target.addEventListener("drop", (event) => {
+        event.preventDefault();
+        resetLog()
+        let droppedFile
+        if (event.dataTransfer.items) {
+            [...event.dataTransfer.items].forEach((item, i) => {
+                if (item.kind === "file") {
+                    droppedFile = item.getAsFile();
+                }
+            });
+        } else {
+            [...event.dataTransfer.files].forEach((file, i) => {
+                droppedFile = file
+            });
+        }
+        if (droppedFile == undefined) {
+            return
+        }
+        axios({
+            method: 'post',
+            url: '/clipboard',
+            headers: {
+                'X-Type': 'file',
+                'X-FileName': encodeURI(droppedFile.name)
+            },
+            data: droppedFile
+        }).then(function (response) {
+            if (response.status != 200) {
+                return
+            }
+            if (response.headers["x-index"] == 0) {
+                return
+            }
+            if (xindex == response.headers["x-index"]) {
+                return
+            }
+            xindex = response.headers["x-index"]
+            $("#clipboard").html($('<p class="m-auto text-truncate"></p>').text(droppedFile.name))
+            infoLog("pushed file(" + xindex + ")")
+        })
+    });
+    target.addEventListener("dragover", (event) => {
+        event.preventDefault();
+    });
+    target.addEventListener("dragenter", (event) => {
+        event.target.classList.add("border-primary");
+    });
+    target.addEventListener("dragleave", (event) => {
+        event.target.classList.remove("border-primary");
+    });
+
 </script>
 
 </html>
