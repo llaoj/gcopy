@@ -30,6 +30,8 @@ dockers:
   - image_templates:
       - "registry.cn-beijing.aliyuncs.com/llaoj/gcopy:{{ .Tag }}"
     dockerfile: "build/Dockerfile"
+    extra_files:
+      - internal/server/templates/index.tmpl
 
 archives:
   - format: tar.gz

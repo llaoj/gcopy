@@ -84,7 +84,14 @@ The Server has started, start the clients:
 当然如果你想使用容器启动服务端, 也可以:
 
 ```
-$ docker run -d --restart=always --name=gcopy -p 3375:3375 registry.cn-beijing.aliyuncs.com/llaoj/gcopy:v0.1.0
+$ docker run -d --restart=always \
+      --name=gcopy-server \
+      -p 3375:3375 \
+      registry.cn-beijing.aliyuncs.com/llaoj/gcopy:v0.1.0 \
+      --role=server \
+      --tls \
+      --certFile="/path/to/cert.pem" \
+      --keyFile="/path/to/key.pem"
 ```
 
 服务端启动成功, 你可能需要一些配置, 比如后台执行, 开机启动等. 我们看到上面的命令打印出了客户端启动命令, 然后我们在不同的设备上运行这个命令就行啦!

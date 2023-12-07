@@ -9,7 +9,7 @@
         integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
 </head>
 
-<body class="vh-100" onclick="refresh()">
+<body class="vh-100" onclick="sync()">
     <nav class="navbar bg-body-tertiary">
         <div class="container-fluid">
             <a class="navbar-brand" href="#">{{ .title}}</a>
@@ -23,7 +23,7 @@
         <h6 class="pt-3">Notes</h6>
         <ul class="list-unstyled">
             <li>Click on the page to synchronize the clipboard.</li>
-            <li>Drag and drop a file onto the page.</li>
+            <li>Drag and drop a file into the preview box.</li>
         </ul>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"
@@ -59,9 +59,9 @@
             })
         }
         let data = [new ClipboardItem({ [type]: blob })]
-        navigator.clipboard.write(data).then(
+        await navigator.clipboard.write(data).then(
             () => {
-                console.log("success")
+                infoLog("successfully copy blob to the clipboard.")
             },
             (err) => {
                 console.log(err)
@@ -69,13 +69,14 @@
         )
     }
 
-    pullClipboard = function () {
-        axios({
+    pullClipboard = async function () {
+        infoLog("pulling...")
+        await axios({
             method: 'get',
             url: '/clipboard',
             responseType: 'blob',
             headers: { 'X-Index': xindex }
-        }).then(function (response) {
+        }).then(async function (response) {
             // console.log(response.headers)
             if (response.status != 200) {
                 return
@@ -92,13 +93,13 @@
                 return
             }
             if (xtype == "text") {
-                copyBlobToClipboard(response.data)
+                await copyBlobToClipboard(response.data)
                 response.data.text().then(text => {
                     $("#clipboard").html($('<textarea class="w-100 border-0 overflow-hidden m-1" style="resize: none"></textarea>').text(text))
                 })
             }
             if (xtype == "screenshot") {
-                copyBlobToClipboard(response.data)
+                await copyBlobToClipboard(response.data)
                 $("#clipboard").html("<img class=\"object-fit-contain mw-100\" src=" + URL.createObjectURL(response.data) + "></img>")
             }
             if (xtype == "file") {
@@ -109,7 +110,7 @@
         })
     }
 
-    async function pushClipboard() {
+    pushClipboard = async function () {
         try {
             let xtype = ""
             const clipboardItems = await navigator.clipboard.read();
@@ -134,7 +135,8 @@
                     if (xtype == "") {
                         return
                     }
-                    axios({
+                    infoLog("pushing...")
+                    await axios({
                         method: 'post',
                         url: '/clipboard',
                         headers: {
@@ -165,12 +167,68 @@
         }
     }
 
-    function refresh() {
+    sync = async function () {
         resetLog()
-        pullClipboard()
+        await pullClipboard()
         pushClipboard()
-        infoLog("loaded")
     }
+
+    // file drag and drop
+    const target = document.getElementById("clipboard");
+    target.addEventListener("drop", (event) => {
+        event.preventDefault();
+        resetLog()
+        let droppedFile
+        if (event.dataTransfer.items) {
+            [...event.dataTransfer.items].forEach((item, i) => {
+                if (item.kind === "file") {
+                    droppedFile = item.getAsFile();
+                }
+            });
+        } else {
+            [...event.dataTransfer.files].forEach((file, i) => {
+                droppedFile = file
+            });
+        }
+        if (droppedFile == undefined) {
+            return
+        }
+        infoLog("uploading...")
+        axios({
+            method: 'post',
+            url: '/clipboard',
+            headers: {
+                'X-Type': 'file',
+                'X-FileName': encodeURI(droppedFile.name)
+            },
+            data: droppedFile
+        }).then(function (response) {
+            if (response.status != 200) {
+                return
+            }
+            if (response.headers["x-index"] == 0) {
+                return
+            }
+            if (xindex == response.headers["x-index"]) {
+                return
+            }
+            xindex = response.headers["x-index"]
+            $("#clipboard").html($('<p class="m-auto text-truncate"></p>').text(droppedFile.name))
+            event.target.classList.remove("border-primary");
+            infoLog("pushed file(" + xindex + ")")
+        })
+    });
+    target.addEventListener("dragover", (event) => {
+        event.preventDefault();
+        $("#clipboard").html('')
+    });
+    target.addEventListener("dragenter", (event) => {
+        event.target.classList.add("border-primary");
+    });
+    target.addEventListener("dragleave", (event) => {
+        event.target.classList.remove("border-primary");
+    });
+
 </script>
 
 </html>
