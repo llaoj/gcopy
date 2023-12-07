@@ -219,8 +219,8 @@
         })
     });
     target.addEventListener("dragover", (event) => {
-        $("#clipboard").html('')
         event.preventDefault();
+        $("#clipboard").html('')
     });
     target.addEventListener("dragenter", (event) => {
         event.target.classList.add("border-primary");
