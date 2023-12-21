@@ -1,13 +1,12 @@
 package server
 
 import (
-	"fmt"
 	"io"
 	"net/http"
-	"net/url"
 	"strconv"
-	"sync"
+	"strings"
 
+	"github.com/clerkinc/clerk-sdk-go/clerk"
 	"github.com/gin-gonic/gin"
 	"github.com/llaoj/gcopy/internal/config"
 	"github.com/llaoj/gcopy/internal/gcopy"
@@ -15,24 +14,20 @@ import (
 )
 
 type Server struct {
-	cb *gcopy.Clipboard
+	cb map[string]*gcopy.Clipboard
 
-	log *logrus.Entry
+	log *logrus.Logger
 }
 
 func NewServer(log *logrus.Logger) *Server {
 	return &Server{
-		cb:  &gcopy.Clipboard{},
-		log: log.WithField("role", "server"),
+		cb:  make(map[string]*gcopy.Clipboard),
+		log: log,
 	}
 }
 
-func (s *Server) Run(wg *sync.WaitGroup) {
-	defer wg.Done()
+func (s *Server) Run() {
 	cfg := config.Get()
-	if err := printClientCommand(); err != nil {
-		s.log.Fatal()
-	}
 
 	if cfg.Debug {
 		gin.SetMode(gin.DebugMode)
@@ -41,17 +36,31 @@ func (s *Server) Run(wg *sync.WaitGroup) {
 	}
 	r := gin.New()
 	r.Use(gin.Recovery())
-	r.Use(gin.BasicAuth(gin.Accounts{cfg.Username: cfg.Password}))
+
+	clerkClient, err := clerk.NewClient(cfg.ClerkSecretKey)
+	if err != nil {
+		s.log.Fatal(err)
+	}
+
+	// use clerk
+	r.Use(func(c *gin.Context) {
+		token := c.Request.Header.Get("Authorization")
+		token = strings.TrimPrefix(token, "Bearer ")
+
+		claims, err := clerkClient.VerifyToken(token)
+		if err != nil {
+			c.String(http.StatusUnauthorized, "Unauthorized")
+			return
+		}
+		c.Set("subject", claims.Claims.Subject)
+		c.Next()
+	})
 
 	r.GET("/ping", func(c *gin.Context) { c.String(200, "pong") })
+
 	r.GET("/clipboard", s.getClipboardHandler)
 	r.POST("/clipboard", s.updateClipboardHandler)
-	r.LoadHTMLGlob("internal/server/templates/*")
-	r.GET("/", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "index.tmpl", gin.H{
-			"title": "GCopy Web Client",
-		})
-	})
+	s.log.Info("The server has started!")
 	if cfg.TLS {
 		r.RunTLS(cfg.Listen, cfg.CertFile, cfg.KeyFile)
 	} else {
@@ -59,59 +68,71 @@ func (s *Server) Run(wg *sync.WaitGroup) {
 	}
 }
 
-func printClientCommand() error {
-	cfg := config.Get()
-	server := cfg.Server
-	fmt.Printf("\nThe Server has started!\n")
-	fmt.Printf("Start command cli: /path/to/gcopy --role=client --server=%v --username=%v --password=%v\n",
-		server,
-		cfg.Username,
-		cfg.Password,
-	)
-	fmt.Printf("Visit web cli: %v/\n\n", server)
-
-	return nil
-}
-
 func (s *Server) getClipboardHandler(c *gin.Context) {
-	index, _ := strconv.Atoi(c.Request.Header.Get("X-Index"))
-	c.Header("X-Index", strconv.Itoa(s.cb.Index))
-	c.Status(http.StatusOK)
-	if s.cb.Index == 0 || index == s.cb.Index {
+	subject, ok := c.Get("subject")
+	if !ok {
+		c.String(http.StatusNotFound, "Subject not found")
 		return
 	}
-	c.Header("X-Type", s.cb.Type)
-	c.Header("X-FileName", url.QueryEscape(s.cb.FileName))
-	if _, err := c.Writer.Write(s.cb.Data); err != nil {
+	sub, ok := subject.(string)
+	if !ok {
+		c.String(http.StatusInternalServerError, "Subject type assert failed")
+		return
+	}
+	cb := s.cb[sub]
+
+	index, _ := strconv.Atoi(c.Request.Header.Get("X-Index"))
+	c.Header("X-Index", strconv.Itoa(cb.Index))
+	c.Status(http.StatusOK)
+	if cb.Index == 0 || index == cb.Index {
+		return
+	}
+	c.Header("X-Type", cb.Type)
+	c.Header("X-FileName", cb.FileName)
+	if _, err := c.Writer.Write(cb.Data); err != nil {
 		s.log.Error(err)
 	}
 }
 
 func (s *Server) updateClipboardHandler(c *gin.Context) {
+	subject, ok := c.Get("subject")
+	if !ok {
+		c.String(http.StatusNotFound, "Subject not found")
+		return
+	}
+	sub, ok := subject.(string)
+	if !ok {
+		c.String(http.StatusInternalServerError, "Subject type assert failed")
+		return
+	}
+
 	data, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		s.log.Error(err)
 	}
 	defer c.Request.Body.Close()
 	if data == nil {
-		c.Status(http.StatusBadRequest)
+		c.String(http.StatusBadRequest, "Request body is nil")
 		return
 	}
 
 	xType := c.Request.Header.Get("X-Type")
 	xFileName := c.Request.Header.Get("X-FileName")
 	if xType == "" || (xType == gcopy.TypeFile && xFileName == "") {
-		c.Status(http.StatusBadRequest)
+		c.String(http.StatusBadRequest, "Request header invalid")
 		return
 	}
 
-	s.cb = &gcopy.Clipboard{
-		Index:    s.cb.Index + 1,
+	cb := s.cb[sub]
+	cb = &gcopy.Clipboard{
+		Index:    cb.Index + 1,
 		Type:     xType,
 		FileName: xFileName,
 		Data:     data,
 	}
-	s.log.Infof("received %s(%v)", s.cb.Type, s.cb.Index)
-	c.Status(http.StatusOK)
-	c.Header("X-Index", strconv.Itoa(s.cb.Index))
+	s.log.Infof("Received %s(%v)", cb.Type, cb.Index)
+	s.cb[sub] = cb
+
+	c.Header("X-Index", strconv.Itoa(cb.Index))
+	c.String(http.StatusOK, "Success")
 }

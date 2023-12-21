@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>GCopy</title>
+    <link href="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.3.1/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.bootcdn.net/ajax/libs/bootstrap-icons/1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+</head>
+
+<body class="vh-100" onclick="sync()">
+    <nav class="navbar navbar-expand-lg bg-body-tertiary">
+        <div class="container">
+            <a class="navbar-brand" href="https://github.com/llaoj/gcopy">GCopy</a>
+            <ul class="navbar-nav">
+                <li class="nav-item"><a class="nav-link" href="#">hmmmbiubiubiu@gmail.com </a></li>
+            </ul>
+            <!-- Button trigger modal -->
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal">
+                LOG IN
+            </button>
+            <!-- Modal -->
+            <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel"
+                aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h1 class="modal-title fs-5" id="exampleModalLabel">LOG IN</h1>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form>
+                                <div class="mb-3">
+                                    <label for="exampleInputEmail1" class="form-label">Email address</label>
+                                    <input type="email" class="form-control" id="exampleInputEmail1">
+                                    <div id="emailHelp" class="form-text">We'll never share your email with anyone else.
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="exampleInputPassword1" class="form-label">Password</label>
+                                    <div class="input-group has-validation">
+                                        <input type="text" class="form-control is-invalid" id="exampleInputPassword1"
+                                            placeholder="Recipient's username">
+                                        <button class="btn btn-outline-secondary" type="button"
+                                            id="button-addon2">Button</button>
+                                        <div id="validationServerUsernameFeedback" class="invalid-feedback">
+                                            Please choose a username.
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mb-3 form-check">
+                                    <input type="checkbox" class="form-check-input" id="exampleCheck1">
+                                    <label class="form-check-label" for="exampleCheck1">Check me out</label>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <button type="button" class="btn btn-primary">Save changes</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </nav>
+    <div id="app" class="container">
+        <h5 class="py-2">Log</h5>
+        <div id="log" class="border rounded p-2 lh-1 text-secondary bg-light-subtle" style="height: 10rem;"></div>
+        <h5 class="py-2">File</h5>
+        <div id="file-box" class="border rounded d-flex justify-content-center" style="height: 8rem;">
+            <p class="m-auto text-secondary">Drag and drop a file here.</p>
+        </div>
+        <h6 class="pt-3">Notes</h6>
+        <ul class="list-unstyled">
+            <li>Click <i class="bi bi-cursor-fill"></i> everywhere on the page to synchronize the clipboard.</li>
+            <li>Click <strong>"Allow"</strong> when the browser asks you "Share clipboard?"</li>
+            <li>We recommend using Google <i class="bi bi-browser-chrome"></i> Chrome 86+.</li>
+        </ul>
+    </div>
+    <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.3.1/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/axios/1.5.0/axios.min.js"></script>
+</body>
+
+<script>
+    var xindex = 0
+    var id = ""
+
+    function resetLog() {
+        $("#log").html("")
+    }
+    function addLog(text) {
+        $("#log").append(text + "<br/>")
+    }
+
+    async function copyBlobToClipboard(blob) {
+        if (id == blob.type + blob.size) {
+            return
+        }
+        id = blob.type + blob.size
+        let type = blob.type
+        if (type == "text/html") {
+            await blob.text().then(text => {
+                type = "text/plain";
+                blob = new Blob([text], { type });
+            })
+        }
+        let data = [new ClipboardItem({ [type]: blob })]
+        await navigator.clipboard.write(data).then(
+            () => {
+                addLog("successfully copy blob to the clipboard.")
+            },
+            (err) => {
+                console.log(err)
+            },
+        )
+    }
+
+    pullClipboard = async function () {
+        addLog("pulling...")
+        await axios({
+            method: 'get',
+            url: '/clipboard',
+            responseType: 'blob',
+            headers: { 'X-Index': xindex }
+        }).then(async function (response) {
+            if (response.status != 200 || response.headers["x-index"] == 0 || response.headers["x-index"] == xindex) {
+                return
+            }
+            xindex = response.headers["x-index"]
+            let xtype = response.headers["x-type"]
+            if (xtype == undefined || xtype == "") {
+                return
+            }
+            if (xtype == "text" || xtype == "screenshot") {
+                await copyBlobToClipboard(response.data)
+            }
+            if (xtype == "file") {
+                let xfilename = decodeURI(response.headers["x-filename"])
+                $("#file-box").html("<a class=\"m-auto text-truncate\" href=" + URL.createObjectURL(response.data) + " download=\"" + xfilename + "\">" + xfilename + "</a>")
+            }
+            addLog("received " + response.headers["x-type"] + "(" + xindex + ")")
+        })
+    }
+
+    pushClipboard = async function () {
+        try {
+            const permission = await navigator.permissions.query({
+                name: "clipboard-read",
+            });
+            if (permission.state === "denied") {
+                addLog("not allowed to read clipboard.");
+                return
+            }
+            let xtype = ""
+            const clipboardItems = await navigator.clipboard.read();
+            for (const clipboardItem of clipboardItems) {
+                for (const type of clipboardItem.types) {
+                    const blob = await clipboardItem.getType(type);
+                    if (id == blob.type + blob.size) {
+                        return
+                    }
+                    id = blob.type + blob.size
+                    if (type == "text/plain") {
+                        xtype = "text"
+                    }
+                    if (type == "image/png") {
+                        xtype = "screenshot"
+                    }
+                    if (xtype == "") {
+                        return
+                    }
+                    addLog("pushing...")
+                    await axios({
+                        method: 'post',
+                        url: '/clipboard',
+                        headers: {
+                            "Content-Type": blob.type,
+                            'X-Type': xtype,
+                            'X-FileName': ""
+                        },
+                        data: blob
+                    }).then(function (response) {
+                        if (response.status != 200 || response.headers["x-index"] == 0 || response.headers["x-index"] == xindex) {
+                            return
+                        }
+                        xindex = response.headers["x-index"]
+                        addLog("pushed " + xtype + "(" + xindex + ")")
+                    })
+                    return
+                }
+            }
+        } catch (err) {
+            console.error(err.message);
+        }
+    }
+
+    sync = async function () {
+        resetLog()
+        await pullClipboard()
+        pushClipboard()
+    }
+
+    // file drag and drop
+    const target = document.getElementById("file-box");
+    target.addEventListener("drop", (event) => {
+        event.preventDefault();
+        resetLog()
+        let droppedFile
+        if (event.dataTransfer.items) {
+            [...event.dataTransfer.items].forEach((item, i) => {
+                if (item.kind === "file") {
+                    droppedFile = item.getAsFile();
+                }
+            });
+        } else {
+            [...event.dataTransfer.files].forEach((file, i) => {
+                droppedFile = file
+            });
+        }
+        if (droppedFile == undefined) {
+            return
+        }
+        addLog("uploading...")
+        axios({
+            method: 'post',
+            url: '/clipboard',
+            headers: {
+                'X-Type': 'file',
+                'X-FileName': encodeURI(droppedFile.name)
+            },
+            data: droppedFile
+        }).then(function (response) {
+            if (response.status != 200) {
+                return
+            }
+            if (response.headers["x-index"] == 0) {
+                return
+            }
+            if (xindex == response.headers["x-index"]) {
+                return
+            }
+            xindex = response.headers["x-index"]
+            $("#file-box").html($('<p class="m-auto text-truncate"></p>').text(droppedFile.name))
+            event.target.classList.remove("border-primary");
+            addLog("pushed file(" + xindex + ")")
+        })
+    });
+    target.addEventListener("dragover", (event) => {
+        event.preventDefault();
+        $("#file-box").html('')
+    });
+    target.addEventListener("dragenter", (event) => {
+        event.target.classList.add("border-primary");
+    });
+    target.addEventListener("dragleave", (event) => {
+        event.target.classList.remove("border-primary");
+    });
+
+</script>
+
+</html>
