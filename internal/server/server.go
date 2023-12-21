@@ -4,9 +4,10 @@ import (
 	"io"
 	"net/http"
 	"strconv"
-	"strings"
+	"time"
 
 	"github.com/clerkinc/clerk-sdk-go/clerk"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/llaoj/gcopy/internal/config"
 	"github.com/llaoj/gcopy/internal/gcopy"
@@ -14,57 +15,63 @@ import (
 )
 
 type Server struct {
-	cb map[string]*gcopy.Clipboard
-
-	log *logrus.Logger
+	cbs   *Clipboards
+	cfg   *config.Config
+	log   *logrus.Logger
+	clerk clerk.Client
 }
 
 func NewServer(log *logrus.Logger) *Server {
-	return &Server{
-		cb:  make(map[string]*gcopy.Clipboard),
+	s := &Server{
+		cbs: NewClipboards(),
+		cfg: config.Get(),
 		log: log,
 	}
+	clerkClient, err := clerk.NewClient(s.cfg.ClerkSecretKey)
+	if err != nil {
+		s.log.Fatal(err)
+	}
+	s.clerk = clerkClient
+
+	return s
 }
 
 func (s *Server) Run() {
-	cfg := config.Get()
-
-	if cfg.Debug {
+	if s.cfg.Debug {
 		gin.SetMode(gin.DebugMode)
 	} else {
 		gin.SetMode(gin.ReleaseMode)
 	}
 	r := gin.New()
 	r.Use(gin.Recovery())
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"*"},
+		AllowMethods:     []string{"*"},
+		AllowHeaders:     []string{"*"},
+		ExposeHeaders:    []string{"*"},
+		AllowCredentials: true,
+		AllowOriginFunc: func(origin string) bool {
+			return true
+		},
+		MaxAge: 12 * time.Hour,
+	}))
 
-	clerkClient, err := clerk.NewClient(cfg.ClerkSecretKey)
-	if err != nil {
-		s.log.Fatal(err)
-	}
+	v1 := r.Group("/api/v1")
+	v1.GET("/ping", func(c *gin.Context) { c.String(200, "pong") })
+	v1.GET("/systeminfo", s.getSystemInfoHandler)
 
-	// use clerk
-	r.Use(func(c *gin.Context) {
-		token := c.Request.Header.Get("Authorization")
-		token = strings.TrimPrefix(token, "Bearer ")
-
-		claims, err := clerkClient.VerifyToken(token)
-		if err != nil {
-			c.String(http.StatusUnauthorized, "Unauthorized")
-			return
-		}
-		c.Set("subject", claims.Claims.Subject)
-		c.Next()
-	})
-
-	r.GET("/ping", func(c *gin.Context) { c.String(200, "pong") })
-
-	r.GET("/clipboard", s.getClipboardHandler)
-	r.POST("/clipboard", s.updateClipboardHandler)
+	v1.Use(s.verifyClerkToken)
+	v1.GET("/clipboard", s.getClipboardHandler)
+	v1.POST("/clipboard", s.updateClipboardHandler)
 	s.log.Info("The server has started!")
-	if cfg.TLS {
-		r.RunTLS(cfg.Listen, cfg.CertFile, cfg.KeyFile)
+	if s.cfg.TLS {
+		if err := r.RunTLS(s.cfg.Listen, s.cfg.CertFile, s.cfg.KeyFile); err != nil {
+			s.log.Fatal(err)
+		}
 	} else {
-		r.Run(cfg.Listen)
+		if err := r.Run(s.cfg.Listen); err != nil {
+			s.log.Fatal(err)
+		}
 	}
 }
 
@@ -79,17 +86,25 @@ func (s *Server) getClipboardHandler(c *gin.Context) {
 		c.String(http.StatusInternalServerError, "Subject type assert failed")
 		return
 	}
-	cb := s.cb[sub]
-
-	index, _ := strconv.Atoi(c.Request.Header.Get("X-Index"))
-	c.Header("X-Index", strconv.Itoa(cb.Index))
-	c.Status(http.StatusOK)
-	if cb.Index == 0 || index == cb.Index {
+	cb := s.cbs.Get(sub)
+	if cb == nil {
+		c.Header("X-Index", "0")
+		c.Status(http.StatusOK)
 		return
 	}
+	index, _ := strconv.Atoi(c.Request.Header.Get("X-Index"))
+	if index == cb.Index {
+		c.Header("X-Index", strconv.Itoa(cb.Index))
+		c.Status(http.StatusOK)
+		return
+	}
+
+	c.Status(http.StatusOK)
+	c.Header("X-Index", strconv.Itoa(cb.Index))
 	c.Header("X-Type", cb.Type)
 	c.Header("X-FileName", cb.FileName)
 	if _, err := c.Writer.Write(cb.Data); err != nil {
+		c.String(http.StatusInternalServerError, "Write data failed")
 		s.log.Error(err)
 	}
 }
@@ -123,15 +138,19 @@ func (s *Server) updateClipboardHandler(c *gin.Context) {
 		return
 	}
 
-	cb := s.cb[sub]
+	cb := s.cbs.Get(sub)
+	index := 0
+	if cb != nil {
+		index = cb.Index
+	}
 	cb = &gcopy.Clipboard{
-		Index:    cb.Index + 1,
+		Index:    index + 1,
 		Type:     xType,
 		FileName: xFileName,
 		Data:     data,
 	}
 	s.log.Infof("Received %s(%v)", cb.Type, cb.Index)
-	s.cb[sub] = cb
+	s.cbs.Set(sub, cb)
 
 	c.Header("X-Index", strconv.Itoa(cb.Index))
 	c.String(http.StatusOK, "Success")
