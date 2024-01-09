@@ -42,7 +42,9 @@ export default function Home() {
   const ensureLoggedIn = () => {
     if (!session.isLoggedIn) {
       router.push("/user/email-code");
+      return false;
     }
+    return true;
   };
 
   const resetLog = () => {
@@ -69,7 +71,7 @@ export default function Home() {
 
   const fetchClipboard = async () => {
     addInfoLog("fetching...");
-    fetch("http://192.168.31.59:3375/api/v1/clipboard", {
+    fetch(process.env.NEXT_PUBLIC_SERVER_URL + "/api/v1/clipboard", {
       headers: {
         "X-Index": clipboard.index,
       },
@@ -173,7 +175,7 @@ export default function Home() {
         }
         addInfoLog("read data from the clipboard successfully.");
 
-        fetch("http://192.168.31.59:3375/api/v1/clipboard", {
+        fetch(process.env.NEXT_PUBLIC_SERVER_URL + "/api/v1/clipboard", {
           method: "POST",
           headers: {
             "Content-Type": blob.type,
@@ -209,7 +211,7 @@ export default function Home() {
     }
     addInfoLog("uploading file " + file.name);
 
-    await fetch("http://192.168.31.59:3375/api/v1/clipboard", {
+    await fetch(process.env.NEXT_PUBLIC_SERVER_URL + "/api/v1/clipboard", {
       method: "POST",
       headers: {
         "Content-Type": file.type,
@@ -240,14 +242,18 @@ export default function Home() {
   };
 
   const onClick = async () => {
-    ensureLoggedIn();
+    if (!ensureLoggedIn()) {
+      return;
+    }
     resetLog();
     fetchClipboard();
   };
 
   const onDrop = async (ev: DragEvent<HTMLElement>) => {
     ev.preventDefault();
-    ensureLoggedIn();
+    if (!ensureLoggedIn()) {
+      return;
+    }
 
     if (!ev.dataTransfer) {
       return;
@@ -320,7 +326,9 @@ export default function Home() {
                 <button
                   className="btn btn-sm"
                   onClick={() => {
-                    ensureLoggedIn();
+                    if (!ensureLoggedIn()) {
+                      return;
+                    }
                     inputRef.current && inputRef.current.click();
                   }}
                 >

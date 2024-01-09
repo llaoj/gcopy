@@ -2,7 +2,7 @@
 import { cookies } from "next/headers";
 import { getIronSession } from "iron-session";
 import { SessionData, sessionOptions } from "@/lib/session";
-import { defaultUserInfo } from "@/lib/types";
+import { UserInfo, defaultUserInfo } from "@/lib/types";
 
 // login
 // export async function POST(request: NextRequest) {
@@ -33,7 +33,10 @@ export async function GET() {
     return Response.json({ defaultUserInfo });
   }
 
-  return Response.json(session);
+  return Response.json({
+    email: session.email,
+    isLoggedIn: session.isLoggedIn,
+  } as UserInfo);
 }
 
 // logout
