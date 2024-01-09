@@ -1,7 +1,6 @@
 import { cookies } from "next/headers";
 import { getIronSession } from "iron-session";
-import { sessionOptions } from "@/lib/session";
-import { SessionData } from "@/lib/session";
+import { SessionData, sessionOptions } from "@/lib/session";
 import { z } from "zod";
 
 export async function POST(request: Request) {

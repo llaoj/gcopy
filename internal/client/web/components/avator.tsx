@@ -1,4 +1,14 @@
-export default function Avator({ email }: { email: string }) {
+import { useState } from "react";
+import useSession from "@/lib/use-session";
+import { defaultUserInfo } from "@/lib/types";
+
+export default function Avator() {
+  const { session, logout, isLoading } = useSession();
+  if (isLoading) {
+    return null;
+  }
+  const [isClicked, setIsClicked] = useState(false);
+
   return (
     <div className="dropdown dropdown-end">
       <div
@@ -7,7 +17,9 @@ export default function Avator({ email }: { email: string }) {
         className="btn btn-ghost btn-circle avatar placeholder"
       >
         <div className="w-8 rounded-full bg-neutral text-neutral-content">
-          <span className="text-xs">{email.substring(0, 2).toUpperCase()}</span>
+          <span className="text-xs">
+            {session.email.substring(0, 2).toUpperCase()}
+          </span>
         </div>
       </div>
       <ul
@@ -16,11 +28,21 @@ export default function Avator({ email }: { email: string }) {
       >
         <li>
           <a className="text-neutral-content btn-disabled">
-            <span className="truncate">{email}</span>
+            <span className="truncate">{session.email}</span>
           </a>
         </li>
         <li>
-          <a href="/user/logout">Logout</a>
+          <button
+            disabled={isClicked}
+            onClick={() => {
+              setIsClicked(true);
+              logout(null, {
+                optimisticData: defaultUserInfo,
+              });
+            }}
+          >
+            Logout
+          </button>
         </li>
       </ul>
     </div>

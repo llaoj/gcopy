@@ -1,19 +1,19 @@
 "use client";
 
-import Navbar from "./navbar";
-import Footer from "./footer";
-import LogBox from "./log-box";
-import Notice from "./notice";
-import { Log, Clipboard, FileInfo, User } from "@/lib/types";
+import Navbar from "@/components/navbar";
+import Notice from "@/components/notice";
+import Title from "@/components/title";
+import Footer from "@/components/footer";
+import LogBox from "@/components/log-box";
+import FileLink from "@/components/file-link";
+import useSession from "@/lib/use-session";
+import { Log, Clipboard, FileInfo } from "@/lib/types";
 import { CursorArrowRippleIcon } from "@heroicons/react/24/solid";
-import Title from "./title";
-import { DragEvent, useRef, useState, useEffect } from "react";
+import { DragEvent, useRef, useState } from "react";
 import clsx from "clsx";
-import FileLink from "./file-link";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
-  const [user, setUser] = useState<User>();
-  const [isLoading, setIsLoading] = useState(true);
   let syncLogs: Log[] = [
     {
       level: "text-warning",
@@ -31,24 +31,19 @@ export default function Home() {
     fileURL: "",
   });
   const inputRef = useRef<HTMLInputElement>(null);
+  const router = useRouter();
 
-  useEffect(() => {
-    fetch("/api/user").then((res: Response) => {
-      res.status == 200 &&
-        res.json().then((body) => {
-          setUser({
-            isLoggedIn: true,
-            email: body.data.email,
-          });
-          setIsLoading(false);
-        });
-    });
-  }, []);
+  const { session, isLoading } = useSession();
   if (isLoading) {
     return (
       <span className="min-h-screen flex mx-auto loading loading-spinner loading-lg"></span>
     );
   }
+  const ensureLoggedIn = () => {
+    if (!session.isLoggedIn) {
+      router.push("/user/email-code");
+    }
+  };
 
   const resetLog = () => {
     syncLogs = [];
@@ -245,18 +240,15 @@ export default function Home() {
   };
 
   const onClick = async () => {
-    if (!user?.isLoggedIn) {
-      return;
-    }
+    ensureLoggedIn();
     resetLog();
     fetchClipboard();
   };
 
   const onDrop = async (ev: DragEvent<HTMLElement>) => {
     ev.preventDefault();
-    if (!user?.isLoggedIn) {
-      return;
-    }
+    ensureLoggedIn();
+
     if (!ev.dataTransfer) {
       return;
     }
@@ -281,7 +273,7 @@ export default function Home() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-between mx-auto  max-w-5xl">
       <header className="p-6 w-full">
-        <Navbar user={user} />
+        <Navbar />
       </header>
       <main className="flex-1 p-6  w-full">
         <div className="pb-4">
@@ -328,9 +320,7 @@ export default function Home() {
                 <button
                   className="btn btn-sm"
                   onClick={() => {
-                    if (!user?.isLoggedIn) {
-                      return;
-                    }
+                    ensureLoggedIn();
                     inputRef.current && inputRef.current.click();
                   }}
                 >

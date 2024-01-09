@@ -3,7 +3,8 @@ import { getIronSession } from "iron-session";
 import { SessionData, sessionOptions } from "@/lib/session";
 import { z } from "zod";
 import { NextRequest } from "next/server";
-import * as nodemailer from "nodemailer";
+import nodemailer from "nodemailer";
+import SMTPTransport from "nodemailer/lib/smtp-transport";
 
 export async function POST(request: NextRequest) {
   const body = (await request.json()) as { email: string };
@@ -35,7 +36,7 @@ export async function POST(request: NextRequest) {
       user: process.env.SMTP_USERNAME,
       pass: process.env.SMTP_PASSWORD,
     },
-  });
+  } as SMTPTransport.Options);
   const code = Math.random().toString().substring(2, 8);
   try {
     await transporter.sendMail({

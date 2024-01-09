@@ -7,13 +7,6 @@ export interface SessionData {
   isLoggedIn: boolean;
 }
 
-export const defaultSession: SessionData = {
-  email: "",
-  emailCode: "",
-  createdTime: 0,
-  isLoggedIn: false,
-};
-
 export const sessionOptions: SessionOptions = {
   password: process.env.IRON_SESSION_PASSWORD || "iron-session-password",
   cookieName: "gcopy",
