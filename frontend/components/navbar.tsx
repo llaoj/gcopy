@@ -38,9 +38,6 @@ export default function Navbar() {
             <li>
               <a>Portfolio</a>
             </li>
-            <li>
-              <a>About</a>
-            </li>
           </ul>
         </div>
       </div>
