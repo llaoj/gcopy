@@ -209,7 +209,7 @@ export default function Home() {
 
   const uploadFileHandler = async (file: File) => {
     resetLog();
-    if (file.size > 2 * 1024 * 1024) {
+    if (file.size > 10 * 1024 * 1024) {
       addErrorLog("sorry, the file cannot exceed 10mb!");
       return;
     }
