@@ -97,6 +97,12 @@ export default function Home() {
       }
       addInfoLog("received " + xtype + "(" + xindex + ")");
 
+      if (xtype == "file") {
+        addInfoLog(
+          "file download should start shortly. if not, please click the file link below.",
+        );
+      }
+
       let blob = await response.blob();
       if (xtype == "text" || xtype == "screenshot") {
         let type = blob.type;
@@ -139,9 +145,6 @@ export default function Home() {
           fileName: decodeURI(xfilename),
           fileURL: URL.createObjectURL(blob),
         });
-        addInfoLog(
-          "file download should start shortly. if not, please click the file link below.",
-        );
       }
     });
   };
