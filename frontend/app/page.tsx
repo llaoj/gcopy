@@ -98,7 +98,7 @@ export default function Home() {
       addInfoLog("received " + xtype + "(" + xindex + ")");
 
       if (xtype == "file") {
-        addInfoLog(
+        addSuccessLog(
           "file download should start shortly. if not, please click the file link below.",
         );
       }
