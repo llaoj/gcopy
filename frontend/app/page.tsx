@@ -209,6 +209,10 @@ export default function Home() {
 
   const uploadFileHandler = async (file: File) => {
     resetLog();
+    if (file.size > 2 * 1024 * 1024) {
+      addErrorLog("sorry, the file cannot exceed 10mb!");
+      return;
+    }
     const nextBlobId: string = file.type + file.size + encodeURI(file.name);
     if (nextBlobId == clipboard.blobId) {
       return;

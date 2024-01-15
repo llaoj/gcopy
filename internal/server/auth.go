@@ -33,7 +33,7 @@ func (s *Server) verifyAuth(c *gin.Context) {
 	}
 
 	if response.StatusCode != http.StatusOK {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "Unauthorized"})
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "unauthorized"})
 		return
 	}
 
@@ -51,7 +51,7 @@ func (s *Server) verifyAuth(c *gin.Context) {
 	}
 
 	if !userInfo.IsLoggedIn || userInfo.Email == "" {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "Unauthorized"})
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "unauthorized"})
 		return
 	}
 
