@@ -5,7 +5,7 @@
 
 ---
 
-[中文文档](docs/intro.md)
+[中文文档](docs/zh-CN/README.md)
 
 A clipboard synchronization tool that powered by Golang.
 
