@@ -33,10 +33,7 @@ export default function Navbar() {
             className="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52"
           >
             <li>
-              <a>Homepage</a>
-            </li>
-            <li>
-              <a>Portfolio</a>
+              <Link href="https://github.com/llaoj/gcopy/blob/v1.0.0/README.md">Document</Link>
             </li>
           </ul>
         </div>
