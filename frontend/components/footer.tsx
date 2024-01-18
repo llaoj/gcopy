@@ -6,6 +6,7 @@ export default function Footer() {
       <aside>
         <p className="text-xs opacity-60">
           Copyright © 2023-2024 v{pack.version} - All right reserved by @llaoj
+          License MIT
         </p>
       </aside>
     </footer>
