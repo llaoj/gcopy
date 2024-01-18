@@ -3,11 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
-	"strings"
-	"sync"
-	"time"
 
-	"github.com/llaoj/gcopy/internal/client"
 	"github.com/llaoj/gcopy/internal/config"
 	"github.com/llaoj/gcopy/internal/server"
 	"github.com/sirupsen/logrus"
@@ -33,22 +29,5 @@ func main() {
 		log.SetLevel(logrus.InfoLevel)
 	}
 	log.Debugf("config: %+v", cfg)
-
-	var wg sync.WaitGroup
-	if strings.Contains(cfg.Role, "server") {
-		wg.Add(1)
-		go server.NewServer(log).Run(&wg)
-		time.Sleep(time.Second)
-	}
-
-	if strings.Contains(cfg.Role, "client") {
-		cli, err := client.NewClient(log)
-		if err != nil {
-			log.Fatal(err)
-		}
-		wg.Add(1)
-		go cli.Run(&wg)
-	}
-
-	wg.Wait()
+	server.NewServer(log).Run()
 }

@@ -1,0 +1,18 @@
+version: '3.8'
+services:
+  gcopy-server:
+    container_name: gcopy-server 
+    image: registry.cn-beijing.aliyuncs.com/llaoj/gcopy-server:v1.0.0
+    restart: always
+
+  gcopy-frontend:
+    container_name: gcopy-frontend
+    image: registry.cn-beijing.aliyuncs.com/llaoj/gcopy-frontend:v1.0.0
+    restart: always
+    ports:
+    - "3375:3375"
+    volumes:
+    - ./frontend/.env.production:/app/.env.production
+    depends_on:
+    - gcopy-server
+    
