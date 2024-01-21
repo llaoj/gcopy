@@ -3,12 +3,15 @@
 import Image from "next/image";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 
 export default function EmailCode({
   searchParams,
 }: {
   searchParams: { email: string };
 }) {
+  const locale = useLocale();
+  const t = useTranslations("EmailCode");
   const [errorMessage, setErrorMessage] = useState("");
   const email = searchParams.email;
   const router = useRouter();
@@ -31,7 +34,7 @@ export default function EmailCode({
         setErrorMessage(body.message);
       }
       if (res.status == 200) {
-        router.push("/user/login?email=" + email);
+        router.push(`/${locale}/user/login?email=${email}`);
       }
     });
   };
@@ -42,32 +45,27 @@ export default function EmailCode({
       className="card w-[32rem] bg-base-100 shadow-xl"
     >
       <div className="card-body gap-4">
-        <Image
-          src="/gcopy.svg"
-          width={50}
-          height={50}
-          alt="Picture of the author"
-        />
+        <Image src="/gcopy.svg" width={50} height={50} alt="gcopy's logo" />
         <div className="flex flex-col gap-0">
-          <h2 className="card-title">Sign in</h2>
-          <span className="text-xs">to continue to GCopy</span>
+          <h2 className="card-title">{t("title")}</h2>
+          <span className="text-xs">{t("smallTitle")}</span>
         </div>
-        <p>Support for text, screenshots & file synchronization.</p>
+        <p>{t("subTitle")}</p>
         <div>
           <input
             name="email"
             type="text"
-            placeholder="Enter email"
+            placeholder={t("placeholder")}
             className="input input-bordered w-full"
             defaultValue={email}
             autoFocus
           />
-          <span className="text-xs">Your privacy is important to GCopy!</span>
+          <span className="text-xs">{t("tip")}</span>
         </div>
         {errorMessage && <p className="text-error">{errorMessage}</p>}
         <div className="card-actions justify-end">
           <button type="submit" className="btn btn-primary">
-            Next
+            {t("buttonText")}
           </button>
         </div>
       </div>

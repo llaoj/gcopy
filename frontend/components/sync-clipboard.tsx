@@ -9,12 +9,15 @@ import { DragEvent, useRef, useState } from "react";
 import clsx from "clsx";
 import { useRouter } from "next/navigation";
 import Title from "@/components/title";
+import { useLocale, useTranslations } from "next-intl";
 
 export default function SyncClipboard() {
+  const locale = useLocale();
+  const t = useTranslations("SyncClipboard");
   let syncLogs: Log[] = [
     {
       level: "text-warning",
-      message: "click the right button to sync clipboard 👉",
+      message: t("log.clickRightButton") + " 👉",
     },
   ];
   const [logs, setLogs] = useState(syncLogs);
@@ -38,7 +41,7 @@ export default function SyncClipboard() {
   }
   const ensureLoggedIn = () => {
     if (!session.isLoggedIn) {
-      router.push("/user/email-code");
+      router.push(`/${locale}/user/email-code`);
       return false;
     }
     return true;
@@ -67,7 +70,7 @@ export default function SyncClipboard() {
   };
 
   const fetchClipboard = async () => {
-    addInfoLog("fetching...");
+    addInfoLog(t("log.fetching") + "...");
     fetch("/api/v1/clipboard", {
       headers: {
         "X-Index": clipboard.index,
@@ -88,16 +91,14 @@ export default function SyncClipboard() {
         xtype == "" ||
         xtype == null
       ) {
-        addInfoLog("already up to date.");
+        addInfoLog(t("log.up2Date"));
         readClipboard();
         return;
       }
-      addInfoLog("received " + xtype + "(" + xindex + ")");
+      addInfoLog(`${t("log.received")} ${t(xtype)}(${xindex})`);
 
       if (xtype == "file") {
-        addSuccessLog(
-          "file download should start shortly. if not, please click the file link below.",
-        );
+        addSuccessLog(t("log.downloadTip"));
       }
 
       let blob = await response.blob();
@@ -121,7 +122,7 @@ export default function SyncClipboard() {
               blobId: nextBlobId,
               index: xindex,
             });
-            addSuccessLog("wrote data to the clipboard successfully");
+            addSuccessLog(t("log.writeClipboardSuccessfully"));
           },
           (err) => {
             addErrorLog(err);
@@ -153,7 +154,7 @@ export default function SyncClipboard() {
       name: permissionClipboardRead,
     });
     if (permission.state === "denied") {
-      addErrorLog("not allowed to read clipboard!");
+      addErrorLog(t("log.denyReadClipboard"));
       return;
     }
     const clipboardItems = await navigator.clipboard.read();
@@ -175,7 +176,8 @@ export default function SyncClipboard() {
         if (nextBlobId == clipboard.blobId) {
           return;
         }
-        addInfoLog("read data from the clipboard successfully.");
+        addInfoLog(t("log.readClipboardSuccessfully"));
+        addInfoLog(`${t("log.uploading")} ${t(xtype)}`);
 
         fetch("/api/v1/clipboard", {
           method: "POST",
@@ -201,7 +203,7 @@ export default function SyncClipboard() {
             blobId: nextBlobId,
             index: xindex,
           });
-          addSuccessLog(xtype + "(" + xindex + ") uploaded.");
+          addSuccessLog(`${t("log.uploaded")} ${t(xtype)}(${xindex}).`);
         });
       }
     }
@@ -210,14 +212,14 @@ export default function SyncClipboard() {
   const uploadFileHandler = async (file: File) => {
     resetLog();
     if (file.size > 10 * 1024 * 1024) {
-      addErrorLog("sorry, the file cannot exceed 10mb!");
+      addErrorLog(t("log.fileTooLarge"));
       return;
     }
     const nextBlobId: string = file.type + file.size + encodeURI(file.name);
     if (nextBlobId == clipboard.blobId) {
       return;
     }
-    addInfoLog("uploading file " + file.name);
+    addInfoLog(`${t("log.uploading")} ${file.name}`);
 
     await fetch("/api/v1/clipboard", {
       method: "POST",
@@ -247,7 +249,7 @@ export default function SyncClipboard() {
         fileName: file.name,
         fileURL: "",
       });
-      addSuccessLog("file(" + xindex + ") uploaded.");
+      addSuccessLog(`${t("log.uploaded")} ${t("file")}(${xindex}).`);
     });
   };
 
@@ -288,10 +290,7 @@ export default function SyncClipboard() {
   return (
     <>
       <div className="pb-4">
-        <Title
-          title="Sync the clipboard"
-          subTitle="Click the button on the right to synchronize the clipboard."
-        ></Title>
+        <Title title={t("title")} subTitle={t("subTitle")}></Title>
         <div className="grid grid-cols-9 gap-3 w-full">
           <LogBox logs={logs} />
           <button
@@ -299,16 +298,15 @@ export default function SyncClipboard() {
             onClick={onClick}
           >
             <CursorArrowRippleIcon className="h-6 w-6" />
-            <span>Click me</span>
-            <span>to sync the clipboard</span>
+            {t("syncButtonText")}
           </button>
         </div>
       </div>
 
       <div className="pb-4">
         <Title
-          title="Sync the files"
-          subTitle="Drag and drop a file here to sync it to different devices."
+          title={t("syncFile.title")}
+          subTitle={t("syncFile.subTitle")}
         ></Title>
 
         <div
@@ -326,7 +324,7 @@ export default function SyncClipboard() {
             <>
               <FileLink fileInfo={fileInfo} />
               <div className="text-lg opacity-40">
-                drag and drop a file here
+                {t("syncFile.dragDropTip")}
               </div>
               <button
                 className="btn btn-sm"
@@ -337,7 +335,7 @@ export default function SyncClipboard() {
                   inputRef.current && inputRef.current.click();
                 }}
               >
-                Choose a file
+                {t("syncFile.fileInputText")}
               </button>
             </>
           )}

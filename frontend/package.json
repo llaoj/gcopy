@@ -16,6 +16,7 @@
     "clsx": "^2.1.0",
     "iron-session": "^8.0.1",
     "next": "14.0.4",
+    "next-intl": "^3.4.5",
     "nodemailer": "^6.9.8",
     "react": "^18",
     "react-dom": "^18",

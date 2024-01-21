@@ -1,17 +1,21 @@
 import Title from "./title";
+import { useTranslations } from "next-intl";
 
 export default function Notice() {
+  const t = useTranslations("Notice");
+
   return (
     <>
-      <Title title="Notice"></Title>
-      <div className="prose">
+      <Title title={t("title")}></Title>
+      <div className="prose max-w-none">
         <ol>
           <li>
-            Click <strong>Allow</strong> when the browser asks you{" "}
-            <strong>Share clipboard?</strong>
+            {t.rich("shareClipboard", {
+              strong: (chunks) => <strong>{chunks}</strong>,
+            })}
           </li>
           <li>
-            We recommend using Google Chrome{" "}
+            {t("useChrome")}{" "}
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="16"
@@ -24,11 +28,7 @@ export default function Notice() {
             </svg>{" "}
             86+.
           </li>
-          <li>
-            GCopy protects your privacy data by temporarily storing your latest
-            clipboard data in memory only. GCopy does not persist your clipboard
-            data.
-          </li>
+          <li>{t("protectPrivacy")}</li>
         </ol>
       </div>
     </>

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import "./globals.css";
+import "@/app/globals.css";
+import { ReactNode } from "react";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -10,13 +11,15 @@ export const metadata: Metadata = {
     "A clipboard synchronization web service for different devices that can synchronize text, screenshots, and files.",
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
+  params: { locale },
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
+  params: { locale: string };
 }) {
   return (
-    <html lang="en">
+    <html lang={locale}>
       <body className={`${inter.className} bg-base-200`}>{children}</body>
     </html>
   );
