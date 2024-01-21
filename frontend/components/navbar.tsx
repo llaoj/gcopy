@@ -1,3 +1,5 @@
+"use client";
+
 import Avator from "@/components/avator";
 import Link from "next/link";
 import useSession from "@/lib/use-session";
