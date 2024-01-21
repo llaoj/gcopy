@@ -11,10 +11,12 @@
     "prettier:check": "prettier --check --ignore-unknown ."
   },
   "dependencies": {
+    "@formatjs/intl-localematcher": "^0.5.4",
     "@heroicons/react": "^2.1.1",
     "@types/nodemailer": "^6.4.14",
     "clsx": "^2.1.0",
     "iron-session": "^8.0.1",
+    "negotiator": "^0.6.3",
     "next": "14.0.4",
     "next-intl": "^3.4.5",
     "nodemailer": "^6.9.8",
@@ -25,6 +27,7 @@
   },
   "devDependencies": {
     "@tailwindcss/typography": "^0.5.10",
+    "@types/negotiator": "^0.6.3",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",

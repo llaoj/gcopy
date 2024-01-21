@@ -18,14 +18,25 @@
     "subTitle": "Support for text, screenshots & file synchronization.",
     "placeholder": "Enter email",
     "tip": "Your privacy is important to GCopy!",
-    "buttonText": "Next"
+    "buttonText": "Next",
+    "invalidEmail": "Invalid email.",
+    "sendEmail": {
+      "subject": "{code} is your verification code",
+      "text": "Enter the verification code when prompted: {code}. Code will expire in 5 minutes. To protect your account, do not share this code.",
+      "failed": "Failed to send email. Please check and retry.",
+      "success": "Success"
+    }
   },
   "Login": {
     "title": "Enter code",
     "subTitle": "We emailed a code to {email}. Please enter the code to sign in.",
     "placeholder": "Enter code",
     "tip": "Your privacy is important to GCopy!",
-    "buttonText": "Sign in"
+    "buttonText": "Sign in",
+    "invalidEmail": "Invalid email.",
+    "incorrectCode": "Incorrect code. Please go back and retry.",
+    "expiredCode": "The code was expired. Please go back and retry.",
+    "success": "Success"
   },
   "SyncClipboard": {
     "title": "Sync the clipboard",
