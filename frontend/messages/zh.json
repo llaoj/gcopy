@@ -49,7 +49,7 @@
     "screenshot": "截图",
     "file": "文件",
     "log": {
-      "clickRightButton": "点击右侧按钮同步剪切板",
+      "clickButton": "点击按钮同步剪切板",
       "up2Date": "已经最新.",
       "received": "已接收",
       "uploaded": "已上传",

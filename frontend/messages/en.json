@@ -50,7 +50,7 @@
     "file": "FILE",
     "syncButtonText": "Click to sync clipboard",
     "log": {
-      "clickRightButton": "Click the right button to sync clipboard",
+      "clickButton": "Click the button to sync clipboard",
       "up2Date": "Already up to date.",
       "received": "Received",
       "uploaded": "Uploaded",

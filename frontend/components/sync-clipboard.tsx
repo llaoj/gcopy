@@ -17,7 +17,7 @@ export default function SyncClipboard() {
   let syncLogs: Log[] = [
     {
       level: "text-warning",
-      message: t("log.clickRightButton") + " 👉",
+      message: t("log.clickButton") + " 👉",
     },
   ];
   const [logs, setLogs] = useState(syncLogs);
