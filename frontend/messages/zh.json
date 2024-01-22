@@ -1,4 +1,8 @@
 {
+  "Metadata": {
+    "title": "GCopy - 不同设备间的剪切板同步服务",
+    "description": "GCopy是一个不同设备间的剪切板同步服务, 它支持文字, 截图和文件. 只需要点击两下就实现数据同步."
+  },
   "Navbar": {
     "title": "文档",
     "signIn": "登录"

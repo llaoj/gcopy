@@ -1,4 +1,8 @@
 {
+  "Metadata": {
+    "title": "GCopy - Sync text screenshot & file",
+    "description": "A clipboard synchronization web service for different devices that can synchronize text, screenshots, and files."
+  },
   "Navbar": {
     "title": "Document",
     "signIn": "Sign in"

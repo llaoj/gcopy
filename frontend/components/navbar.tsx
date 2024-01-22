@@ -39,7 +39,11 @@ export default function Navbar() {
           >
             <li>
               <Link
-                href="https://github.com/llaoj/gcopy/blob/v1.0.0/README.md"
+                href={
+                  locale == "zh"
+                    ? "https://github.com/llaoj/gcopy/blob/v1.0.0/docs/zh-CN/README.md"
+                    : "https://github.com/llaoj/gcopy/blob/v1.0.0/README.md"
+                }
                 target="_blank"
               >
                 {t("title")}
