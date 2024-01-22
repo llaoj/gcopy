@@ -294,7 +294,7 @@ export default function SyncClipboard() {
         <div className="grid grid-cols-9 gap-3 w-full">
           <LogBox logs={logs} />
           <button
-            className="btn btn-outline btn-primary col-span-2 h-full rounded-box bg-base-100 content-center"
+            className="btn btn-outline btn-primary col-span-9 md:col-span-2 h-full rounded-box bg-base-100 content-center"
             onClick={onClick}
           >
             <CursorArrowRippleIcon className="h-6 w-6" />

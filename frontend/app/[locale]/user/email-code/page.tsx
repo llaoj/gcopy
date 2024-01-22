@@ -42,7 +42,7 @@ export default function EmailCode({
   return (
     <form
       onSubmit={createEmailCode}
-      className="card w-[32rem] bg-base-100 shadow-xl"
+      className="card w-full md:w-[32rem] bg-base-100 shadow-xl"
     >
       <div className="card-body gap-4">
         <Image src="/gcopy.svg" width={50} height={50} alt="gcopy's logo" />

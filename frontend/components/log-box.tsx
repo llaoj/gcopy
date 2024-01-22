@@ -7,5 +7,9 @@ export default function LogBox({ logs }: { logs: Log[] }) {
     </pre>
   ));
 
-  return <div className="mockup-code h-52 col-span-7 text-sm">{listItems}</div>;
+  return (
+    <div className="mockup-code h-52 col-span-9 md:col-span-7 text-sm">
+      {listItems}
+    </div>
+  );
 }
