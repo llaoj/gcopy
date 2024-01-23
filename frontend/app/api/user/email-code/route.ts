@@ -5,13 +5,17 @@ import { z } from "zod";
 import { NextRequest } from "next/server";
 import nodemailer from "nodemailer";
 import SMTPTransport from "nodemailer/lib/smtp-transport";
+import { getAcceptLanguageLocale } from "@/lib/i18n";
+import { getTranslations } from "next-intl/server";
 
 export async function POST(request: NextRequest) {
+  const locale = getAcceptLanguageLocale(request.headers);
+  const t = await getTranslations({ locale, namespace: "EmailCode" });
   const body = (await request.json()) as { email: string };
 
   const validatedFields = z
     .object({
-      email: z.string().email({ message: "Invalid email" }),
+      email: z.string().email({ message: t("invalidEmail") }),
     })
     .safeParse({
       email: body.email,
@@ -45,21 +49,11 @@ export async function POST(request: NextRequest) {
         address: process.env.SMTP_SENDER || "",
       },
       to: validatedFields.data.email,
-      subject: code + " is your verification code",
-      text:
-        "Enter the verification code when prompted: " +
-        code +
-        ". Code will expire in 5 minutes. To protect your account, do not share this code.",
-      html:
-        "<p>Enter the following verification code when prompted:<br/>" +
-        code +
-        "<br/>Code will expire in 5 minutes.<br/>To protect your account, do not share this code.</p>",
+      subject: t("sendEmail.subject", { code: code }),
+      text: t("sendEmail.text", { code: code }),
     });
   } catch {
-    return Response.json(
-      { message: "Failed to send email. Please check and retry." },
-      { status: 500 },
-    );
+    return Response.json({ message: t("sendEmail.failed") }, { status: 500 });
   }
 
   const session = await getIronSession<SessionData>(cookies(), sessionOptions);
@@ -68,5 +62,5 @@ export async function POST(request: NextRequest) {
   session.createdTime = Date.now();
   await session.save();
 
-  return Response.json({ message: "success" });
+  return Response.json({ message: t("sendEmail.success") });
 }

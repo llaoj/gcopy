@@ -1,9 +1,5 @@
 "use client";
 
-import Navbar from "@/components/navbar";
-import Notice from "@/components/notice";
-import Title from "@/components/title";
-import Footer from "@/components/footer";
 import LogBox from "@/components/log-box";
 import FileLink from "@/components/file-link";
 import useSession from "@/lib/use-session";
@@ -12,12 +8,16 @@ import { CursorArrowRippleIcon } from "@heroicons/react/24/solid";
 import { DragEvent, useRef, useState } from "react";
 import clsx from "clsx";
 import { useRouter } from "next/navigation";
+import Title from "@/components/title";
+import { useLocale, useTranslations } from "next-intl";
 
-export default function Home() {
+export default function SyncClipboard() {
+  const locale = useLocale();
+  const t = useTranslations("SyncClipboard");
   let syncLogs: Log[] = [
     {
       level: "text-warning",
-      message: "click the right button to sync clipboard 👉",
+      message: t("log.clickButton") + " 👉",
     },
   ];
   const [logs, setLogs] = useState(syncLogs);
@@ -41,7 +41,7 @@ export default function Home() {
   }
   const ensureLoggedIn = () => {
     if (!session.isLoggedIn) {
-      router.push("/user/email-code");
+      router.push(`/${locale}/user/email-code`);
       return false;
     }
     return true;
@@ -70,7 +70,7 @@ export default function Home() {
   };
 
   const fetchClipboard = async () => {
-    addInfoLog("fetching...");
+    addInfoLog(t("log.fetching") + "...");
     fetch("/api/v1/clipboard", {
       headers: {
         "X-Index": clipboard.index,
@@ -91,16 +91,14 @@ export default function Home() {
         xtype == "" ||
         xtype == null
       ) {
-        addInfoLog("already up to date.");
+        addInfoLog(t("log.up2Date"));
         readClipboard();
         return;
       }
-      addInfoLog("received " + xtype + "(" + xindex + ")");
+      addInfoLog(`${t("log.received")} ${t(xtype)}(${xindex})`);
 
       if (xtype == "file") {
-        addSuccessLog(
-          "file download should start shortly. if not, please click the file link below.",
-        );
+        addSuccessLog(t("log.downloadTip"));
       }
 
       let blob = await response.blob();
@@ -124,7 +122,7 @@ export default function Home() {
               blobId: nextBlobId,
               index: xindex,
             });
-            addSuccessLog("wrote data to the clipboard successfully");
+            addSuccessLog(t("log.writeClipboardSuccessfully"));
           },
           (err) => {
             addErrorLog(err);
@@ -156,7 +154,7 @@ export default function Home() {
       name: permissionClipboardRead,
     });
     if (permission.state === "denied") {
-      addErrorLog("not allowed to read clipboard!");
+      addErrorLog(t("log.denyReadClipboard"));
       return;
     }
     const clipboardItems = await navigator.clipboard.read();
@@ -178,7 +176,8 @@ export default function Home() {
         if (nextBlobId == clipboard.blobId) {
           return;
         }
-        addInfoLog("read data from the clipboard successfully.");
+        addInfoLog(t("log.readClipboardSuccessfully"));
+        addInfoLog(`${t("log.uploading")} ${t(xtype)}`);
 
         fetch("/api/v1/clipboard", {
           method: "POST",
@@ -204,7 +203,7 @@ export default function Home() {
             blobId: nextBlobId,
             index: xindex,
           });
-          addSuccessLog(xtype + "(" + xindex + ") uploaded.");
+          addSuccessLog(`${t("log.uploaded")} ${t(xtype)}(${xindex}).`);
         });
       }
     }
@@ -213,14 +212,14 @@ export default function Home() {
   const uploadFileHandler = async (file: File) => {
     resetLog();
     if (file.size > 10 * 1024 * 1024) {
-      addErrorLog("sorry, the file cannot exceed 10mb!");
+      addErrorLog(t("log.fileTooLarge"));
       return;
     }
     const nextBlobId: string = file.type + file.size + encodeURI(file.name);
     if (nextBlobId == clipboard.blobId) {
       return;
     }
-    addInfoLog("uploading file " + file.name);
+    addInfoLog(`${t("log.uploading")} ${file.name}`);
 
     await fetch("/api/v1/clipboard", {
       method: "POST",
@@ -250,7 +249,7 @@ export default function Home() {
         fileName: file.name,
         fileURL: "",
       });
-      addSuccessLog("file(" + xindex + ") uploaded.");
+      addSuccessLog(`${t("log.uploaded")} ${t("file")}(${xindex}).`);
     });
   };
 
@@ -288,85 +287,72 @@ export default function Home() {
   const onDragOver = (ev: DragEvent<HTMLElement>) => {
     ev.preventDefault();
   };
-
   return (
-    <div className="min-h-screen flex flex-col items-center justify-between mx-auto  max-w-5xl">
-      <header className="p-6 w-full">
-        <Navbar />
-      </header>
-      <main className="flex-1 p-6  w-full">
-        <div className="pb-4">
-          <Title
-            title="Sync the clipboard"
-            subTitle="Click the button on the right to synchronize the clipboard."
-          ></Title>
-          <div className="grid grid-cols-9 gap-3 w-full">
-            <LogBox logs={logs} />
-            <button
-              className="btn btn-outline btn-primary col-span-2 h-full rounded-box bg-base-100 content-center"
-              onClick={onClick}
-            >
-              <CursorArrowRippleIcon className="h-6 w-6" />
-              <span>Click me</span>
-              <span>to sync the clipboard</span>
-            </button>
-          </div>
-        </div>
-
-        <div className="pb-4">
-          <Title
-            title="Sync the files"
-            subTitle="Drag and drop a file here to sync it to different devices."
-          ></Title>
-
-          <div
-            className={clsx(
-              "preview h-40 border rounded-box flex flex-col items-center justify-center gap-y-1 px-4",
-              { "border-primary text-primary": dragging },
-              { "border-base-300": !dragging },
-            )}
-            onDragEnter={onDragEnter}
-            onDragLeave={onDragLeave}
-            onDragOver={onDragOver}
-            onDrop={onDrop}
+    <>
+      <div className="pb-4">
+        <Title title={t("title")} subTitle={t("subTitle")}></Title>
+        <div className="grid grid-cols-9 gap-3 w-full">
+          <LogBox logs={logs} />
+          <button
+            className="btn btn-outline btn-primary col-span-9 md:col-span-2 h-full rounded-box bg-base-100 content-center"
+            onClick={onClick}
           >
-            {!dragging && (
-              <>
-                <FileLink fileInfo={fileInfo} />
-                <div className="text-lg opacity-40">
-                  drag and drop a file here
-                </div>
-                <button
-                  className="btn btn-sm"
-                  onClick={() => {
-                    if (!ensureLoggedIn()) {
-                      return;
-                    }
-                    inputRef.current && inputRef.current.click();
-                  }}
-                >
-                  Choose a file
-                </button>
-              </>
-            )}
-            <input
-              type="file"
-              hidden
-              ref={inputRef}
-              onChange={async () => {
-                if (inputRef.current?.files) {
-                  const selectedFile = inputRef.current.files[0];
-                  await uploadFileHandler(selectedFile);
-                  setDragging(false);
-                }
-              }}
-            />
-          </div>
+            <CursorArrowRippleIcon className="h-6 w-6" />
+            {t("syncButtonText")}
+          </button>
         </div>
+      </div>
 
-        <Notice />
-      </main>
-      <Footer />
-    </div>
+      <div className="pb-4">
+        <Title
+          title={t("syncFile.title")}
+          subTitle={t("syncFile.subTitle")}
+        ></Title>
+
+        <div
+          className={clsx(
+            "preview h-40 border rounded-box flex flex-col items-center justify-center gap-y-1 px-4",
+            { "border-primary text-primary": dragging },
+            { "border-base-300": !dragging },
+          )}
+          onDragEnter={onDragEnter}
+          onDragLeave={onDragLeave}
+          onDragOver={onDragOver}
+          onDrop={onDrop}
+        >
+          {!dragging && (
+            <>
+              <FileLink fileInfo={fileInfo} />
+              <div className="text-lg opacity-40">
+                {t("syncFile.dragDropTip")}
+              </div>
+              <button
+                className="btn btn-sm"
+                onClick={() => {
+                  if (!ensureLoggedIn()) {
+                    return;
+                  }
+                  inputRef.current && inputRef.current.click();
+                }}
+              >
+                {t("syncFile.fileInputText")}
+              </button>
+            </>
+          )}
+          <input
+            type="file"
+            hidden
+            ref={inputRef}
+            onChange={async () => {
+              if (inputRef.current?.files) {
+                const selectedFile = inputRef.current.files[0];
+                await uploadFileHandler(selectedFile);
+                setDragging(false);
+              }
+            }}
+          />
+        </div>
+      </div>
+    </>
   );
 }

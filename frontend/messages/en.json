@@ -1,0 +1,72 @@
+{
+  "Metadata": {
+    "title": "GCopy - Sync text screenshot & file",
+    "description": "A clipboard synchronization web service for different devices that can synchronize text, screenshots, and files."
+  },
+  "Navbar": {
+    "title": "Document",
+    "signIn": "Sign in"
+  },
+  "Notice": {
+    "title": "Notice",
+    "shareClipboard": "Click <strong>Allow</strong> when the browser asks you if it can <strong>See text and images copied to the clipboard</strong>.",
+    "useChrome": "We recommend using Google Chrome",
+    "protectPrivacy": "GCopy protects your privacy data by temporarily storing your latest clipboard data in memory only. GCopy does not persist your clipboard data."
+  },
+  "Avator": {
+    "logout": "Logout"
+  },
+  "EmailCode": {
+    "title": "Sign in",
+    "smallTitle": "to continue to GCopy",
+    "subTitle": "Support for text, screenshots & file synchronization.",
+    "placeholder": "Enter email",
+    "tip": "Your privacy is important to GCopy!",
+    "buttonText": "Next",
+    "invalidEmail": "Invalid email.",
+    "sendEmail": {
+      "subject": "{code} is your verification code",
+      "text": "Enter the verification code when prompted: {code}. Code will expire in 5 minutes. To protect your account, do not share this code.",
+      "failed": "Failed to send email. Please check and retry.",
+      "success": "Success"
+    }
+  },
+  "Login": {
+    "title": "Enter code",
+    "subTitle": "We emailed a code to {email}. Please enter the code to sign in.",
+    "placeholder": "Enter code",
+    "tip": "Your privacy is important to GCopy!",
+    "buttonText": "Sign in",
+    "invalidEmail": "Invalid email.",
+    "incorrectCode": "Incorrect code. Please go back and retry.",
+    "expiredCode": "The code was expired. Please go back and retry.",
+    "success": "Success"
+  },
+  "SyncClipboard": {
+    "title": "Sync the clipboard",
+    "subTitle": "Click-click and the clipboard synced between devices.",
+    "text": "TEXT",
+    "screenshot": "SCREENSHOT",
+    "file": "FILE",
+    "syncButtonText": "Click to sync clipboard",
+    "log": {
+      "clickButton": "Click the button to sync clipboard",
+      "up2Date": "Already up to date.",
+      "received": "Received",
+      "uploaded": "Uploaded",
+      "uploading": "Uploading",
+      "fetching": "Fetching",
+      "readClipboardSuccessfully": "Read data from the clipboard successfully.",
+      "writeClipboardSuccessfully": "Written data to the clipboard successfully.",
+      "downloadTip": "File download should start shortly. if not, please click the file link below.",
+      "denyReadClipboard": "Not allowed to read clipboard!",
+      "fileTooLarge": "Sorry, the file cannot exceed 10mb!"
+    },
+    "syncFile": {
+      "title": "Sync the files",
+      "subTitle": "Drag and drop a file here to sync it to different devices.",
+      "dragDropTip": "Drag and drop a file here",
+      "fileInputText": "Choose a file"
+    }
+  }
+}

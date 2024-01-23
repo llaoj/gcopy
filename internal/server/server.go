@@ -71,12 +71,12 @@ func (s *Server) Run() {
 func (s *Server) getClipboardHandler(c *gin.Context) {
 	subject, ok := c.Get("subject")
 	if !ok {
-		c.JSON(http.StatusNotFound, gin.H{"message": "subject not found"})
+		c.JSON(http.StatusNotFound, gin.H{"message": "Subject not found"})
 		return
 	}
 	sub, ok := subject.(string)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": "subject type assert failed"})
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Subject type assert failed"})
 		return
 	}
 	cb := s.cbs.Get(sub)
@@ -97,7 +97,7 @@ func (s *Server) getClipboardHandler(c *gin.Context) {
 	c.Header("X-Type", cb.Type)
 	c.Header("X-FileName", cb.FileName)
 	if _, err := c.Writer.Write(cb.Data); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": "write data failed"})
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Write data failed"})
 		s.log.Error(err)
 	}
 }
@@ -105,12 +105,12 @@ func (s *Server) getClipboardHandler(c *gin.Context) {
 func (s *Server) updateClipboardHandler(c *gin.Context) {
 	subject, ok := c.Get("subject")
 	if !ok {
-		c.JSON(http.StatusNotFound, gin.H{"message": "subject not found"})
+		c.JSON(http.StatusNotFound, gin.H{"message": "Subject not found"})
 		return
 	}
 	sub, ok := subject.(string)
 	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": "subject type assert failed"})
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Subject type assert failed"})
 		return
 	}
 
@@ -120,18 +120,18 @@ func (s *Server) updateClipboardHandler(c *gin.Context) {
 	}
 	defer c.Request.Body.Close()
 	if data == nil {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "request body is nil"})
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Request body is nil"})
 		return
 	}
 
 	xType := c.Request.Header.Get("X-Type")
 	xFileName := c.Request.Header.Get("X-FileName")
 	if xType == "" || (xType == gcopy.TypeFile && xFileName == "") {
-		c.JSON(http.StatusBadRequest, gin.H{"message": "request header invalid"})
+		c.JSON(http.StatusBadRequest, gin.H{"message": "Request header invalid"})
 		return
 	}
 	if xType == gcopy.TypeFile && len(data) > 10*1024*1024 {
-		c.JSON(http.StatusRequestEntityTooLarge, gin.H{"message": "the file cannot exceed 10mb"})
+		c.JSON(http.StatusRequestEntityTooLarge, gin.H{"message": "The file cannot exceed 10mb"})
 		return
 	}
 
@@ -150,5 +150,5 @@ func (s *Server) updateClipboardHandler(c *gin.Context) {
 	s.cbs.Set(sub, cb)
 
 	c.Header("X-Index", strconv.Itoa(cb.Index))
-	c.JSON(http.StatusOK, gin.H{"message": "success"})
+	c.JSON(http.StatusOK, gin.H{"message": "Success"})
 }

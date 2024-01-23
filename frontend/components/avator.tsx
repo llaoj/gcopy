@@ -2,8 +2,11 @@ import { useState } from "react";
 import useSession from "@/lib/use-session";
 import { defaultUserInfo } from "@/lib/types";
 import { useRouter } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 
 export default function Avator() {
+  const locale = useLocale();
+  const t = useTranslations("Avator");
   const [isClicked, setIsClicked] = useState(false);
   const router = useRouter();
   const { session, logout, isLoading } = useSession();
@@ -41,10 +44,10 @@ export default function Avator() {
               logout(null, {
                 optimisticData: defaultUserInfo,
               });
-              router.push("/user/email-code");
+              router.push(`/${locale}/user/email-code`);
             }}
           >
-            Logout
+            {t("logout")}
           </button>
         </li>
       </ul>

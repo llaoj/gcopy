@@ -2,18 +2,22 @@ import { cookies } from "next/headers";
 import { getIronSession } from "iron-session";
 import { SessionData, sessionOptions } from "@/lib/session";
 import { z } from "zod";
+import { getAcceptLanguageLocale } from "@/lib/i18n";
+import { getTranslations } from "next-intl/server";
 
 export async function POST(request: Request) {
+  const locale = getAcceptLanguageLocale(request.headers);
+  const t = await getTranslations({ locale, namespace: "Login" });
   const body = (await request.json()) as {
     email: string;
     code: string;
   };
   const validatedFields = z
     .object({
-      email: z.string().email({ message: "Invalid email" }),
+      email: z.string().email({ message: t("invalidEmail") }),
       code: z
         .string()
-        .regex(new RegExp("[0-9]{6}"), { message: "Incorrect code" }),
+        .regex(new RegExp("[0-9]{6}"), { message: t("incorrectCode") }),
     })
     .safeParse({
       email: body.email,
@@ -37,23 +41,17 @@ export async function POST(request: Request) {
 
   if (validatedFields.data.code == session.emailCode) {
     if (Date.now() - session.createdTime > 5 * 60 * 1000) {
-      return Response.json(
-        { email: "The code was expired. Please go back and retry." },
-        { status: 422 },
-      );
+      return Response.json({ message: t("expiredCode") }, { status: 422 });
     }
     session.isLoggedIn = true;
     await session.save();
     return Response.json({
-      message: "success",
+      message: t("success"),
       data: {
         email: validatedFields.data.email,
       },
     });
   }
 
-  return Response.json(
-    { message: "Incorrect code. Please go back and retry." },
-    { status: 401 },
-  );
+  return Response.json({ message: t("incorrectCode") }, { status: 401 });
 }

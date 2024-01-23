@@ -1,8 +1,13 @@
+"use client";
+
 import Avator from "@/components/avator";
 import Link from "next/link";
 import useSession from "@/lib/use-session";
+import { useLocale, useTranslations } from "next-intl";
 
 export default function Navbar() {
+  const locale = useLocale();
+  const t = useTranslations("Navbar");
   const { session, isLoading } = useSession();
   if (isLoading) {
     return null;
@@ -33,8 +38,15 @@ export default function Navbar() {
             className="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52"
           >
             <li>
-              <Link href="https://github.com/llaoj/gcopy/blob/v1.0.0/README.md">
-                Document
+              <Link
+                href={
+                  locale == "zh"
+                    ? "https://github.com/llaoj/gcopy/blob/v1.0.0/docs/zh-CN/README.md"
+                    : "https://github.com/llaoj/gcopy/blob/v1.0.0/README.md"
+                }
+                target="_blank"
+              >
+                {t("title")}
               </Link>
             </li>
           </ul>
@@ -63,8 +75,8 @@ export default function Navbar() {
         {session.isLoggedIn ? (
           <Avator />
         ) : (
-          <Link className="btn" href="/user/email-code">
-            Sign in
+          <Link className="btn" href={`/${locale}/user/email-code`}>
+            {t("signIn")}
           </Link>
         )}
       </div>
