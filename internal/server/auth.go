@@ -17,7 +17,7 @@ type UserInfo struct {
 func (s *Server) verifyAuth(c *gin.Context) {
 	cookie := c.Request.Header.Get("Cookie")
 
-	request, err := http.NewRequest("GET", "http://gcopy-frontend:3375/api/session", nil)
+	request, err := http.NewRequest("GET", s.cfg.FrontendURL+"/api/session", nil)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": err.Error()})
 		return

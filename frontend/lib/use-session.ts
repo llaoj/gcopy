@@ -1,7 +1,7 @@
 import useSWR from "swr";
 // import { SessionData } from "@/lib/session";
 import useSWRMutation from "swr/mutation";
-import { UserInfo, defaultUserInfo } from "./types";
+import { UserInfo, defaultUserInfo } from "./user";
 
 const sessionApiRoute = "/api/session";
 

@@ -1,13 +1,13 @@
 import { useState } from "react";
 import useSession from "@/lib/use-session";
-import { defaultUserInfo } from "@/lib/types";
+import { defaultUserInfo } from "@/lib/user";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 
 export default function Avator() {
   const locale = useLocale();
   const t = useTranslations("Avator");
-  const [isClicked, setIsClicked] = useState(false);
+  const [clicked, setClicked] = useState(false);
   const router = useRouter();
   const { session, logout, isLoading } = useSession();
   if (isLoading) {
@@ -38,9 +38,9 @@ export default function Avator() {
         </li>
         <li>
           <button
-            disabled={isClicked}
+            disabled={clicked}
             onClick={() => {
-              setIsClicked(true);
+              setClicked(true);
               logout(null, {
                 optimisticData: defaultUserInfo,
               });
