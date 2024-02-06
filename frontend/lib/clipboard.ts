@@ -20,26 +20,16 @@ export const initFileInfo: FileInfo = {
   autoDownloaded: false,
 };
 
-export interface temporaryClipboard {
+export interface TemporaryClipboard {
   blobId: string;
   index: string;
   blob: Blob;
 }
 
-export const initTemporaryClipboard: temporaryClipboard = {
+export const initTemporaryClipboard: TemporaryClipboard = {
   blobId: "",
   index: "",
   blob: new Blob([]),
-};
-
-export interface drag {
-  dragging: boolean;
-  finishedAt: number;
-}
-
-export const initDrag: drag = {
-  dragging: false,
-  finishedAt: 0,
 };
 
 export function clipboardWriteBlob(blob: Blob) {

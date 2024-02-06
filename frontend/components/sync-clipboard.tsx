@@ -10,7 +10,7 @@ import { useRouter } from "next/navigation";
 import Title from "@/components/title";
 import { useLocale, useTranslations } from "next-intl";
 import {
-  temporaryClipboard,
+  TemporaryClipboard,
   initTemporaryClipboard,
   clipboardWriteBlob,
   clipboardWriteBlobPromise,
@@ -20,8 +20,6 @@ import {
   toTextBlob,
   FileInfo,
   initFileInfo,
-  drag,
-  initDrag,
   clipboardRead,
 } from "@/lib/clipboard";
 import { browserName } from "react-device-detect";
@@ -32,16 +30,16 @@ export default function SyncClipboard() {
   const [clipboard, setClipboard] = useState<Clipboard>(initClipboard);
   const [fileInfo, setFileInfo] = useState<FileInfo>(initFileInfo);
   const [temporaryClipboard, setTemporaryClipboard] =
-    useState<temporaryClipboard>(initTemporaryClipboard);
+    useState<TemporaryClipboard>(initTemporaryClipboard);
   const [logs, setLogs] = useState<Log[]>([
     {
       level: Level.Warn,
       message: t("logs.clickToSync"),
     },
   ]);
-  // processing | interrupted-[r|w] | finished
+  // "" | interrupted-[r|w] | finished
   const [status, setStatus] = useState<string>("");
-  const [drag, setDrag] = useState<drag>(initDrag);
+  const [dragging, setDragging] = useState(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
@@ -75,27 +73,25 @@ export default function SyncClipboard() {
     ]);
   };
 
-  const fetchClipboard = async () => {
+  const pullClipboard = async () => {
     if (status == "interrupted-w") {
-      clipboardWriteBlobPromise(temporaryClipboard.blob)
-        .then(async () => {
-          // This blobId is hashed by the fetched blob
-          // which is different from the blob read from clipboard.
-          // So this will upload the blob back to the server once.
-          setClipboard({
-            blobId: temporaryClipboard.blobId,
-            index: temporaryClipboard.index,
-          });
-          addLog(t("logs.writeSuccess"), Level.Success);
-        })
-        .catch((err) => addLog(err.toString(), Level.Error));
+      await clipboardWriteBlobPromise(temporaryClipboard.blob);
+      // This blobId is hashed by the fetched blob
+      // which is different from the blob read from clipboard.
+      // So this will upload the blob back to the server once.
+      setClipboard({
+        blobId: temporaryClipboard.blobId,
+        index: temporaryClipboard.index,
+      });
+      addLog(t("logs.writeSuccess"), Level.Success);
+
       setTemporaryClipboard(initTemporaryClipboard);
       setStatus("finished");
       return;
     }
 
     if (status == "interrupted-r") {
-      readClipboard();
+      await pushClipboard();
       setStatus("finished");
       return;
     }
@@ -131,7 +127,7 @@ export default function SyncClipboard() {
         return;
       }
 
-      readClipboard();
+      await pushClipboard();
       return;
     }
     addLog(t("logs.received", { type: t(xtype), index: xindex }));
@@ -164,19 +160,15 @@ export default function SyncClipboard() {
         return;
       }
 
-      clipboardWriteBlob(blob)
-        .then(async () => {
-          // Although they are the same,
-          // the blob read from the clipboard is different from
-          // the blob just fetched from the server.
-          const nextBlobId = await hashBlob(await clipboardRead());
-          setClipboard({
-            blobId: nextBlobId,
-            index: xindex,
-          });
-          addLog(t("logs.writeSuccess"), Level.Success);
-        })
-        .catch((err) => addLog(err.toString(), Level.Error));
+      await clipboardWriteBlob(blob);
+      // Although they are the same,
+      // the blob read from the clipboard is different from
+      // the blob just fetched from the server.
+      setClipboard({
+        blobId: await hashBlob(await clipboardRead()),
+        index: xindex,
+      });
+      addLog(t("logs.writeSuccess"), Level.Success);
 
       return;
     }
@@ -192,7 +184,7 @@ export default function SyncClipboard() {
         return {
           ...current,
           index: xindex,
-        }
+        };
       });
       setFileInfo({
         fileName: decodeURI(xfilename),
@@ -202,9 +194,11 @@ export default function SyncClipboard() {
     }
   };
 
-  const readClipboard = async () => {
+  const pushClipboard = async () => {
+    if (!navigator.clipboard || !navigator.clipboard.read) {
+      return;
+    }
     let blob = await clipboardRead();
-
     let xtype;
     switch (blob.type) {
       case "text/plain":
@@ -218,7 +212,6 @@ export default function SyncClipboard() {
       default:
         xtype = "";
     }
-
     if (xtype == "") {
       return;
     }
@@ -242,9 +235,8 @@ export default function SyncClipboard() {
     });
 
     if (response.status != 200) {
-      await response.json().then((body) => {
-        addLog(body.message, Level.Error);
-      });
+      const body = await response.json();
+      addLog(body.message, Level.Error);
       return;
     }
     const xindex = response.headers.get("x-index");
@@ -268,12 +260,8 @@ export default function SyncClipboard() {
       addLog(t("logs.fileTooLarge"), Level.Error);
       return;
     }
-    const nextBlobId: string = await hashBlob(file);
-    if (nextBlobId == clipboard.blobId) {
-      return;
-    }
-    addLog(t("logs.uploading", { object: file.name }));
 
+    addLog(t("logs.uploading", { object: file.name }));
     const response = await fetch("/api/v1/clipboard", {
       method: "POST",
       headers: {
@@ -284,9 +272,8 @@ export default function SyncClipboard() {
       body: file,
     });
     if (response.status != 200) {
-      await response.json().then((body) => {
-        addLog(body.message, Level.Error);
-      });
+      const body = await response.json();
+      addLog(body.message, Level.Error);
       return;
     }
     const xindex = response.headers.get("x-index");
@@ -294,9 +281,13 @@ export default function SyncClipboard() {
       return;
     }
 
-    setClipboard({
-      blobId: nextBlobId,
-      index: xindex,
+    // The file did not enter the clipboard,
+    // so only update the index.
+    setClipboard((current) => {
+      return {
+        ...current,
+        index: xindex,
+      };
     });
     setFileInfo({
       fileName: file.name,
@@ -307,68 +298,36 @@ export default function SyncClipboard() {
       t("logs.uploaded", { type: t("file"), index: xindex }),
       Level.Success,
     );
+
+    setStatus("finished");
   };
 
   const syncFunc = async () => {
-    if (!ensureLoggedIn()) {
-      return;
-    }
-
-    // Ask for permission
-    if (browserName != "Safari") {
-      const permissionClipboardRead: PermissionName =
-        "clipboard-read" as PermissionName;
-      const permission = await navigator.permissions.query({
-        name: permissionClipboardRead,
-      });
-      if (permission.state === "denied") {
-        addLog(t("logs.denyRead"), Level.Error);
+    try {
+      if (!ensureLoggedIn()) {
         return;
       }
-    }
 
-    fetchClipboard();
-    setStatus((current) =>
-      current.startsWith("interrupted") ? current : "finished",
-    );
-  };
-
-  const onDrop = async (ev: DragEvent<HTMLElement>) => {
-    setDrag({
-      dragging: false,
-      finishedAt: new Date().getTime(),
-    });
-
-    ev.preventDefault();
-    if (!ensureLoggedIn()) {
-      return;
-    }
-    if (!ev.dataTransfer) {
-      return;
-    }
-    if (ev.dataTransfer.files) {
-      const droppedFile = ev.dataTransfer.files[0];
-      if (droppedFile) {
-        uploadFileHandler(droppedFile);
+      // Ask for permission
+      if (browserName != "Safari") {
+        const permissionClipboardRead: PermissionName =
+          "clipboard-read" as PermissionName;
+        const permission = await navigator.permissions.query({
+          name: permissionClipboardRead,
+        });
+        if (permission.state === "denied") {
+          addLog(t("logs.denyRead"), Level.Error);
+          return;
+        }
       }
+
+      await pullClipboard();
+      setStatus((current) =>
+        current.startsWith("interrupted") ? current : "finished",
+      );
+    } catch (e) {
+      addLog(String(e), Level.Error);
     }
-    return;
-  };
-
-  const onDragEnter = () => {
-    setDrag((current) => {
-      return {
-        ...current,
-        dragging: true,
-      };
-    });
-  };
-
-  const onDragLeave = () => {
-    setDrag({
-      dragging: false,
-      finishedAt: new Date().getTime(),
-    });
   };
 
   const autoDownloaded = () => {
@@ -380,30 +339,13 @@ export default function SyncClipboard() {
     });
   };
 
-  const canAutoClick = () => {
-    if (status.startsWith("interrupted")) {
-      return false;
-    }
-
-    if (drag.dragging) {
-      return false;
-    }
-    const diff = new Date().getTime() - drag.finishedAt;
-    if (diff < 5000) {
-      // ms
-      return false;
-    }
-
-    return true;
-  };
-
   return (
     <>
       <div className="pb-4">
         <Title title={t("title")} subTitle={t("subTitle")}></Title>
         <div className="grid grid-cols-9 gap-3 w-full">
           <LogBox logs={logs} />
-          <SyncButton syncFunc={syncFunc} canAutoClickFunc={canAutoClick} />
+          <SyncButton syncFunc={syncFunc} />
         </div>
       </div>
 
@@ -416,17 +358,31 @@ export default function SyncClipboard() {
         <div
           className={clsx(
             "preview h-40 border rounded-box flex flex-col items-center justify-center gap-y-1 px-4",
-            { "border-primary text-primary": drag.dragging },
-            { "border-base-300": !drag.dragging },
+            { "border-primary text-primary": dragging },
+            { "border-base-300": !dragging },
           )}
           onDragOver={(ev: DragEvent<HTMLElement>) => {
             ev.preventDefault();
           }}
-          onDragEnter={onDragEnter}
-          onDragLeave={onDragLeave}
-          onDrop={onDrop}
+          onDragEnter={() => {
+            setDragging(true);
+          }}
+          onDragLeave={() => {
+            setDragging(false);
+          }}
+          onDrop={async (ev: DragEvent<HTMLElement>) => {
+            ev.preventDefault();
+            if (!ensureLoggedIn()) {
+              return;
+            }
+            if (ev.dataTransfer && ev.dataTransfer.files) {
+              const droppedFile = ev.dataTransfer.files[0];
+              await uploadFileHandler(droppedFile);
+            }
+            setDragging(false);
+          }}
         >
-          {!drag.dragging && (
+          {!dragging && (
             <>
               <FileLink
                 fileInfo={fileInfo}
