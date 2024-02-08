@@ -6,31 +6,32 @@ import useSession from "@/lib/use-session";
 import { Log, Level } from "@/lib/log";
 import { DragEvent, useRef, useState } from "react";
 import clsx from "clsx";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import Title from "@/components/title";
 import { useLocale, useTranslations } from "next-intl";
 import {
-  TemporaryClipboard,
-  initTemporaryClipboard,
+  TmpClipboard,
+  initTmpClipboard,
   clipboardWriteBlob,
   clipboardWriteBlobPromise,
   hashBlob,
-  initClipboard,
-  Clipboard,
   toTextBlob,
   FileInfo,
   initFileInfo,
   clipboardRead,
 } from "@/lib/clipboard";
+// Chrome | Safari | Mobile Safari
 import { browserName } from "react-device-detect";
 import SyncButton from "@/components/sync-button";
 
+// route: /locale?ci=123&cbi=abc
+// - ci: clipboard index
+// - cbi: clipboard blob id
 export default function SyncClipboard() {
   const t = useTranslations("SyncClipboard");
-  const [clipboard, setClipboard] = useState<Clipboard>(initClipboard);
   const [fileInfo, setFileInfo] = useState<FileInfo>(initFileInfo);
-  const [temporaryClipboard, setTemporaryClipboard] =
-    useState<TemporaryClipboard>(initTemporaryClipboard);
+  const [tmpClipboard, setTmpClipboard] =
+    useState<TmpClipboard>(initTmpClipboard);
   const [logs, setLogs] = useState<Log[]>([
     {
       level: Level.Warn,
@@ -42,9 +43,11 @@ export default function SyncClipboard() {
   const [dragging, setDragging] = useState(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
-  const router = useRouter();
   const locale = useLocale();
   const { session, isLoading } = useSession();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   if (isLoading) {
     return (
@@ -75,17 +78,16 @@ export default function SyncClipboard() {
 
   const pullClipboard = async () => {
     if (status == "interrupted-w") {
-      await clipboardWriteBlobPromise(temporaryClipboard.blob);
+      await clipboardWriteBlobPromise(tmpClipboard.blob);
       // This blobId is hashed by the fetched blob
       // which is different from the blob read from clipboard.
       // So this will upload the blob back to the server once.
-      setClipboard({
-        blobId: temporaryClipboard.blobId,
-        index: temporaryClipboard.index,
-      });
+      router.replace(
+        `${pathname}?ci=${tmpClipboard.index}&cbi=${tmpClipboard.blobId}`,
+      );
       addLog(t("logs.writeSuccess"), Level.Success);
 
-      setTemporaryClipboard(initTemporaryClipboard);
+      setTmpClipboard(initTmpClipboard);
       setStatus("finished");
       return;
     }
@@ -100,7 +102,7 @@ export default function SyncClipboard() {
     addLog(t("logs.fetching"));
     const response = await fetch("/api/v1/clipboard", {
       headers: {
-        "X-Index": clipboard.index,
+        "X-Index": searchParams.get("ci") ?? "",
       },
     });
 
@@ -114,13 +116,13 @@ export default function SyncClipboard() {
     if (
       xindex == null ||
       xindex == "0" ||
-      xindex == clipboard.index ||
+      xindex == searchParams.get("ci") ||
       xtype == "" ||
       xtype == null
     ) {
       addLog(t("logs.upToDate"));
 
-      if (browserName == "Safari") {
+      if (browserName.includes("Safari")) {
         setStatus("interrupted-r");
         addLog(t("logs.clickAgain"), Level.Warn);
         addLog(t("logs.clickPaste"), Level.Warn);
@@ -145,12 +147,12 @@ export default function SyncClipboard() {
 
     if (xtype == "text" || xtype == "screenshot") {
       const nextBlobId: string = await hashBlob(blob);
-      if (nextBlobId == clipboard.blobId) {
+      if (nextBlobId == searchParams.get("cbi")) {
         return;
       }
 
-      if (browserName == "Safari") {
-        setTemporaryClipboard({
+      if (browserName.includes("Safari")) {
+        setTmpClipboard({
           blobId: nextBlobId,
           index: xindex,
           blob: blob,
@@ -164,10 +166,8 @@ export default function SyncClipboard() {
       // Although they are the same,
       // the blob read from the clipboard is different from
       // the blob just fetched from the server.
-      setClipboard({
-        blobId: await hashBlob(await clipboardRead()),
-        index: xindex,
-      });
+      const realBlobId = await hashBlob(await clipboardRead());
+      router.replace(`${pathname}?ci=${xindex}&cbi=${realBlobId}`);
       addLog(t("logs.writeSuccess"), Level.Success);
 
       return;
@@ -180,12 +180,9 @@ export default function SyncClipboard() {
       }
       // The file did not enter the clipboard,
       // so only update the index.
-      setClipboard((current) => {
-        return {
-          ...current,
-          index: xindex,
-        };
-      });
+      router.replace(
+        `${pathname}?ci=${xindex}&cbi=${searchParams.get("cbi") ?? ""}`,
+      );
       setFileInfo({
         fileName: decodeURI(xfilename),
         fileURL: URL.createObjectURL(blob),
@@ -217,7 +214,7 @@ export default function SyncClipboard() {
     }
 
     const nextBlobId = await hashBlob(blob);
-    if (nextBlobId == clipboard.blobId) {
+    if (nextBlobId == searchParams.get("cbi")) {
       addLog(t("logs.unchanged"));
       return;
     }
@@ -244,10 +241,7 @@ export default function SyncClipboard() {
       return;
     }
 
-    setClipboard({
-      blobId: nextBlobId,
-      index: xindex,
-    });
+    router.replace(`${pathname}?ci=${xindex}&cbi=${nextBlobId}`);
     addLog(
       t("logs.uploaded", { type: t(xtype), index: xindex }),
       Level.Success,
@@ -283,12 +277,9 @@ export default function SyncClipboard() {
 
     // The file did not enter the clipboard,
     // so only update the index.
-    setClipboard((current) => {
-      return {
-        ...current,
-        index: xindex,
-      };
-    });
+    router.replace(
+      `${pathname}?ci=${xindex}&cbi=${searchParams.get("cbi") ?? ""}`,
+    );
     setFileInfo({
       fileName: file.name,
       fileURL: "",
@@ -309,7 +300,7 @@ export default function SyncClipboard() {
       }
 
       // Ask for permission
-      if (browserName != "Safari") {
+      if (!browserName.includes("Safari")) {
         const permissionClipboardRead: PermissionName =
           "clipboard-read" as PermissionName;
         const permission = await navigator.permissions.query({
@@ -325,8 +316,9 @@ export default function SyncClipboard() {
       setStatus((current) =>
         current.startsWith("interrupted") ? current : "finished",
       );
-    } catch (e) {
-      addLog(String(e), Level.Error);
+    } catch (err) {
+      addLog(String(err), Level.Error);
+      setStatus("finished");
     }
   };
 

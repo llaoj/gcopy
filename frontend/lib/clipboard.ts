@@ -1,13 +1,3 @@
-export interface Clipboard {
-  blobId: string;
-  index: string;
-}
-
-export const initClipboard: Clipboard = {
-  blobId: "",
-  index: "",
-};
-
 export interface FileInfo {
   fileName: string;
   fileURL: string;
@@ -20,13 +10,13 @@ export const initFileInfo: FileInfo = {
   autoDownloaded: false,
 };
 
-export interface TemporaryClipboard {
+export interface TmpClipboard {
   blobId: string;
   index: string;
   blob: Blob;
 }
 
-export const initTemporaryClipboard: TemporaryClipboard = {
+export const initTmpClipboard: TmpClipboard = {
   blobId: "",
   index: "",
   blob: new Blob([]),
@@ -54,7 +44,10 @@ export async function hashBlob(blob: Blob): Promise<string> {
   const uint8Array = new Uint8Array(await blob.arrayBuffer());
   const hashBuffer = await crypto.subtle.digest("SHA-256", uint8Array);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map((h) => h.toString(16).padStart(2, "0")).join("");
+  return hashArray
+    .map((h) => h.toString(16).padStart(2, "0"))
+    .join("")
+    .substring(0, 16);
 }
 
 export function toTextBlob(blob: Blob) {

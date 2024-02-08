@@ -15,7 +15,7 @@ GCopy values your data privacy, it does not persistently store your data; it is 
 
 ## Usage
 
-![screanshot](docs/screenshot.png)
+![screanshot on chrome](docs/screenshot-chrome.png)
 
 Steps:
 
@@ -33,9 +33,21 @@ Current tools typically only support text, excluding screenshots and files. Addi
 
 This is not ideal!
 
-Therefore, I developed GCopy to address these issues. Currently, you can share the clipboard between Windows and MacOS computers, supporting text, screenshots, and files. It has low network requirements, allowing different devices to be on the same local network or not.
+Therefore, I developed GCopy to address these issues. Currently, you can share the clipboard across PC, Mac, and mobile devices, supporting text, screenshots, and files. It has low network requirements, allowing different devices to be on the same local network or not.
 
 Initially, I used Git as the backend storage and utilized scripts like PowerShell and osascript to synchronize the clipboard between different devices. However, due to its dependence on Git, it was not user-friendly for non-technical users. So, I replaced Git with Golang to serve as a data transfer service between different devices, but it still required users to download and run the GCopy client on their devices, creating a barrier to entry. That led to the development of the current version, 'GCopy v1.0', as a web service. You can directly access the website [https://gcopy.rutron.net](https://gcopy.rutron.net) without worrying about data leakage.
+
+## Browser compatibility
+
+GCopy depends on the browser's Clipboard API. Please refer to [browser_compatibility](https://developer.mozilla.org/en-US/docs/Web/API/Clipboard#browser_compatibility) for more information.
+
+The tested browsers and its versions are listed below:
+
+|Browser|Version||
+|-|-|-|
+|Chrome|Version 121.0.6167.85 (Official Build) (x86_64)|✅ Tested|
+|Safari|Version 15.6.1 (17613.3.9.1.16)|✅ Tested|
+|Safari on iOS|Version 16.1|✅ Tested|
 
 ## Limitations
 
@@ -58,3 +70,9 @@ Feel free to reach out to my personal email: qustwwy@163.com. If you have any qu
 Here, some interesting discussions are happening.
 
 Server link: https://discord.gg/pyTrT3aAaC
+
+## Screenshot
+
+Safari on iOS
+
+<img width="200" alt="screenshot on ios safari" src="docs/screenshot-ios-safari.png">
