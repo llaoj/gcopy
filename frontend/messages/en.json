@@ -45,28 +45,32 @@
   "SyncClipboard": {
     "title": "Sync the clipboard",
     "subTitle": "Click-click and the clipboard synced between devices.",
+    "click2sync": "Click to sync clipboard",
     "text": "TEXT",
     "screenshot": "SCREENSHOT",
     "file": "FILE",
-    "syncButtonText": "Click to sync clipboard",
-    "log": {
-      "clickButton": "Click the button to sync clipboard",
-      "up2Date": "Already up to date.",
-      "received": "Received",
-      "uploaded": "Uploaded",
-      "uploading": "Uploading",
-      "fetching": "Fetching",
-      "readClipboardSuccessfully": "Read data from the clipboard successfully.",
-      "writeClipboardSuccessfully": "Written data to the clipboard successfully.",
-      "downloadTip": "File download should start shortly. if not, please click the file link below.",
-      "denyReadClipboard": "Not allowed to read clipboard!",
-      "fileTooLarge": "Sorry, the file cannot exceed 10mb!"
-    },
     "syncFile": {
       "title": "Sync the files",
       "subTitle": "Drag and drop a file here to sync it to different devices.",
       "dragDropTip": "Drag and drop a file here",
       "fileInputText": "Choose a file"
+    },
+    "logs": {
+      "clickToSync": "Click the button to sync clipboard 👉",
+      "fetching": "Fetching...",
+      "upToDate": "Already up to date.",
+      "readSuccess": "Read data from the clipboard successfully.",
+      "writeSuccess": "Written data to the clipboard successfully.",
+      "autoDownload": "File download should start shortly. if not, please click the file link below.",
+      "denyRead": "Not allowed to read clipboard!",
+      "fileTooLarge": "Sorry, the file cannot exceed 10mb!",
+      "clickAgain": "Click again due to browser security policies 👉",
+      "clickPaste": "If the \"Paste\" appears on the page, click it to allow reading the clipboard.",
+      "unchanged": "Clipboard unchanged.",
+      "uploading": "Uploading {object}",
+      "uploaded": "Uploaded {type}({index}).",
+      "received": "Received {type}({index}).",
+      "unsupportedFormat": "Unsupported format: {format}."
     }
   }
 }

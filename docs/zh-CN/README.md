@@ -15,7 +15,7 @@ GCopy重视您的数据隐私, 不持久化存储您的数据, 它们都在内�
 
 ## 使用方法
 
-![页面截图](../screenshot.png)
+![页面截图](../screenshot-chrome.png)
 
 步骤:
 
@@ -37,10 +37,22 @@ GCopy重视您的数据隐私, 不持久化存储您的数据, 它们都在内�
 这很不好!
 
 所以, 我开发了GCopy, 它解决了这些问题.
-目前, 你可以在Windows电脑与MacOS电脑之间共享剪切板, 支持文字, 截图和文件.
+目前, 你可以在PC、Mac和移动端之间共享剪切板, 支持文字, 截图和文件.
 它对网络没有太高的要求, 不同的设备可以在同一个局域网, 也可以不在.
 
 最开始我使用Git作为后端存储, 使用powershell、osascript这样的脚本在不同的设备之间同步剪切板. 但是因为它依赖Git, 注定不能让更多的非技术朋友使用. 所以, 我使用Golang替换了Git, 来作为不同设备之间的数据中转服务, 但是它仍然需要您在设备上下载运行GCopy客户端, 给使用带来了门槛. 所以, 我做了现在的`GCopy v1.0`, 它是一个Web服务, 您可以直接打开网站[https://gcopy.rutron.net](https://gcopy.rutron.net)使用, 同时不用担心您的数据泄露.
+
+## 浏览器兼容性
+
+GCopy依赖浏览器的Clipboard API. 它的浏览器兼容性请参考: [browser_compatibility](https://developer.mozilla.org/en-US/docs/Web/API/Clipboard#browser_compatibility)
+
+下面是测试过的浏览器和版本:
+
+|浏览器|版本||
+|-|-|-|
+|Chrome|Version 121.0.6167.85 (Official Build) (x86_64)|✅ Tested|
+|Safari|Version 15.6.1 (17613.3.9.1.16)|✅ Tested|
+|Safari on iOS|Version 16.1|✅ Tested|
 
 ## 不足之处
 
@@ -62,3 +74,9 @@ GCopy重视您的数据隐私, 不持久化存储您的数据, 它们都在内�
 添加我的微信我拉你进群, 这里已经聚集了一帮有意思的朋友.
 
 <img width="200" src="../wechat-lllaoj.png">
+
+## 截图
+
+Safari on iOS
+
+<img width="200" alt="screenshot on ios safari" src="../screenshot-ios-safari.png">

@@ -3,7 +3,7 @@
   "version": "1.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -p 3375 --experimental-https",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
@@ -21,6 +21,7 @@
     "next-intl": "^3.4.5",
     "nodemailer": "^6.9.8",
     "react": "^18",
+    "react-device-detect": "^2.2.3",
     "react-dom": "^18",
     "swr": "^2.2.4",
     "zod": "^3.22.4"

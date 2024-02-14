@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { getIronSession } from "iron-session";
 import { SessionData, sessionOptions } from "@/lib/session";
-import { UserInfo, defaultUserInfo } from "@/lib/types";
+import { UserInfo, defaultUserInfo } from "@/lib/user";
 
 export async function GET() {
   const session = await getIronSession<SessionData>(cookies(), sessionOptions);
