@@ -13,8 +13,8 @@ export default function FileLink({
 
   useEffect(() => {
     if (fileInfo.fileURL != "" && !fileInfo.autoDownloaded) {
-      autoDownloadedFunc();
       linkRef.current?.click();
+      autoDownloadedFunc();
     }
   }, [fileInfo.fileURL]);
 
@@ -22,7 +22,7 @@ export default function FileLink({
     return (
       <Link
         ref={linkRef}
-        className="text-primary underline decoration-solid line-clamp-1"
+        className="text-primary underline decoration-solid text-center w-full truncate"
         href={fileInfo.fileURL}
         target="_blank"
         download={fileInfo.fileName}

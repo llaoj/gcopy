@@ -6,7 +6,7 @@ import useSession from "@/lib/use-session";
 import { Log, Level } from "@/lib/log";
 import { DragEvent, useRef, useState } from "react";
 import clsx from "clsx";
-import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import Title from "@/components/title";
 import { useLocale, useTranslations } from "next-intl";
 import {
@@ -47,7 +47,6 @@ export default function SyncClipboard() {
   const { session, isLoading } = useSession();
   const router = useRouter();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
 
   if (isLoading) {
     return (
@@ -82,7 +81,9 @@ export default function SyncClipboard() {
       // This blobId is hashed by the fetched blob
       // which is different from the blob read from clipboard.
       // So this will upload the blob back to the server once.
-      router.replace(
+      window.history.replaceState(
+        null,
+        document.title,
         `${pathname}?ci=${tmpClipboard.index}&cbi=${tmpClipboard.blobId}`,
       );
       addLog(t("logs.writeSuccess"), Level.Success);
@@ -100,6 +101,7 @@ export default function SyncClipboard() {
 
     resetLog();
     addLog(t("logs.fetching"));
+    const searchParams = new URLSearchParams(window.location.search);
     const response = await fetch("/api/v1/clipboard", {
       headers: {
         "X-Index": searchParams.get("ci") ?? "",
@@ -167,7 +169,11 @@ export default function SyncClipboard() {
       // the blob read from the clipboard is different from
       // the blob just fetched from the server.
       const realBlobId = await hashBlob(await clipboardRead());
-      router.replace(`${pathname}?ci=${xindex}&cbi=${realBlobId}`);
+      window.history.replaceState(
+        null,
+        document.title,
+        `${pathname}?ci=${xindex}&cbi=${realBlobId}`,
+      );
       addLog(t("logs.writeSuccess"), Level.Success);
 
       return;
@@ -178,16 +184,18 @@ export default function SyncClipboard() {
       if (xfilename == null || xfilename == "") {
         return;
       }
-      // The file did not enter the clipboard,
-      // so only update the index.
-      router.replace(
-        `${pathname}?ci=${xindex}&cbi=${searchParams.get("cbi") ?? ""}`,
-      );
       setFileInfo({
         fileName: decodeURI(xfilename),
         fileURL: URL.createObjectURL(blob),
         autoDownloaded: false,
       });
+      // The file did not enter the clipboard,
+      // so only update the index.
+      window.history.replaceState(
+        null,
+        document.title,
+        `${pathname}?ci=${xindex}&cbi=${searchParams.get("cbi") ?? ""}`,
+      );
     }
   };
 
@@ -200,6 +208,7 @@ export default function SyncClipboard() {
     switch (blob.type) {
       case "text/plain":
       case "text/html":
+      case "text/uri-list":
         xtype = "text";
         blob = await toTextBlob(blob);
         break;
@@ -207,6 +216,7 @@ export default function SyncClipboard() {
         xtype = "screenshot";
         break;
       default:
+        addLog(t("logs.unsupportedFormat", { format: blob.type }), Level.Error);
         xtype = "";
     }
     if (xtype == "") {
@@ -214,6 +224,7 @@ export default function SyncClipboard() {
     }
 
     const nextBlobId = await hashBlob(blob);
+    const searchParams = new URLSearchParams(window.location.search);
     if (nextBlobId == searchParams.get("cbi")) {
       addLog(t("logs.unchanged"));
       return;
@@ -241,7 +252,11 @@ export default function SyncClipboard() {
       return;
     }
 
-    router.replace(`${pathname}?ci=${xindex}&cbi=${nextBlobId}`);
+    window.history.replaceState(
+      null,
+      document.title,
+      `${pathname}?ci=${xindex}&cbi=${nextBlobId}`,
+    );
     addLog(
       t("logs.uploaded", { type: t(xtype), index: xindex }),
       Level.Success,
@@ -275,16 +290,19 @@ export default function SyncClipboard() {
       return;
     }
 
-    // The file did not enter the clipboard,
-    // so only update the index.
-    router.replace(
-      `${pathname}?ci=${xindex}&cbi=${searchParams.get("cbi") ?? ""}`,
-    );
     setFileInfo({
       fileName: file.name,
       fileURL: "",
       autoDownloaded: false,
     });
+    // The file did not enter the clipboard,
+    // so only update the index.
+    const searchParams = new URLSearchParams(window.location.search);
+    window.history.replaceState(
+      null,
+      document.title,
+      `${pathname}?ci=${xindex}&cbi=${searchParams.get("cbi") ?? ""}`,
+    );
     addLog(
       t("logs.uploaded", { type: t("file"), index: xindex }),
       Level.Success,

@@ -2,14 +2,18 @@ import { CursorArrowRippleIcon } from "@heroicons/react/24/solid";
 import { useTranslations } from "next-intl";
 import { useRef, useState } from "react";
 
-export default function SyncButton({ syncFunc }: { syncFunc: () => void }) {
+export default function SyncButton({
+  syncFunc,
+}: {
+  syncFunc: () => Promise<void>;
+}) {
   const [clicked, setClicked] = useState<boolean>(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const t = useTranslations("SyncClipboard");
 
-  const onClick = () => {
+  const onClick = async () => {
     setClicked(true);
-    syncFunc();
+    await syncFunc();
     setClicked(false);
   };
 

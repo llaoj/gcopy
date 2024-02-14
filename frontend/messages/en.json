@@ -69,7 +69,8 @@
       "unchanged": "Clipboard unchanged.",
       "uploading": "Uploading {object}",
       "uploaded": "Uploaded {type}({index}).",
-      "received": "Received {type}({index})."
+      "received": "Received {type}({index}).",
+      "unsupportedFormat": "Unsupported format: {format}."
     }
   }
 }

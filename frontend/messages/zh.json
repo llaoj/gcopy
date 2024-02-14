@@ -69,7 +69,8 @@
       "unchanged": "剪切板没有改变.",
       "uploading": "正在上传 {object}",
       "uploaded": "已经上传 {type}({index}).",
-      "received": "已经接收 {type}({index})."
+      "received": "已经接收 {type}({index}).",
+      "unsupportedFormat": "不支持的格式: {format}."
     }
   }
 }

@@ -52,7 +52,7 @@ export async function hashBlob(blob: Blob): Promise<string> {
 
 export function toTextBlob(blob: Blob) {
   let type = blob.type;
-  if (type == "text/html") {
+  if (type == "text/html" || type == "text/uri-list") {
     return blob.text().then((text) => {
       type = "text/plain";
       return new Blob([text], { type });
