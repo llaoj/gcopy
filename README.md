@@ -11,7 +11,7 @@ A clipboard synchronization service between different operating systems.
 
 `Text`, `Screenshot` & `File` are supported.
 
-GCopy values your data privacy, it does not persistently store your data; it is all kept in memory.
+GCopy values your data privacy, it does not persistently store your data; it is all kept in memory. If you are inactive for 24h, the data will expire.
 
 ## Usage
 
@@ -75,4 +75,4 @@ Server link: https://discord.gg/pyTrT3aAaC
 
 Safari on iOS
 
-<img width="200" alt="screenshot on ios safari" src="docs/screenshot-ios-safari.png">
+<img width="300" alt="screenshot on ios safari" src="docs/screenshot-ios-safari.png">

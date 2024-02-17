@@ -10,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/llaoj/gcopy/internal/config"
 	"github.com/llaoj/gcopy/internal/gcopy"
+	"github.com/llaoj/gcopy/pkg/utils"
 	"github.com/sirupsen/logrus"
 )
 
@@ -21,7 +22,7 @@ type Server struct {
 
 func NewServer(log *logrus.Logger) *Server {
 	s := &Server{
-		cbs: NewClipboards(),
+		cbs: NewClipboards(log),
 		cfg: config.Get(),
 		log: log,
 	}
@@ -30,6 +31,9 @@ func NewServer(log *logrus.Logger) *Server {
 }
 
 func (s *Server) Run() {
+	stop := s.cbs.Housekeeping()
+	defer stop()
+
 	if s.cfg.Debug {
 		gin.SetMode(gin.DebugMode)
 	} else {
@@ -141,12 +145,13 @@ func (s *Server) updateClipboardHandler(c *gin.Context) {
 		index = cb.Index
 	}
 	cb = &gcopy.Clipboard{
-		Index:    index + 1,
-		Type:     xType,
-		FileName: xFileName,
-		Data:     data,
+		Index:     index + 1,
+		Type:      xType,
+		FileName:  xFileName,
+		Data:      data,
+		CreatedAt: time.Now(),
 	}
-	s.log.Infof("Received %s(%v)", cb.Type, cb.Index)
+	s.log.Infof("[%s] Received %s(%v)", utils.StrMaskMiddle(sub), cb.Type, cb.Index)
 	s.cbs.Set(sub, cb)
 
 	c.Header("X-Index", strconv.Itoa(cb.Index))

@@ -11,7 +11,7 @@
 
 使用 Golang 和 Nextjs 开发. 完全开源.
 
-GCopy重视您的数据隐私, 不持久化存储您的数据, 它们都在内存中.
+GCopy重视您的数据隐私, 不持久化存储您的数据, 它们都在内存中. 如果你24h内不使用, 数据就会被删除.
 
 ## 使用方法
 
@@ -79,4 +79,4 @@ GCopy依赖浏览器的Clipboard API. 它的浏览器兼容性请参考: [browse
 
 Safari on iOS
 
-<img width="200" alt="screenshot on ios safari" src="../screenshot-ios-safari.png">
+<img width="300" alt="screenshot on ios safari" src="../screenshot-ios-safari.png">

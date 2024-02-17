@@ -13,6 +13,6 @@ From alpine
 WORKDIR /
 COPY --from=0 /gcopy .
 
-EXPOSE 3375
+EXPOSE 3376
 
 ENTRYPOINT ["/gcopy"]

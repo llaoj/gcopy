@@ -1,5 +1,7 @@
 package gcopy
 
+import "time"
+
 type Clipboard struct {
 	// The index of the clipboard
 	Index int
@@ -9,4 +11,6 @@ type Clipboard struct {
 	FileName string
 	// The chunk of data, less than 2^32(2GB).
 	Data []byte
+	// Create time of the data
+	CreatedAt time.Time
 }
