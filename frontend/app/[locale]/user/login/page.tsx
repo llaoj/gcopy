@@ -10,17 +10,18 @@ export default function Login({
 }: {
   searchParams: { email: string };
 }) {
+  const [clicked, setClicked] = useState<boolean>(false);
   const locale = useLocale();
   const t = useTranslations("Login");
   const email = searchParams.email;
   const [errorMessage, setErrorMessage] = useState("");
   const router = useRouter();
 
-  const validateEmailCode = (event: FormEvent) => {
+  const validateEmailCode = async (event: FormEvent) => {
     event.preventDefault();
+    setClicked(true);
     const formData = new FormData(event.currentTarget as HTMLFormElement);
-
-    fetch("/api/user/login", {
+    const res = await fetch("/api/user/login", {
       headers: {
         accept: "application/json",
         "content-type": "application/json",
@@ -30,15 +31,16 @@ export default function Login({
         email: formData.get("email") as string,
         code: formData.get("code") as string,
       }),
-    }).then(async (res: Response) => {
-      if (res.status != 200) {
-        const body = await res.json();
-        setErrorMessage(body.message);
-      }
-      if (res.status == 200) {
-        router.push(`/${locale}/`);
-      }
     });
+
+    if (res.status == 200) {
+      router.push(`/${locale}/`);
+      return;
+    }
+
+    const body = await res.json();
+    setErrorMessage(body.message);
+    setClicked(false);
   };
 
   return (
@@ -85,7 +87,7 @@ export default function Login({
         </div>
         {errorMessage && <p className="text-error">{errorMessage}</p>}
         <div className="card-actions justify-end">
-          <button className="btn btn-primary" type="submit">
+          <button className="btn btn-primary" type="submit" disabled={clicked}>
             {t("buttonText")}
           </button>
         </div>

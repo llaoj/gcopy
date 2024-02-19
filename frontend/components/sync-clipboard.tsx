@@ -108,6 +108,11 @@ export default function SyncClipboard() {
       },
     });
 
+    if (response.status == 401) {
+      router.push(`/${locale}/user/email-code`);
+      return;
+    }
+
     if (response.status != 200) {
       const body = await response.json();
       addLog(body.message, Level.Error);
@@ -242,6 +247,11 @@ export default function SyncClipboard() {
       body: blob,
     });
 
+    if (response.status == 401) {
+      router.push(`/${locale}/user/email-code`);
+      return;
+    }
+
     if (response.status != 200) {
       const body = await response.json();
       addLog(body.message, Level.Error);
@@ -280,6 +290,12 @@ export default function SyncClipboard() {
       },
       body: file,
     });
+
+    if (response.status == 401) {
+      router.push(`/${locale}/user/email-code`);
+      return;
+    }
+
     if (response.status != 200) {
       const body = await response.json();
       addLog(body.message, Level.Error);
