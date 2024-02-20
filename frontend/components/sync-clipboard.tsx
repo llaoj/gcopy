@@ -173,7 +173,12 @@ export default function SyncClipboard() {
       // Although they are the same,
       // the blob read from the clipboard is different from
       // the blob just fetched from the server.
-      const realBlobId = await hashBlob(await clipboardRead());
+      let shadowBlob = await clipboardRead();
+      if (!shadowBlob) {
+        addLog(t("logs.emptyClipboard"));
+        return;
+      }
+      const realBlobId = await hashBlob(shadowBlob);
       window.history.replaceState(
         null,
         document.title,
@@ -209,6 +214,10 @@ export default function SyncClipboard() {
       return;
     }
     let blob = await clipboardRead();
+    if (!blob) {
+      addLog(t("logs.emptyClipboard"));
+      return;
+    }
     let xtype;
     switch (blob.type) {
       case "text/plain":
