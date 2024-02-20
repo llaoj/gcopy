@@ -10,6 +10,7 @@ export default function EmailCode({
 }: {
   searchParams: { email: string };
 }) {
+  const [clicked, setClicked] = useState<boolean>(false);
   const locale = useLocale();
   const t = useTranslations("EmailCode");
   const [errorMessage, setErrorMessage] = useState("");
@@ -18,25 +19,24 @@ export default function EmailCode({
 
   const createEmailCode = async (event: FormEvent) => {
     event.preventDefault();
+    setClicked(true);
     const formData = new FormData(event.currentTarget as HTMLFormElement);
     const email = formData.get("email") as string;
-
-    fetch("/api/user/email-code", {
+    const res = await fetch("/api/user/email-code", {
       headers: {
         accept: "application/json",
         "content-type": "application/json",
       },
       method: "POST",
       body: JSON.stringify({ email: email }),
-    }).then(async (res: Response) => {
-      if (res.status != 200) {
-        const body = await res.json();
-        setErrorMessage(body.message);
-      }
-      if (res.status == 200) {
-        router.push(`/${locale}/user/login?email=${email}`);
-      }
     });
+    if (res.status == 200) {
+      router.push(`/${locale}/user/login?email=${email}`);
+      return;
+    }
+    const body = await res.json();
+    setErrorMessage(body.message);
+    setClicked(false);
   };
 
   return (
@@ -64,7 +64,7 @@ export default function EmailCode({
         </div>
         {errorMessage && <p className="text-error">{errorMessage}</p>}
         <div className="card-actions justify-end">
-          <button type="submit" className="btn btn-primary">
+          <button type="submit" className="btn btn-primary" disabled={clicked}>
             {t("buttonText")}
           </button>
         </div>
