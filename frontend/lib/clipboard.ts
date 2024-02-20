@@ -34,10 +34,10 @@ export function clipboardWriteBlobPromise(blob: Blob) {
 }
 
 export async function clipboardRead() {
-  const clipboardItems = await navigator.clipboard.read();
-  const clipboardItem = clipboardItems[0];
-  const itemType = clipboardItem.types[0];
-  return clipboardItem.getType(itemType);
+  let items = await navigator.clipboard.read();
+  if (items && items[0]) {
+    return items[0].getType(items[0].types[0]);
+  }
 }
 
 export async function hashBlob(blob: Blob): Promise<string> {

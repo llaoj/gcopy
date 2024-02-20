@@ -70,7 +70,8 @@
       "uploading": "Uploading {object}",
       "uploaded": "Uploaded {type}({index}).",
       "received": "Received {type}({index}).",
-      "unsupportedFormat": "Unsupported format: {format}."
+      "unsupportedFormat": "Unsupported format: {format}.",
+      "emptyClipboard": "Clipboard is empty."
     }
   }
 }
