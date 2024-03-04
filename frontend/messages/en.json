@@ -23,6 +23,7 @@
     "placeholder": "Enter email",
     "tip": "Your privacy is important to GCopy!",
     "buttonText": "Next",
+    "cancel": "Cancel",
     "invalidEmail": "Invalid email.",
     "sendEmail": {
       "subject": "{code} is your verification code",
@@ -37,6 +38,7 @@
     "placeholder": "Enter code",
     "tip": "Your privacy is important to GCopy!",
     "buttonText": "Sign in",
+    "cancel": "Cancel",
     "invalidEmail": "Invalid email.",
     "incorrectCode": "Incorrect code. Please go back and retry.",
     "expiredCode": "The code was expired. Please go back and retry.",

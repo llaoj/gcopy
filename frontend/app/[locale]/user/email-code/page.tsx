@@ -39,6 +39,10 @@ export default function EmailCode({
     setClicked(false);
   };
 
+  const cancel = () => {
+    router.back();
+  };
+
   return (
     <form
       onSubmit={createEmailCode}
@@ -64,6 +68,9 @@ export default function EmailCode({
         </div>
         {errorMessage && <p className="text-error">{errorMessage}</p>}
         <div className="card-actions justify-end">
+          <button className="btn" type="button" onClick={cancel}>
+            {t("cancel")}
+          </button>
           <button type="submit" className="btn btn-primary" disabled={clicked}>
             {t("buttonText")}
           </button>
