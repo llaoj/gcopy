@@ -23,7 +23,6 @@
     "placeholder": "输入邮箱地址",
     "tip": "你的隐私安全对GCopy很重要!",
     "buttonText": "下一步",
-    "cancel": "取消",
     "invalidEmail": "无效的邮箱地址.",
     "sendEmail": {
       "subject": "{code}是您的验证码",
@@ -38,7 +37,6 @@
     "placeholder": "输入验证码",
     "tip": "你的隐私安全对GCopy很重要!",
     "buttonText": "登录",
-    "cancel": "取消",
     "invalidEmail": "无效的邮箱地址.",
     "incorrectCode": "验证码不正确, 请退回重试.",
     "expiredCode": "验证码过期, 请退回重试.",

@@ -43,10 +43,6 @@ export default function Login({
     setClicked(false);
   };
 
-  const cancel = () => {
-    router.back();
-  };
-
   return (
     <form
       onSubmit={validateEmailCode}
@@ -91,9 +87,6 @@ export default function Login({
         </div>
         {errorMessage && <p className="text-error">{errorMessage}</p>}
         <div className="card-actions justify-end">
-          <button className="btn" type="button" onClick={cancel}>
-            {t("cancel")}
-          </button>
           <button className="btn btn-primary" type="submit" disabled={clicked}>
             {t("buttonText")}
           </button>
