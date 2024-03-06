@@ -17,6 +17,7 @@
     "logout": "登出"
   },
   "EmailCode": {
+    "back": "返回",
     "title": "登录",
     "smallTitle": "以使用GCopy",
     "subTitle": "支持文字, 截图和文件的同步.",

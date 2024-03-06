@@ -46,7 +46,7 @@ export default function EmailCode({
     >
       <div className="card-body gap-4">
         <Image src="/gcopy.svg" width={50} height={50} alt="gcopy's logo" />
-        <div className="flex flex-col gap-0">
+        <div className="flex items-center">
           <a
             className="btn btn-ghost btn-circle btn-xs"
             onClick={() => router.back()}
@@ -66,6 +66,9 @@ export default function EmailCode({
               />
             </svg>
           </a>
+          <span className="ml-1">{t("back")}</span>
+        </div>
+        <div className="flex flex-col gap-0">
           <h2 className="card-title">{t("title")}</h2>
           <span className="text-xs">{t("smallTitle")}</span>
         </div>

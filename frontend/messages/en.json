@@ -17,6 +17,7 @@
     "logout": "Logout"
   },
   "EmailCode": {
+    "back": "Back",
     "title": "Sign in",
     "smallTitle": "to continue to GCopy",
     "subTitle": "Support for text, screenshots & file synchronization.",
