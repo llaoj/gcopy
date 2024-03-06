@@ -44,7 +44,7 @@ func (s *Clipboards) Housekeeping() func() {
 				cb := s.Get(key)
 				if time.Since(cb.CreatedAt) > 24*time.Hour {
 					delete(s.cbs, key)
-					s.log.Infof("[%s] Clipboard expired\n", utils.StrMaskMiddle(key))
+					s.log.Infof("[%s] Clipboard expired", utils.StrMaskMiddle(key))
 				}
 			}
 		}
