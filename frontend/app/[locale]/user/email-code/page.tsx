@@ -47,6 +47,25 @@ export default function EmailCode({
       <div className="card-body gap-4">
         <Image src="/gcopy.svg" width={50} height={50} alt="gcopy's logo" />
         <div className="flex flex-col gap-0">
+          <a
+            className="btn btn-ghost btn-circle btn-xs"
+            onClick={() => router.back()}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={1.5}
+              stroke="currentColor"
+              className="w-4 h-4"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"
+              />
+            </svg>
+          </a>
           <h2 className="card-title">{t("title")}</h2>
           <span className="text-xs">{t("smallTitle")}</span>
         </div>
