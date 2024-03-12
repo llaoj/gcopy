@@ -25,12 +25,7 @@
     "tip": "Your privacy is important to GCopy!",
     "buttonText": "Next",
     "invalidEmail": "Invalid email.",
-    "sendEmail": {
-      "subject": "{code} is your verification code",
-      "text": "Enter the verification code when prompted: {code}. Code will expire in 5 minutes. To protect your account, do not share this code.",
-      "failed": "Failed to send email. Please check and retry.",
-      "success": "Success"
-    }
+    "sendEmailFailed": "Failed to send email. Please check and retry."
   },
   "Login": {
     "title": "Enter code",
@@ -40,8 +35,7 @@
     "buttonText": "Sign in",
     "invalidEmail": "Invalid email.",
     "incorrectCode": "Incorrect code. Please go back and retry.",
-    "expiredCode": "The code was expired. Please go back and retry.",
-    "success": "Success"
+    "authenticationFailed": "Authentication failed. Please go back and retry."
   },
   "SyncClipboard": {
     "title": "Sync the clipboard",

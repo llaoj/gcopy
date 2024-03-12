@@ -22,7 +22,12 @@ export default function EmailCode({
     setClicked(true);
     const formData = new FormData(event.currentTarget as HTMLFormElement);
     const email = formData.get("email") as string;
-    const res = await fetch("/api/user/email-code", {
+    if (!/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i.test(email)) {
+      setErrorMessage(t("invalidEmail"));
+      setClicked(false);
+      return;
+    }
+    const res = await fetch("/api/v1/user/email-code", {
       headers: {
         accept: "application/json",
         "content-type": "application/json",
@@ -34,8 +39,7 @@ export default function EmailCode({
       router.push(`/${locale}/user/login?email=${email}`);
       return;
     }
-    const body = await res.json();
-    setErrorMessage(body.message);
+    setErrorMessage(t("sendEmailFailed"));
     setClicked(false);
   };
 

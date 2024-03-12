@@ -2,7 +2,7 @@
 
 import LogBox from "@/components/log-box";
 import FileLink from "@/components/file-link";
-import useSession from "@/lib/use-session";
+import useAuth from "@/lib/auth";
 import { Log, Level } from "@/lib/log";
 import { DragEvent, useRef, useState } from "react";
 import clsx from "clsx";
@@ -44,7 +44,7 @@ export default function SyncClipboard() {
 
   const inputRef = useRef<HTMLInputElement>(null);
   const locale = useLocale();
-  const { session, isLoading } = useSession();
+  const { isLoading, loggedIn } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -57,7 +57,7 @@ export default function SyncClipboard() {
   }
 
   const ensureLoggedIn = () => {
-    if (!session.isLoggedIn) {
+    if (!loggedIn) {
       router.push(`/${locale}/user/email-code`);
       return false;
     }

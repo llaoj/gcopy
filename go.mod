@@ -3,9 +3,11 @@ module github.com/llaoj/gcopy
 go 1.20
 
 require (
-	github.com/clerkinc/clerk-sdk-go v1.48.4
+	github.com/gin-contrib/cors v1.5.0
 	github.com/gin-gonic/gin v1.9.1
+	github.com/gorilla/sessions v1.2.2
 	github.com/sirupsen/logrus v1.9.3
+	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
 )
 
 require (
@@ -13,16 +15,16 @@ require (
 	github.com/chenzhuoyu/base64x v0.0.0-20230717121745-296ad89f973d // indirect
 	github.com/chenzhuoyu/iasm v0.9.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.2 // indirect
-	github.com/gin-contrib/cors v1.5.0 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
-	github.com/go-jose/go-jose/v3 v3.0.0 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/go-playground/validator/v10 v10.15.5 // indirect
 	github.com/goccy/go-json v0.10.2 // indirect
 	github.com/google/go-cmp v0.5.9 // indirect
+	github.com/gorilla/securecookie v1.1.2 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.5 // indirect
+	github.com/kr/text v0.2.0 // indirect
 	github.com/leodido/go-urn v1.2.4 // indirect
 	github.com/mattn/go-isatty v0.0.19 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
@@ -36,5 +38,6 @@ require (
 	golang.org/x/sys v0.13.0 // indirect
 	golang.org/x/text v0.13.0 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect
+	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
