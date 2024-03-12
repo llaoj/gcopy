@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/gorilla/sessions"
 	"github.com/llaoj/gcopy/internal/config"
 	"github.com/llaoj/gcopy/internal/gcopy"
 	"github.com/llaoj/gcopy/pkg/utils"
@@ -15,26 +16,29 @@ import (
 )
 
 type Server struct {
-	cbs *Clipboards
-	cfg *config.Config
-	log *logrus.Logger
+	clipboards   *Clipboards
+	config       *config.Config
+	log          *logrus.Logger
+	sessionStore sessions.Store
 }
 
 func NewServer(log *logrus.Logger) *Server {
+	cfg := config.Get()
 	s := &Server{
-		cbs: NewClipboards(log),
-		cfg: config.Get(),
-		log: log,
+		clipboards:   NewClipboards(log),
+		config:       cfg,
+		log:          log,
+		sessionStore: sessions.NewCookieStore([]byte(cfg.AppKey)),
 	}
 
 	return s
 }
 
 func (s *Server) Run() {
-	stop := s.cbs.Housekeeping()
+	stop := s.clipboards.Housekeeping()
 	defer stop()
 
-	if s.cfg.Debug {
+	if s.config.Debug {
 		gin.SetMode(gin.DebugMode)
 	} else {
 		gin.SetMode(gin.ReleaseMode)
@@ -57,16 +61,21 @@ func (s *Server) Run() {
 	v1.GET("/ping", func(c *gin.Context) { c.String(200, "pong") })
 	v1.GET("/systeminfo", s.getSystemInfoHandler)
 
-	v1.Use(s.verifyAuth)
+	v1.POST("/user/email-code", s.emailCodeHandler)
+	v1.POST("/user/login", s.loginHandler)
+	v1.GET("/user/logout", s.logoutHandler)
+	v1.GET("/user", s.getUserHandler)
+
+	v1.Use(s.verifyAuthMiddleware)
 	v1.GET("/clipboard", s.getClipboardHandler)
 	v1.POST("/clipboard", s.updateClipboardHandler)
 	s.log.Info("The server has started!")
-	if s.cfg.TLS {
-		if err := r.RunTLS(s.cfg.Listen, s.cfg.CertFile, s.cfg.KeyFile); err != nil {
+	if s.config.TLS {
+		if err := r.RunTLS(s.config.Listen, s.config.TLSCertFile, s.config.TLSKeyFile); err != nil {
 			s.log.Fatal(err)
 		}
 	} else {
-		if err := r.Run(s.cfg.Listen); err != nil {
+		if err := r.Run(s.config.Listen); err != nil {
 			s.log.Fatal(err)
 		}
 	}
@@ -83,7 +92,7 @@ func (s *Server) getClipboardHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "Subject type assert failed"})
 		return
 	}
-	cb := s.cbs.Get(sub)
+	cb := s.clipboards.Get(sub)
 	if cb == nil {
 		c.Header("X-Index", "0")
 		c.Status(http.StatusOK)
@@ -139,7 +148,7 @@ func (s *Server) updateClipboardHandler(c *gin.Context) {
 		return
 	}
 
-	cb := s.cbs.Get(sub)
+	cb := s.clipboards.Get(sub)
 	index := 0
 	if cb != nil {
 		index = cb.Index
@@ -152,7 +161,7 @@ func (s *Server) updateClipboardHandler(c *gin.Context) {
 		CreatedAt: time.Now(),
 	}
 	s.log.Infof("[%s] Received %s(%v)", utils.StrMaskMiddle(sub), cb.Type, cb.Index)
-	s.cbs.Set(sub, cb)
+	s.clipboards.Set(sub, cb)
 
 	c.Header("X-Index", strconv.Itoa(cb.Index))
 	c.JSON(http.StatusOK, gin.H{"message": "Success"})

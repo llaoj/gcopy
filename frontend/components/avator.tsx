@@ -1,6 +1,5 @@
 import { useState } from "react";
-import useSession from "@/lib/use-session";
-import { defaultUserInfo } from "@/lib/user";
+import useAuth from "@/lib/auth";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 
@@ -9,7 +8,7 @@ export default function Avator() {
   const t = useTranslations("Avator");
   const [clicked, setClicked] = useState(false);
   const router = useRouter();
-  const { session, logout, isLoading } = useSession();
+  const { isLoading, email, logout } = useAuth();
   if (isLoading) {
     return null;
   }
@@ -22,9 +21,7 @@ export default function Avator() {
         className="btn btn-ghost btn-circle avatar placeholder"
       >
         <div className="w-8 rounded-full bg-neutral text-neutral-content">
-          <span className="text-xs">
-            {session.email.substring(0, 2).toUpperCase()}
-          </span>
+          <span className="text-xs">{email.substring(0, 2).toUpperCase()}</span>
         </div>
       </div>
       <ul
@@ -33,17 +30,15 @@ export default function Avator() {
       >
         <li>
           <a className="text-neutral-content btn-disabled">
-            <span className="truncate">{session.email}</span>
+            <span className="truncate">{email}</span>
           </a>
         </li>
         <li>
           <button
             disabled={clicked}
-            onClick={() => {
+            onClick={async () => {
               setClicked(true);
-              logout(null, {
-                optimisticData: defaultUserInfo,
-              });
+              await logout();
               router.push(`/${locale}/user/email-code`);
             }}
           >

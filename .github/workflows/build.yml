@@ -11,21 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Variables
+      - name: Build gcopy & gcopy-frontend image
         run: |
-          echo "REGISTRY=registry.cn-beijing.aliyuncs.com" >> $GITHUB_ENV
-          echo "GIT_TAG=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
-
-      - name: Build server image
-        run: |
-          IMAGE=${{ env.REGISTRY }}/llaoj/gcopy-server:${{ env.GIT_TAG }}
-          docker build -t $IMAGE -f build/server/Dockerfile .
-          docker login -u ${{ secrets.REGISTRY_USERNAME }} -p ${{ secrets.REGISTRY_PASSWORD }} ${{ env.REGISTRY }}
-          docker push $IMAGE
-
-      - name: Build frontend image
-        run: |
-          IMAGE=${{ env.REGISTRY }}/llaoj/gcopy-frontend:${{ env.GIT_TAG }}
-          docker build -t $IMAGE -f build/frontend/Dockerfile .
-          docker login -u ${{ secrets.REGISTRY_USERNAME }} -p ${{ secrets.REGISTRY_PASSWORD }} ${{ env.REGISTRY }}
-          docker push $IMAGE
+          docker login -u ${{ secrets.REGISTRY_USERNAME }} -p ${{ secrets.REGISTRY_PASSWORD }} registry.cn-beijing.aliyuncs.com
+          make push-container

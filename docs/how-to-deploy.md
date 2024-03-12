@@ -10,12 +10,19 @@ You can refer to the Nginx configuration file: `deploy/nginx-example.conf`
 
 Using docker compose:
 
-1. Create docker-compose.yml file, refer: `deploy/docker-compose.yml`
+1. Create docker-compose.yml file, modify the params `<var-name>`, refer: `deploy/docker-compose.yml`. For the `<app-key>` param, use the following command:
+
+```sh
+sed -i "s#^<app-key>#$(openssl rand -base64 16)#" docker-compose.yml
+```
+
+
+
 2. Create configuration file of frontend, refer: `frontend/.env.sample`
 3. Start the containers:
 
 ```sh
-sed -i "s#^IRON_SESSION_PASSWORD=.*#IRON_SESSION_PASSWORD=$(openssl rand -base64 32)#" frontend/.env.production
+
 docker-compose up -d
 ```
 

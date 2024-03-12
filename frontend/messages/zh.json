@@ -25,12 +25,7 @@
     "tip": "你的隐私安全对GCopy很重要!",
     "buttonText": "下一步",
     "invalidEmail": "无效的邮箱地址.",
-    "sendEmail": {
-      "subject": "{code}是您的验证码",
-      "text": "请输入您的验证码: {code}. 该验证码有效期5分钟. 为保护您的账户, 请不要分享这个验证码.",
-      "failed": "发送邮件失败, 请检查并重试.",
-      "success": "成功"
-    }
+    "sendEmailFailed": "发送邮件失败, 请检查并重试."
   },
   "Login": {
     "title": "输入验证码",
@@ -40,8 +35,7 @@
     "buttonText": "登录",
     "invalidEmail": "无效的邮箱地址.",
     "incorrectCode": "验证码不正确, 请退回重试.",
-    "expiredCode": "验证码过期, 请退回重试.",
-    "success": "成功"
+    "authenticationFailed": "身份验证失败, 请退回重试."
   },
   "SyncClipboard": {
     "title": "同步剪切板",

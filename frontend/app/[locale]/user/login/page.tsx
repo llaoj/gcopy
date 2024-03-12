@@ -21,15 +21,27 @@ export default function Login({
     event.preventDefault();
     setClicked(true);
     const formData = new FormData(event.currentTarget as HTMLFormElement);
-    const res = await fetch("/api/user/login", {
+    const email = formData.get("email") as string;
+    const code = formData.get("code") as string;
+    if (!/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i.test(email)) {
+      setErrorMessage(t("invalidEmail"));
+      setClicked(false);
+      return;
+    }
+    if (!/\d{6}/i.test(code)) {
+      setErrorMessage(t("incorrectCode"));
+      setClicked(false);
+      return;
+    }
+    const res = await fetch("/api/v1/user/login", {
       headers: {
         accept: "application/json",
         "content-type": "application/json",
       },
       method: "POST",
       body: JSON.stringify({
-        email: formData.get("email") as string,
-        code: formData.get("code") as string,
+        email: email,
+        code: code,
       }),
     });
 
@@ -38,8 +50,7 @@ export default function Login({
       return;
     }
 
-    const body = await res.json();
-    setErrorMessage(body.message);
+    setErrorMessage(t("authenticationFailed"));
     setClicked(false);
   };
 
