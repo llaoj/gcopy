@@ -3,6 +3,8 @@ package config
 import (
 	"flag"
 	"log"
+
+	"github.com/llaoj/gcopy/pkg/version"
 )
 
 func Get() *Config {
@@ -10,6 +12,7 @@ func Get() *Config {
 		return cfg
 	}
 
+	flagVersion := flag.Bool("version", false, "Print version")
 	debug := flag.Bool("debug", false, "Enable debug mode")
 	appKey := flag.String("app-key", "", "Encryption Key")
 	listen := flag.String("listen", ":3376", "The server will listen this ip and port, format: [ip]:port")
@@ -26,6 +29,10 @@ func Get() *Config {
 
 	flag.Parse()
 
+	if *flagVersion {
+		version.PrintVersion()
+		return nil
+	}
 	if *appKey == "" {
 		log.Fatal("app-key cannot be empty")
 	}

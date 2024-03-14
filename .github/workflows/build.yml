@@ -16,10 +16,10 @@ jobs:
           echo "REGISTRY=registry.cn-beijing.aliyuncs.com" >> $GITHUB_ENV
           echo "GIT_TAG=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
 
-      - name: Build server image
+      - name: Build gcopy image
         run: |
-          IMAGE=${{ env.REGISTRY }}/llaoj/gcopy-server:${{ env.GIT_TAG }}
-          docker build -t $IMAGE -f build/server/Dockerfile .
+          IMAGE=${{ env.REGISTRY }}/llaoj/gcopy:${{ env.GIT_TAG }}
+          docker build -t $IMAGE -f build/gcopy/Dockerfile .
           docker login -u ${{ secrets.REGISTRY_USERNAME }} -p ${{ secrets.REGISTRY_PASSWORD }} ${{ env.REGISTRY }}
           docker push $IMAGE
 

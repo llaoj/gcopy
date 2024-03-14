@@ -10,6 +10,11 @@ import (
 )
 
 func main() {
+	cfg := config.Get()
+	if cfg == nil {
+		return
+	}
+
 	fmt.Println(`
   __ _  ___ ___  _ __  _   _ 
  / _  |/ __/ _ \| '_ \| | | |
@@ -19,7 +24,6 @@ func main() {
  |___/          |_|    |___/ `)
 	fmt.Println()
 
-	cfg := config.Get()
 	log := logrus.New()
 	log.SetOutput(os.Stdout)
 	if cfg.Debug {
