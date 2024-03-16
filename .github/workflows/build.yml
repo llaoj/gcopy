@@ -2,8 +2,6 @@ name: build
 
 on:
   push:
-    branches:
-      - main
     tags:
       - "v[0-9].[0-9]+.[0-9]+"
 
@@ -15,5 +13,5 @@ jobs:
 
       - name: Build gcopy & gcopy-frontend image
         run: |
-          docker login -u ${{ secrets.REGISTRY_USERNAME }} -p ${{ secrets.REGISTRY_PASSWORD }} ${{ env.REGISTRY }}
+          docker login -u ${{ secrets.REGISTRY_USERNAME }} -p ${{ secrets.REGISTRY_PASSWORD }} registry.cn-beijing.aliyuncs.com
           make push-container
