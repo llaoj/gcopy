@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"strconv"
@@ -127,6 +128,16 @@ func (s *Server) updateClipboardHandler(c *gin.Context) {
 		return
 	}
 
+	contentLength, err := strconv.Atoi(c.Request.Header.Get("Content-Length"))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+		return
+	}
+	if contentLength > s.config.MaxContentLength*1024*1024 {
+		c.JSON(http.StatusRequestEntityTooLarge, gin.H{"message": fmt.Sprintf("The max synchronized content length cannot exceed %vMib", s.config.MaxContentLength)})
+		return
+	}
+
 	data, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		s.log.Error(err)
@@ -141,10 +152,6 @@ func (s *Server) updateClipboardHandler(c *gin.Context) {
 	xFileName := c.Request.Header.Get("X-FileName")
 	if xType == "" || (xType == gcopy.TypeFile && xFileName == "") {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "Request header invalid"})
-		return
-	}
-	if xType == gcopy.TypeFile && len(data) > 10*1024*1024 {
-		c.JSON(http.StatusRequestEntityTooLarge, gin.H{"message": "The file cannot exceed 10mb"})
 		return
 	}
 

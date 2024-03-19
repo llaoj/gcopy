@@ -284,10 +284,6 @@ export default function SyncClipboard() {
 
   const uploadFileHandler = async (file: File) => {
     resetLog();
-    if (file.size > 10 * 1024 * 1024) {
-      addLog(t("logs.fileTooLarge"), Level.Error);
-      return;
-    }
 
     addLog(t("logs.uploading", { object: file.name }));
     const response = await fetch("/api/v1/clipboard", {
