@@ -62,7 +62,7 @@ output/darwin_amd64/bin/%:
 		./cmd
 	touch $@
 
-push-container: clean version
+push-container: clean
 	docker buildx create --platform $(DOCKER_PLATFORMS) --use
 	docker buildx build --push --platform $(DOCKER_PLATFORMS) -t $(GCOPY_IMAGE) -f build/gcopy/Dockerfile .
 	docker buildx build --push --platform $(DOCKER_PLATFORMS) -t $(GCOPY_FRONTEND_IMAGE) -f build/frontend/Dockerfile .
