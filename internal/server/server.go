@@ -134,7 +134,7 @@ func (s *Server) updateClipboardHandler(c *gin.Context) {
 		return
 	}
 	if contentLength > s.config.MaxContentLength*1024*1024 {
-		c.JSON(http.StatusRequestEntityTooLarge, gin.H{"message": fmt.Sprintf("The max synchronized content length cannot exceed %vMib", s.config.MaxContentLength)})
+		c.JSON(http.StatusRequestEntityTooLarge, gin.H{"message": fmt.Sprintf("The synchronized content length cannot exceed %vMiB", s.config.MaxContentLength)})
 		return
 	}
 
