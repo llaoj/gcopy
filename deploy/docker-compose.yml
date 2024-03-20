@@ -4,6 +4,8 @@ services:
     container_name: gcopy
     image: registry.cn-beijing.aliyuncs.com/llaoj/gcopy:v1.1.5
     restart: always
+    ports:
+    - "3376:3376"
     command: ["--app-key=<app-key>", "--smtp-host=<smtp-host>", "--smtp-username=<smtp-username>", "--smtp-password=<smtp-password>", "--smtp-ssl"]
 
   gcopy-frontend:
