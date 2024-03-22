@@ -35,7 +35,30 @@ export function clipboardWriteBlobPromise(blob: Blob) {
 
 export async function clipboardRead() {
   let items = await navigator.clipboard.read();
-  if (items && items[0]) {
+  let imagePngIndex = null;
+  let textPlainIndex = null;
+  let textHtmlIndex = null;
+  if (items) {
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].types.includes("image/png")) {
+        imagePngIndex = i;
+      }
+      if (items[i].types.includes("text/plain")) {
+        textPlainIndex = i;
+      }
+      if (items[i].types.includes("text/html")) {
+        textHtmlIndex = i;
+      }
+    }
+    if (imagePngIndex != null) {
+      return items[imagePngIndex].getType("image/png");
+    }
+    if (textPlainIndex != null) {
+      return items[textPlainIndex].getType("text/plain");
+    }
+    if (textHtmlIndex != null) {
+      return items[textHtmlIndex].getType("text/html");
+    }
     return items[0].getType(items[0].types[0]);
   }
 }
@@ -51,15 +74,10 @@ export async function hashBlob(blob: Blob): Promise<string> {
 }
 
 export function toTextBlob(blob: Blob) {
-  let type = blob.type;
-  if (type == "text/html" || type == "text/uri-list") {
-    return blob.text().then((text) => {
-      type = "text/plain";
-      return new Blob([text], { type });
-    });
-  }
-  if (type == "text/plain") {
+  if (blob.type == "text/plain") {
     return blob;
   }
-  return new Blob([""], { type: "text/plain" });
+  return blob.text().then((text) => {
+    return new Blob([text], { type: "text/plain" });
+  });
 }
