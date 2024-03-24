@@ -388,7 +388,7 @@ export default function SyncClipboard() {
 
         <div
           className={clsx(
-            "preview h-40 border rounded-box flex flex-col items-center justify-center gap-y-1 px-4",
+            "preview min-h-52 border rounded-box flex flex-col items-center justify-center gap-y-1 px-4",
             { "border-primary text-primary": dragging },
             { "border-base-300": !dragging },
           )}
