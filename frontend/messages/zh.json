@@ -10,7 +10,8 @@
   "Notice": {
     "title": "注意",
     "shareClipboard": "当浏览器询问是否允许<strong>查看复制到剪切板的文字和图片</strong>时, 点击 <strong>允许</strong>.",
-    "useChrome": "我们推荐使用谷歌Chrome浏览器",
+    "supportedBrowsers": "支持的浏览器/操作系统",
+    "etc": "等等.",
     "protectPrivacy": "GCopy保护您的隐私, 它仅在内存中临时存储最新剪切板数据. GCopy并不持久化存储您的数据."
   },
   "Avator": {

@@ -10,7 +10,8 @@
   "Notice": {
     "title": "Notice",
     "shareClipboard": "Click <strong>Allow</strong> when the browser asks you if it can <strong>See text and images copied to the clipboard</strong>.",
-    "useChrome": "We recommend using Google Chrome",
+    "supportedBrowsers": "Supported browsers/operating systems",
+    "etc": "etc.",
     "protectPrivacy": "GCopy protects your privacy data by temporarily storing your latest clipboard data in memory only. GCopy does not persist your clipboard data."
   },
   "Avator": {

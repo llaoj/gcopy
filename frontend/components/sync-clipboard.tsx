@@ -68,6 +68,10 @@ export default function SyncClipboard() {
     setLogs([]);
   };
 
+  const sleep = function (ms: number) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  };
+
   const addLog = (message: string, level?: Level) => {
     setLogs((current) => [
       ...current,
@@ -173,6 +177,7 @@ export default function SyncClipboard() {
       // Although they are the same,
       // the blob read from the clipboard is different from
       // the blob just fetched from the server.
+      await sleep(100);
       let shadowBlob = await clipboardRead();
       if (!shadowBlob) {
         addLog(t("logs.emptyClipboard"));
@@ -381,11 +386,10 @@ export default function SyncClipboard() {
       </div>
 
       <div className="pb-4">
-        <Title
-          title={t("syncFile.title")}
-          subTitle={t("syncFile.subTitle")}
-        ></Title>
-
+        <div className="pb-2 text-sm opacity-70">
+          <strong>{t("syncFile.title") + ": "}</strong>
+          {t("syncFile.subTitle")}
+        </div>
         <div
           className={clsx(
             "preview min-h-52 border rounded-box flex flex-col items-center justify-center gap-y-1 px-4",
