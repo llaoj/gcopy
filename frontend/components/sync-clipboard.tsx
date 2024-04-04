@@ -21,7 +21,7 @@ import {
   clipboardRead,
 } from "@/lib/clipboard";
 // Chrome | Safari | Mobile Safari
-import { browserName } from "react-device-detect";
+import { browserName, isMobile } from "react-device-detect";
 import SyncButton from "@/components/sync-button";
 
 // route: /locale?ci=123&cbi=abc
@@ -174,10 +174,17 @@ export default function SyncClipboard() {
       }
 
       await clipboardWriteBlob(blob);
+      // After writing, you need to wait for a while before you can read it.
+      // Fix: Error(
+      //   NotFoundError: Failed to execute 'getType' on 'ClipboardItem': The type was not found
+      // ) on Edge for HarmonyOS
+      // Cannot get the HarmonyOS info, so only use the browserName for now.
+      if (isMobile && browserName == "Edge") {
+        await sleep(500);
+      }
       // Although they are the same,
       // the blob read from the clipboard is different from
       // the blob just fetched from the server.
-      await sleep(100);
       let shadowBlob = await clipboardRead();
       if (!shadowBlob) {
         addLog(t("logs.emptyClipboard"));

@@ -45,9 +45,11 @@ The tested browsers and its versions are listed below:
 
 |Browser|Version||
 |-|-|-|
-|Chrome|Version 121.0.6167.85 (Official Build) (x86_64)|✅ Tested|
+|Chrome for Windows|Version 123.0.6312.86 (Official Build) (x86_64)|✅ Tested|
+|Chrome for macOS|Version 121.0.6167.85 (Official Build) (x86_64)|✅ Tested|
 |Safari|Version 15.6.1 (17613.3.9.1.16)|✅ Tested|
-|Safari on iOS|Version 16.1|✅ Tested|
+|Safari for iOS|Version 16.1|✅ Tested|
+|Edge for HarmonyOS 3.0|Edge 122.0.2365.99|✅ Tested|
 
 ## Limitations
 
