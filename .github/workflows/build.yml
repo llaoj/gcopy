@@ -25,6 +25,7 @@ jobs:
       release_tag: ${{ steps.release_tag.outputs.release_tag }}
 
   build:
+    needs: tag
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
