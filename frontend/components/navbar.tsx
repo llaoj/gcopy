@@ -4,6 +4,7 @@ import Avator from "@/components/avator";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import useAuth from "@/lib/auth";
+import pack from "@/package.json";
 
 export default function Navbar() {
   const locale = useLocale();
@@ -41,8 +42,12 @@ export default function Navbar() {
               <Link
                 href={
                   locale == "zh"
-                    ? "https://github.com/llaoj/gcopy/blob/v1.0.0/docs/zh-CN/README.md"
-                    : "https://github.com/llaoj/gcopy/blob/v1.0.0/README.md"
+                    ? "https://github.com/llaoj/gcopy/blob/v" +
+                      pack.version +
+                      "/docs/zh-CN/README.md"
+                    : "https://github.com/llaoj/gcopy/blob/v" +
+                      pack.version +
+                      "/README.md"
                 }
                 target="_blank"
               >
