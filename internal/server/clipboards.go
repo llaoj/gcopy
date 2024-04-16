@@ -42,8 +42,8 @@ func (c *Clipboards) Housekeeping() func() {
 	go func() {
 		for range ticker.C {
 			c.cbs.Range(func(key, value any) bool {
-				cp := value.(*gcopy.Clipboard)
-				if time.Since(cp.CreatedAt) > 24*time.Hour {
+				cb := value.(*gcopy.Clipboard)
+				if time.Since(cb.CreatedAt) > 24*time.Hour {
 					c.cbs.Delete(key)
 					c.log.Infof("[%s] Clipboard expired", utils.StrMaskMiddle(key.(string)))
 				}
