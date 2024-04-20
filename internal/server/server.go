@@ -17,7 +17,7 @@ import (
 )
 
 type Server struct {
-	clipboards   *Clipboards
+	wall         *Wall
 	config       *config.Config
 	log          *logrus.Logger
 	sessionStore sessions.Store
@@ -26,7 +26,7 @@ type Server struct {
 func NewServer(log *logrus.Logger) *Server {
 	cfg := config.Get()
 	s := &Server{
-		clipboards:   NewClipboards(log),
+		wall:         NewWall(log),
 		config:       cfg,
 		log:          log,
 		sessionStore: sessions.NewCookieStore([]byte(cfg.AppKey)),
@@ -36,7 +36,7 @@ func NewServer(log *logrus.Logger) *Server {
 }
 
 func (s *Server) Run() {
-	stop := s.clipboards.Housekeeping()
+	stop := s.wall.Housekeeping()
 	defer stop()
 
 	if s.config.Debug {
@@ -93,7 +93,7 @@ func (s *Server) getClipboardHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "Subject type assert failed"})
 		return
 	}
-	cb := s.clipboards.Get(sub)
+	cb := s.wall.Get(sub)
 	if cb == nil {
 		c.Header("X-Index", "0")
 		c.Status(http.StatusOK)
@@ -155,7 +155,7 @@ func (s *Server) updateClipboardHandler(c *gin.Context) {
 		return
 	}
 
-	cb := s.clipboards.Get(sub)
+	cb := s.wall.Get(sub)
 	index := 0
 	if cb != nil {
 		index = cb.Index
@@ -168,7 +168,7 @@ func (s *Server) updateClipboardHandler(c *gin.Context) {
 		CreatedAt: time.Now(),
 	}
 	s.log.Infof("[%s] Received %s(%v)", utils.StrMaskMiddle(sub), cb.Type, cb.Index)
-	s.clipboards.Set(sub, cb)
+	s.wall.Set(sub, cb)
 
 	c.Header("X-Index", strconv.Itoa(cb.Index))
 	c.JSON(http.StatusOK, gin.H{"message": "Success"})
