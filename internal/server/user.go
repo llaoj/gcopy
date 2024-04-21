@@ -133,6 +133,10 @@ func (s *Server) getUserHandler(c *gin.Context) {
 	}
 
 	if session.Values["loggedIn"] == true && session.Values["email"] != "" {
+		if err = session.Save(c.Request, c.Writer); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+			return
+		}
 		c.JSON(http.StatusOK, gin.H{
 			"email":    session.Values["email"],
 			"loggedIn": session.Values["loggedIn"],
