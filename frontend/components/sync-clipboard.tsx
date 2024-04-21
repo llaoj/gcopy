@@ -21,7 +21,7 @@ import {
   clipboardRead,
 } from "@/lib/clipboard";
 // Chrome | Safari | Mobile Safari
-import { browserName, isMobile } from "react-device-detect";
+import { browserName, isAndroid } from "react-device-detect";
 import SyncButton from "@/components/sync-button";
 
 // route: /locale?ci=123&cbi=abc
@@ -80,29 +80,6 @@ export default function SyncClipboard() {
   };
 
   const pullClipboard = async () => {
-    if (status == "interrupted-w") {
-      await clipboardWriteBlobPromise(tmpClipboard.blob);
-      // This blobId is hashed by the fetched blob
-      // which is different from the blob read from clipboard.
-      // So this will upload the blob back to the server once.
-      window.history.replaceState(
-        null,
-        document.title,
-        `${pathname}?ci=${tmpClipboard.index}&cbi=${tmpClipboard.blobId}`,
-      );
-      addLog(t("logs.writeSuccess"), Level.Success);
-
-      setTmpClipboard(initTmpClipboard);
-      setStatus("finished");
-      return;
-    }
-
-    if (status == "interrupted-r") {
-      await pushClipboard();
-      setStatus("finished");
-      return;
-    }
-
     resetLog();
     addLog(t("logs.fetching"));
     const searchParams = new URLSearchParams(window.location.search);
@@ -174,30 +151,32 @@ export default function SyncClipboard() {
       }
 
       await clipboardWriteBlob(blob);
-      // After writing, you need to wait for a while before you can read it.
-      // Fix: Error(
-      //   NotFoundError: Failed to execute 'getType' on 'ClipboardItem': The type was not found
-      // ) on Edge for HarmonyOS
-      // Cannot get the HarmonyOS info, so only use the browserName for now.
-      if (isMobile && browserName == "Edge") {
-        await sleep(500);
+      searchParams.set("ci", xindex);
+      addLog(t("logs.writeSuccess"), Level.Success);
+
+      // Cannot read the clipboard after writing immediately on Chrome for Android, Edge for Android, Edge for HarmonyOS.
+      // So, after writing, you need to wait for a while before you can read it.
+      // Fix: NotFoundError: Failed to execute 'getType' on 'ClipboardItem': The type was not found
+      // isAndroid=true on HarmonyOS 3.0/4.0
+      if (isAndroid && ["Chrome", "Edge"].includes(browserName)) {
+        // Known bug:
+        //  Even though we waited for a while, we still might not be able to get it.
+        await sleep(1000);
       }
       // Although they are the same,
       // the blob read from the clipboard is different from
       // the blob just fetched from the server.
-      let shadowBlob = await clipboardRead();
-      if (!shadowBlob) {
-        addLog(t("logs.emptyClipboard"));
-        return;
+      const shadowBlob = await clipboardRead();
+      if (shadowBlob) {
+        const realBlobId = await hashBlob(shadowBlob);
+        searchParams.set("cbi", realBlobId);
       }
-      const realBlobId = await hashBlob(shadowBlob);
+
       window.history.replaceState(
         null,
         document.title,
-        `${pathname}?ci=${xindex}&cbi=${realBlobId}`,
+        "?" + searchParams.toString(),
       );
-      addLog(t("logs.writeSuccess"), Level.Success);
-
       return;
     }
 
@@ -213,11 +192,13 @@ export default function SyncClipboard() {
       });
       // The file did not enter the clipboard,
       // so only update the index.
+      searchParams.set("ci", xindex);
       window.history.replaceState(
         null,
         document.title,
-        `${pathname}?ci=${xindex}&cbi=${searchParams.get("cbi") ?? ""}`,
+        "?" + searchParams.toString(),
       );
+      return;
     }
   };
 
@@ -363,7 +344,33 @@ export default function SyncClipboard() {
         }
       }
 
+      // Safari requires that every call to the clipboard API must be triggered by the user.
+      // So we have to interrupt before the next call to the clipboard API.
+      if (status == "interrupted-w") {
+        await clipboardWriteBlobPromise(tmpClipboard.blob);
+        // Known bug:
+        //   This blobId is hashed by the fetched blob
+        //   which is different from the blob read from clipboard.
+        //   So this will upload the blob back to the server once.
+        window.history.replaceState(
+          null,
+          document.title,
+          `${pathname}?ci=${tmpClipboard.index}&cbi=${tmpClipboard.blobId}`,
+        );
+        addLog(t("logs.writeSuccess"), Level.Success);
+
+        setTmpClipboard(initTmpClipboard);
+        setStatus("finished");
+        return;
+      }
+      if (status == "interrupted-r") {
+        await pushClipboard();
+        setStatus("finished");
+        return;
+      }
+
       await pullClipboard();
+
       setStatus((current) =>
         current.startsWith("interrupted") ? current : "finished",
       );
