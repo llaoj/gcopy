@@ -55,6 +55,8 @@ GCopy依赖浏览器的Clipboard API. 它的浏览器兼容性请参考: [browse
 |Safari|Version 15.6.1 (17613.3.9.1.16)|✅ Tested|
 |Safari for iOS|Version 16.1|✅ Tested|
 |Edge for HarmonyOS 3.0/4.0|Edge 122.0.2365.99|✅ Tested|
+|Chrome for Android|107.0.5304.105|✅ Tested|
+|Edge for Android|Edge 108.0.1462.48|✅ Tested|
 
 ## 不足之处
 
