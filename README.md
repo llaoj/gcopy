@@ -80,3 +80,7 @@ Server link: https://discord.gg/pyTrT3aAaC
 Safari on iOS
 
 <img width="300" alt="screenshot on ios safari" src="docs/screenshot-ios-safari.png">
+
+## More
+
+- [How to deploy](/docs/how-to-deploy.md)

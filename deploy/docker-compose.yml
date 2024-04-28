@@ -6,7 +6,7 @@ services:
     restart: always
     ports:
     - "3376:3376"
-    command: ["--app-key=<app-key>", "--smtp-host=<smtp-host>", "--smtp-username=<smtp-username>", "--smtp-password=<smtp-password>", "--smtp-ssl"]
+    command: ["--app-key=<app-key>", "--smtp-host=<smtp-host>", "--smtp-port=<smtp-port>", "--smtp-username=<smtp-username>", "--smtp-password=<smtp-password>", "--smtp-ssl"]
 
   gcopy-frontend:
     container_name: gcopy-frontend
