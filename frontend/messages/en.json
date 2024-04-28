@@ -65,7 +65,7 @@
       "unchanged": "Clipboard unchanged.",
       "uploading": "Uploading {object}",
       "uploaded": "Uploaded {type}({index}).",
-      "received": "Received {type}({index}).",
+      "received": "Received {type}({index}) from {clientname}.",
       "unsupportedFormat": "Unsupported format: {format}.",
       "emptyClipboard": "Clipboard is empty."
     }

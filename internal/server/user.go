@@ -34,29 +34,27 @@ func (s *Server) emailCodeHandler(c *gin.Context) {
 	}
 	ua := useragent.Parse(c.Request.Header.Get("User-Agent"))
 	language := c.Request.Header.Get("Accept-Language")
-	var subject, body string
+	var subject, body, clientName string
 	if strings.HasPrefix(language, "zh-CN") {
 		subject = fmt.Sprintf("%s是您的验证码", code)
-		clientInfo := ""
 		if ua.OS != "" {
-			clientInfo += "该请求由 " + ua.OS
+			clientName = "该请求由 " + ua.OS
 			if ua.Name != "" {
-				clientInfo += fmt.Sprintf(" %s", ua.Name)
+				clientName += fmt.Sprintf(" %s", ua.Name)
 			}
-			clientInfo += " 发送.<br>"
+			clientName += " 发送.<br>"
 		}
-		body = fmt.Sprintf("请输入您的验证码: %s. 该验证码有效期5分钟.<br>%s为保护您的账户, 请不要分享这个验证码.", code, clientInfo)
+		body = fmt.Sprintf("请输入您的验证码: %s. 该验证码有效期5分钟.<br>%s为保护您的账户, 请不要分享这个验证码.", code, clientName)
 	} else {
 		subject = fmt.Sprintf("%s is your verification code", code)
-		clientInfo := ""
 		if ua.OS != "" {
-			clientInfo += "Requested from " + ua.OS
+			clientName = "Requested from " + ua.OS
 			if ua.Name != "" {
-				clientInfo += fmt.Sprintf(" %s", ua.Name)
+				clientName += fmt.Sprintf(" %s", ua.Name)
 			}
-			clientInfo += ".<br>"
+			clientName += ".<br>"
 		}
-		body = fmt.Sprintf("Enter the verification code when prompted: %s. Code will expire in 5 minutes.<br>%sTo protect your account, do not share this code.", code, clientInfo)
+		body = fmt.Sprintf("Enter the verification code when prompted: %s. Code will expire in 5 minutes.<br>%sTo protect your account, do not share this code.", code, clientName)
 	}
 	message := gomail.NewMessage()
 	message.SetHeader("From", message.FormatAddress(s.config.SMTPSender, "GCopy"))

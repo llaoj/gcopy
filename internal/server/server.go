@@ -13,6 +13,7 @@ import (
 	"github.com/llaoj/gcopy/internal/config"
 	"github.com/llaoj/gcopy/internal/gcopy"
 	"github.com/llaoj/gcopy/pkg/utils"
+	"github.com/mileusna/useragent"
 	"github.com/sirupsen/logrus"
 )
 
@@ -110,6 +111,7 @@ func (s *Server) getClipboardHandler(c *gin.Context) {
 	c.Header("X-Index", strconv.Itoa(cb.Index))
 	c.Header("X-Type", cb.Type)
 	c.Header("X-FileName", cb.FileName)
+	c.Header("X-ClientName", cb.ClientName)
 	if _, err := c.Writer.Write(cb.Data); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "Write data failed"})
 		s.log.Error(err)
@@ -160,12 +162,23 @@ func (s *Server) updateClipboardHandler(c *gin.Context) {
 	if cb != nil {
 		index = cb.Index
 	}
+
+	var clientName string
+	ua := useragent.Parse(c.Request.Header.Get("User-Agent"))
+	if ua.OS != "" {
+		clientName = ua.OS
+		if ua.Name != "" {
+			clientName += fmt.Sprintf(" %s", ua.Name)
+		}
+	}
+
 	cb = &gcopy.Clipboard{
-		Index:     index + 1,
-		Type:      xType,
-		FileName:  xFileName,
-		Data:      data,
-		CreatedAt: time.Now(),
+		Index:      index + 1,
+		Type:       xType,
+		FileName:   xFileName,
+		Data:       data,
+		CreatedAt:  time.Now(),
+		ClientName: clientName,
 	}
 	s.log.Infof("[%s] Received %s(%v)", utils.StrMaskMiddle(sub), cb.Type, cb.Index)
 	s.wall.Set(sub, cb)

@@ -64,8 +64,8 @@
       "clickPaste": "如果页面出现\"粘贴\", 点击它以允许读取剪切板.",
       "unchanged": "剪切板没有改变.",
       "uploading": "正在上传 {object}",
-      "uploaded": "已经上传 {type}({index}).",
-      "received": "已经接收 {type}({index}).",
+      "uploaded": "已上传 {type}({index}).",
+      "received": "已接收 {type}({index}) 来自 {clientname}.",
       "unsupportedFormat": "不支持的格式: {format}.",
       "emptyClipboard": "剪切板是空的."
     }

@@ -13,4 +13,6 @@ type Clipboard struct {
 	Data []byte
 	// Create time of the data
 	CreatedAt time.Time
+	// The client where the clipboard data from, format: <os-name> <browser-name>
+	ClientName string
 }
