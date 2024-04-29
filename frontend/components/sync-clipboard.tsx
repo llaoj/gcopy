@@ -125,7 +125,7 @@ export default function SyncClipboard() {
       t("logs.received", {
         type: t(xtype),
         index: xindex,
-        clientname: xclientname ?? "unknown",
+        clientname: xclientname ?? "UNKNOWN",
       }),
     );
 
