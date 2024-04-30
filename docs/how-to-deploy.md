@@ -16,7 +16,7 @@ Using docker compose:
 $ /gcopy --help
 Usage of /gcopy:
   -app-key string
-    	Encryption Key
+    	Secret used to encrypt and decrypt data, recommend using random strings over 8 characters.
   -debug
     	Enable debug mode
   -listen string
