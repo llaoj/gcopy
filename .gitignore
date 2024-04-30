@@ -2,3 +2,4 @@
 dist/
 frontend/.env
 output/
+bin/

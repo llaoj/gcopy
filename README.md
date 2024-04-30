@@ -57,7 +57,7 @@ The tested browsers and its versions are listed below:
 
 - Due to browser limitations, reading and setting files directly in the clipboard are not supported. Therefore, file synchronization is achieved through uploading and downloading, ensuring a smooth user experience.
 - At any given time, only one file can be synchronized.
-- Due to limited server memory, the size of the files you synchronize must not exceed 10 MB.
+- Due to limited server memory, the size of the files you synchronize must not exceed `--max-content-length` MB.
 
 ## Community
 

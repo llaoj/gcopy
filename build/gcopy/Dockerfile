@@ -3,13 +3,13 @@ FROM golang
 WORKDIR /app
 COPY . .
 
-RUN make output/linux_amd64/bin/gcopy
+RUN GOARCH=${TARGETARCH} make bin/gcopy
 
-From alpine
-LABEL maintainer="Llaoj <hmmmbiubiubiu@gmail.com>"
+FROM --platform=${TARGETPLATFORM} alpine
+LABEL maintainer="llaoj <hmmmbiubiubiu@gmail.com>"
 
 WORKDIR /
-COPY --from=0 /app/output/linux_amd64/bin/gcopy .
+COPY --from=0 /app/bin/gcopy .
 
 EXPOSE 3376
 
