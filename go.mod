@@ -6,6 +6,7 @@ require (
 	github.com/gin-contrib/cors v1.5.0
 	github.com/gin-gonic/gin v1.9.1
 	github.com/gorilla/sessions v1.2.2
+	github.com/mileusna/useragent v1.3.4
 	github.com/sirupsen/logrus v1.9.3
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
 )

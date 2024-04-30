@@ -62,7 +62,7 @@ GCopy依赖浏览器的Clipboard API. 它的浏览器兼容性请参考: [browse
 
 - 由于浏览器不支持在剪切板中读取和设置文件. 所以文件只能通过上传和下载的方式实现. 不过体验同样很丝滑.
 - 同时只能同步一个文件.
-- 因为服务器内存有限, 您同步的文件不能超过10mb.
+- 因为服务器内存有限, 您同步的文件不能超过`--max-content-length`MB.
 
 ## 社区
 
@@ -84,3 +84,7 @@ GCopy依赖浏览器的Clipboard API. 它的浏览器兼容性请参考: [browse
 Safari on iOS
 
 <img width="300" alt="screenshot on ios safari" src="../screenshot-ios-safari.png">
+
+## 更多
+
+- [如何部署](/docs/how-to-deploy.md)

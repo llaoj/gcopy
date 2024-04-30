@@ -14,7 +14,8 @@ COPY frontend/. .
 COPY frontend/.env.sample .env.production
 RUN npm run build
 
-FROM base AS runner
+FROM --platform=${TARGETPLATFORM} base AS runner
+LABEL maintainer="llaoj <hmmmbiubiubiu@gmail.com>"
 WORKDIR /app
 ENV NODE_ENV=production
 RUN addgroup -g 1001 -S nodejs

@@ -120,7 +120,14 @@ export default function SyncClipboard() {
       await pushClipboard();
       return;
     }
-    addLog(t("logs.received", { type: t(xtype), index: xindex }));
+    const xclientname = response.headers.get("x-clientname");
+    addLog(
+      t("logs.received", {
+        type: t(xtype),
+        index: xindex,
+        clientname: xclientname ?? "UNKNOWN",
+      }),
+    );
 
     if (xtype == "file") {
       addLog(t("logs.autoDownload"), Level.Success);

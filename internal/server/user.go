@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/mileusna/useragent"
 	"gopkg.in/gomail.v2"
 )
 
@@ -31,14 +32,29 @@ func (s *Server) emailCodeHandler(c *gin.Context) {
 	for i := 0; i < 6; i++ {
 		code += strconv.Itoa(r.Intn(10))
 	}
+	ua := useragent.Parse(c.Request.Header.Get("User-Agent"))
 	language := c.Request.Header.Get("Accept-Language")
 	var subject, body string
 	if strings.HasPrefix(language, "zh-CN") {
 		subject = fmt.Sprintf("%s是您的验证码", code)
 		body = fmt.Sprintf("请输入您的验证码: %s. 该验证码有效期5分钟. 为保护您的账户, 请不要分享这个验证码.", code)
+		if ua.OS != "" {
+			body += "<br>请求自 " + ua.OS
+			if ua.Name != "" {
+				body += fmt.Sprintf(" %s", ua.Name)
+			}
+			body += "."
+		}
 	} else {
 		subject = fmt.Sprintf("%s is your verification code", code)
 		body = fmt.Sprintf("Enter the verification code when prompted: %s. Code will expire in 5 minutes. To protect your account, do not share this code.", code)
+		if ua.OS != "" {
+			body += "<br>Requested from " + ua.OS
+			if ua.Name != "" {
+				body += fmt.Sprintf(" %s", ua.Name)
+			}
+			body += "."
+		}
 	}
 	message := gomail.NewMessage()
 	message.SetHeader("From", message.FormatAddress(s.config.SMTPSender, "GCopy"))

@@ -2,15 +2,15 @@ version: '3.8'
 services:
   gcopy:
     container_name: gcopy
-    image: registry.cn-beijing.aliyuncs.com/llaoj/gcopy:v1.1.5
+    image: registry.cn-beijing.aliyuncs.com/llaoj/gcopy
     restart: always
     ports:
     - "3376:3376"
-    command: ["--app-key=<app-key>", "--smtp-host=<smtp-host>", "--smtp-username=<smtp-username>", "--smtp-password=<smtp-password>", "--smtp-ssl"]
+    command: ["--app-key=<app-key>", "--smtp-host=<smtp-host>", "--smtp-port=<smtp-port>", "--smtp-username=<smtp-username>", "--smtp-password=<smtp-password>", "--smtp-ssl"]
 
   gcopy-frontend:
     container_name: gcopy-frontend
-    image: registry.cn-beijing.aliyuncs.com/llaoj/gcopy-frontend:v1.1.5
+    image: registry.cn-beijing.aliyuncs.com/llaoj/gcopy-frontend
     restart: always
     ports:
     - "3375:3375"
