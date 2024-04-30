@@ -30,7 +30,7 @@ GOARCH ?= amd64
 
 version:
 	@echo $(VERSION)
-	cd frontend && npm version $(VERSION) && cd ..
+	cd frontend && npm version $(VERSION) && npm run prettier && cd ..
 
 vet:
 	go list -tags "" ./... | grep -v "./vendor/*" | xargs go vet -tags ""
@@ -53,7 +53,7 @@ push-container: clean
 	docker buildx build --push --platform $(DOCKER_PLATFORMS) -t $(GCOPY_FRONTEND_IMAGE_REPO):$(TAG) -t $(GCOPY_FRONTEND_IMAGE_REPO):latest -f build/frontend/Dockerfile .
 
 clean:
-	rm -rf output/
+	rm -rf bin/
 	rm -f coverage.out
 
 gomod:
