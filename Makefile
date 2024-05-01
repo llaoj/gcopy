@@ -12,7 +12,7 @@ VERSION=$(shell cat version.txt)
 TAG?=$(VERSION)
 
 # REGISTRY is the container registry to push into.
-REGISTRY?=registry.cn-beijing.aliyuncs.com/llaoj
+REGISTRY?=docker.io/llaoj
 
 # PKG is the package name of gcopy repo.
 PKG:=github.com/llaoj/gcopy
