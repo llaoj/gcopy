@@ -32,5 +32,5 @@ jobs:
 
       - name: Build gcopy & gcopy-frontend image
         run: |
-          docker login -u ${{ secrets.REGISTRY_USERNAME }} -p ${{ secrets.REGISTRY_PASSWORD }} registry.cn-beijing.aliyuncs.com
+          echo "${{ secrets.REGISTRY_PASSWORD }}" | docker login -u "${{ secrets.REGISTRY_USERNAME }}" --password-stdin
           make push-container
