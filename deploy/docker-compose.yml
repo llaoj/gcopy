@@ -18,4 +18,3 @@ services:
     - ./frontend/.env.production:/app/.env.production
     depends_on:
     - gcopy
-    
