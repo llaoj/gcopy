@@ -30,7 +30,7 @@ GOARCH ?= amd64
 
 version:
 	@echo $(VERSION)
-	cd frontend && npm version $(VERSION) && npm run prettier && cd ..
+	cd frontend && npm version $(VERSION) --allow-same-version && npm run prettier && cd ..
 
 vet:
 	go list -tags "" ./... | grep -v "./vendor/*" | xargs go vet -tags ""
