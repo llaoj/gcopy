@@ -12,8 +12,6 @@ fi
 #   exit 1
 # fi
 
-make version
-
 git tag -f -a -m "Release ${VERSION}" "${VERSION}"
 git push origin -f "${VERSION}"
 
