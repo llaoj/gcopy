@@ -12,7 +12,7 @@ VERSION=$(shell cat version.txt)
 TAG?=$(VERSION)
 
 # REGISTRY is the container registry to push into.
-REGISTRY?=registry.cn-beijing.aliyuncs.com/llaoj
+REGISTRY?=docker.io/llaoj
 
 # PKG is the package name of gcopy repo.
 PKG:=github.com/llaoj/gcopy
@@ -30,7 +30,7 @@ GOARCH ?= amd64
 
 version:
 	@echo $(VERSION)
-	cd frontend && npm version $(VERSION) && npm run prettier && cd ..
+	cd frontend && npm version $(VERSION) --allow-same-version && npm run prettier && cd ..
 
 vet:
 	go list -tags "" ./... | grep -v "./vendor/*" | xargs go vet -tags ""

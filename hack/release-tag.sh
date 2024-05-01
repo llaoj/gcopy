@@ -1,4 +1,4 @@
-#!/bin/bash -xe
+#!/bin/bash -e
 
 VERSION=$(cat version.txt)
 
@@ -7,12 +7,12 @@ if [[ ! "${VERSION}" =~ ^v([0-9]+[.][0-9]+)[.]([0-9]+)(-(alpha|beta)[.]([0-9]+))
   exit 1
 fi
 
-if [ "$(git tag -l "${VERSION}")" ]; then
-  echo "Tag ${VERSION} already exists"
-  exit 1
-fi
+# if [ "$(git tag -l "${VERSION}")" ]; then
+#   echo "Tag ${VERSION} already exists"
+#   exit 1
+# fi
 
-git tag -a -m "Release ${VERSION}" "${VERSION}"
-git push origin "${VERSION}"
+git tag -f -a -m "Release ${VERSION}" "${VERSION}"
+git push origin -f "${VERSION}"
 
-echo "release_tag=refs/tags/${VERSION}" >> "$GITHUB_OUTPUT"
+echo "release_tag=refs/tags/${VERSION}"
