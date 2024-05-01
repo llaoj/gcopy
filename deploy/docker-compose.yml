@@ -2,7 +2,7 @@ version: '3.8'
 services:
   gcopy:
     container_name: gcopy
-    image: registry.cn-beijing.aliyuncs.com/llaoj/gcopy
+    image: llaoj/gcopy
     restart: always
     ports:
     - "3376:3376"
@@ -10,7 +10,7 @@ services:
 
   gcopy-frontend:
     container_name: gcopy-frontend
-    image: registry.cn-beijing.aliyuncs.com/llaoj/gcopy-frontend
+    image: llaoj/gcopy-frontend
     restart: always
     ports:
     - "3375:3375"
@@ -18,4 +18,3 @@ services:
     - ./frontend/.env.production:/app/.env.production
     depends_on:
     - gcopy
-    
