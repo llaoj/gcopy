@@ -36,3 +36,33 @@ body {
   );
   background-size: 40px 40px;
 }
+
+.logbox:before {
+  content: "";
+  margin-top: 0.25rem;
+  margin-bottom: 0.5rem;
+  display: flex;
+  flex: none;
+  height: 0.75rem;
+  width: 0.75rem;
+  border-radius: 9999px;
+  opacity: 0.3;
+  box-shadow:
+    1em 0,
+    2.4em 0,
+    3.8em 0;
+}
+
+.logbox ul {
+  padding-left: 1.75rem;
+}
+
+.logbox li:before {
+  content: ">";
+  display: inline-block;
+  text-align: right;
+  opacity: 0.5;
+  width: 1.75rem;
+  padding-right: 0.3rem;
+  margin-left: -1.75rem;
+}

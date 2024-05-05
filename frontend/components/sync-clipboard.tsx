@@ -8,7 +8,7 @@ import { DragEvent, useRef, useState } from "react";
 import clsx from "clsx";
 import { useRouter, usePathname } from "next/navigation";
 import Title from "@/components/title";
-import { useLocale, useTranslations } from "next-intl";
+import { useLocale, useTranslations, useFormatter } from "next-intl";
 import {
   TmpClipboard,
   initTmpClipboard,
@@ -21,7 +21,7 @@ import {
   clipboardRead,
 } from "@/lib/clipboard";
 // Chrome | Safari | Mobile Safari
-import { browserName, isAndroid } from "react-device-detect";
+import { osName, browserName, isAndroid } from "react-device-detect";
 import SyncButton from "@/components/sync-button";
 
 // route: /locale?ci=123&cbi=abc
@@ -29,15 +29,10 @@ import SyncButton from "@/components/sync-button";
 // - cbi: clipboard blob id
 export default function SyncClipboard() {
   const t = useTranslations("SyncClipboard");
+  const format = useFormatter();
   const [fileInfo, setFileInfo] = useState<FileInfo>(initFileInfo);
   const [tmpClipboard, setTmpClipboard] =
     useState<TmpClipboard>(initTmpClipboard);
-  const [logs, setLogs] = useState<Log[]>([
-    {
-      level: Level.Warn,
-      message: t("logs.clickToSync"),
-    },
-  ]);
   // "" | interrupted-[r|w] | finished
   const [status, setStatus] = useState<string>("");
   const [dragging, setDragging] = useState(false);
@@ -47,6 +42,34 @@ export default function SyncClipboard() {
   const { isLoading, loggedIn } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+
+  let initLogs = [
+    {
+      level: Level.Warn,
+      message: t("logs.clickToSync"),
+    },
+  ];
+  const recommendedBrowsers = [
+    { osName: "Windows", browsers: ["Chrome", "Edge", "Opera"] },
+    { osName: "iOS", browsers: ["Mobile Safari"] },
+    { osName: "Android", browsers: ["Chrome", "Edge"] },
+    { osName: "Mac OS", browsers: ["Chrome", "Opera", "Safari"] },
+  ];
+  recommendedBrowsers.map((item) => {
+    if (osName == item.osName && !item.browsers.includes(browserName)) {
+      initLogs = [
+        {
+          level: Level.Info,
+          message: t("logs.recommendedBrowsers", {
+            os: item.osName,
+            browsers: format.list(item.browsers),
+          }),
+        },
+        ...initLogs,
+      ];
+    }
+  });
+  const [logs, setLogs] = useState<Log[]>(initLogs);
 
   if (isLoading) {
     return (
