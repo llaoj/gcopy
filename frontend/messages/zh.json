@@ -63,7 +63,7 @@
       "clickAgain": "因为浏览器安全策略, 请再次点击 👉",
       "clickPaste": "如果页面出现\"粘贴\", 点击它以允许读取剪切板.",
       "unchanged": "剪切板没有改变.",
-      "uploading": "正在上传 {object}",
+      "uploading": "正在上传...",
       "uploaded": "已上传 {type}({index}).",
       "received": "已接收 {type}({index}) 来自 {clientname}.",
       "unsupportedFormat": "不支持的格式: {format}.",
