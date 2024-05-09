@@ -68,7 +68,7 @@
       "received": "已接收 {type}({index}) 来自 {clientname}.",
       "unsupportedFormat": "不支持的格式: {format}.",
       "emptyClipboard": "剪切板是空的.",
-      "recommendedBrowsers": "在{os}上, 我们推荐使用{browsers}浏览器."
+      "recommendedBrowsers": "在{os}上, 推荐使用{browsers}浏览器."
     }
   }
 }

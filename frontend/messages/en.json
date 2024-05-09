@@ -68,7 +68,7 @@
       "received": "Received {type}({index}) from {clientname}.",
       "unsupportedFormat": "Unsupported format: {format}.",
       "emptyClipboard": "Clipboard is empty.",
-      "recommendedBrowsers": "On {os}, we recommend using {browsers} browser."
+      "recommendedBrowsers": "On {os}, recommend using {browsers} browser."
     }
   }
 }
