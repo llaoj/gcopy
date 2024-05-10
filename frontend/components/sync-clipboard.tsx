@@ -267,7 +267,7 @@ export default function SyncClipboard() {
       return;
     }
     addLog(t("logs.readSuccess"));
-    addLog(t("logs.uploading", { object: t(xtype) }));
+    addLog(t("logs.uploading"));
 
     const response = await fetch("/api/v1/clipboard", {
       method: "POST",
@@ -308,7 +308,7 @@ export default function SyncClipboard() {
   const uploadFileHandler = async (file: File) => {
     resetLog();
 
-    addLog(t("logs.uploading", { object: file.name }));
+    addLog(t("logs.uploading"));
     const response = await fetch("/api/v1/clipboard", {
       method: "POST",
       headers: {

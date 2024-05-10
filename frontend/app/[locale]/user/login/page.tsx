@@ -1,9 +1,9 @@
 "use client";
 
-import Image from "next/image";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
+import Logo from "@/components/logo";
 
 export default function Login({
   searchParams,
@@ -60,7 +60,7 @@ export default function Login({
       className="card w-full md:w-[32rem] bg-base-100 shadow-xl"
     >
       <div className="card-body gap-4">
-        <Image src="/gcopy.svg" width={50} height={50} alt="gcopy's logo" />
+        <Logo />
         <div className="flex items-center">
           <a
             className="btn btn-ghost btn-circle btn-xs"

@@ -63,7 +63,7 @@
       "clickAgain": "Click again due to browser security policies 👉",
       "clickPaste": "If the \"Paste\" appears on the page, click it to allow reading the clipboard.",
       "unchanged": "Clipboard unchanged.",
-      "uploading": "Uploading {object}",
+      "uploading": "Uploading...",
       "uploaded": "Uploaded {type}({index}).",
       "received": "Received {type}({index}) from {clientname}.",
       "unsupportedFormat": "Unsupported format: {format}.",
