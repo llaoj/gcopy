@@ -8,7 +8,7 @@ export default function Logo() {
         stroke-width="1.5"
         stroke="currentColor"
         data-slot="icon"
-        className="w-10 h-10 dark:text-white"
+        className="w-12 h-12 dark:text-white"
       >
         <path
           stroke-linecap="round"
