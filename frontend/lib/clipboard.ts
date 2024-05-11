@@ -1,13 +1,11 @@
 export interface FileInfo {
   fileName: string;
   fileURL: string;
-  autoDownloaded: boolean;
 }
 
 export const initFileInfo: FileInfo = {
   fileName: "",
   fileURL: "",
-  autoDownloaded: false,
 };
 
 export interface TmpClipboard {

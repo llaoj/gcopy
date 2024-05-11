@@ -1,22 +1,17 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import Link from "next/link";
 import { FileInfo } from "@/lib/clipboard";
 
-export default function FileLink({
-  fileInfo,
-  autoDownloadedFunc,
-}: {
-  fileInfo: FileInfo;
-  autoDownloadedFunc: () => void;
-}) {
+export default function FileLink({ fileInfo }: { fileInfo: FileInfo }) {
   const linkRef = useRef<HTMLAnchorElement>(null);
+  const [autoClick, setAutoClick] = useState<string>("");
 
   useEffect(() => {
-    if (fileInfo.fileURL != "" && !fileInfo.autoDownloaded) {
+    if (fileInfo.fileURL != "" && fileInfo.fileURL != autoClick) {
       linkRef.current?.click();
-      autoDownloadedFunc();
+      setAutoClick(fileInfo.fileURL);
     }
-  }, [fileInfo.fileURL]);
+  }, [fileInfo.fileURL, autoClick]);
 
   if (fileInfo.fileURL) {
     return (

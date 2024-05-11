@@ -218,7 +218,6 @@ export default function SyncClipboard() {
       setFileInfo({
         fileName: decodeURI(xfilename),
         fileURL: URL.createObjectURL(blob),
-        autoDownloaded: false,
       });
       // The file did not enter the clipboard,
       // so only update the index.
@@ -337,7 +336,6 @@ export default function SyncClipboard() {
     setFileInfo({
       fileName: file.name,
       fileURL: "",
-      autoDownloaded: false,
     });
     // The file did not enter the clipboard,
     // so only update the index.
@@ -410,15 +408,6 @@ export default function SyncClipboard() {
     }
   };
 
-  const autoDownloaded = () => {
-    setFileInfo((current) => {
-      return {
-        ...current,
-        autoDownloaded: true,
-      };
-    });
-  };
-
   return (
     <>
       <div className="pb-4">
@@ -463,10 +452,7 @@ export default function SyncClipboard() {
         >
           {!dragging && (
             <>
-              <FileLink
-                fileInfo={fileInfo}
-                autoDownloadedFunc={autoDownloaded}
-              />
+              <FileLink fileInfo={fileInfo} />
               <div className="text-lg opacity-40">
                 {t("syncFile.dragDropTip")}
               </div>
