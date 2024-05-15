@@ -1,6 +1,7 @@
 import { CursorArrowRippleIcon } from "@heroicons/react/24/solid";
 import { useTranslations } from "next-intl";
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState } from "react";
+import { useShortcut } from "@/lib/shortcut";
 
 export default function SyncButton({
   syncFunc,
@@ -17,16 +18,12 @@ export default function SyncButton({
     setClicked(false);
   };
 
-  useEffect(() => {
-    function keyDownHandler(e: globalThis.KeyboardEvent) {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        buttonRef.current?.click();
-      }
-    }
-    document.addEventListener("keydown", keyDownHandler);
-    return () => document.removeEventListener("keydown", keyDownHandler);
-  }, []);
+  useShortcut({
+    key: "Enter",
+    onKeyPressed: () => {
+      buttonRef.current?.click();
+    },
+  });
 
   return (
     <>
