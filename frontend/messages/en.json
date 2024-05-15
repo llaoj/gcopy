@@ -40,8 +40,8 @@
   },
   "SyncClipboard": {
     "title": "Sync the clipboard",
-    "subTitle": "Click-click and the clipboard synced between devices.",
-    "click2sync": "Click to sync clipboard",
+    "subTitle": "Press the button and the clipboard synced between devices.",
+    "syncButtonText": "Sync clipboard",
     "text": "TEXT",
     "screenshot": "SCREENSHOT",
     "file": "FILE",

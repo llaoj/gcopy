@@ -33,8 +33,11 @@ export default function SyncButton({
         className="btn btn-outline btn-primary col-span-9 md:col-span-2 h-full rounded-box bg-base-100 content-center"
         onClick={onClick}
       >
-        <CursorArrowRippleIcon className="h-6 w-6" />
-        {t("click2sync")}
+        <CursorArrowRippleIcon className="h-6 w-6" />&#47;
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" stroke="currentColor" fill="currentColor" className="h-6 w-6">
+          <path d="M360-240 120-480l240-240 56 56-144 144h488v-160h80v240H272l144 144-56 56Z" />
+        </svg>
+        {t("syncButtonText")}
       </button>
     </>
   );
