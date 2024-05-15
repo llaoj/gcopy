@@ -40,8 +40,8 @@
   },
   "SyncClipboard": {
     "title": "同步剪切板",
-    "subTitle": "Click-click剪切板就能在不同设备间同步.",
-    "click2sync": "点击同步剪切板",
+    "subTitle": "按下按钮剪切板就能在不同设备间同步.",
+    "syncButtonText": "同步剪切板",
     "text": "文字",
     "screenshot": "截图",
     "file": "文件",

@@ -20,8 +20,8 @@ GCopy values your data privacy, it does not persistently store your data; it is 
 Steps:
 
 1. Open the website [https://gcopy.rutron.net](https://gcopy.rutron.net) on two devices, A and B, using a browser and log in with the same email.
-2. On device A, copy (e.g., `Ctrl+C`) and then click the button on the right side of the page.
-3. Switch to device B, click the button again, and the data will be synchronized. Now, go ahead and paste (`Ctrl+V`)!
+2. On device A, copy (e.g., `Ctrl+C`) and then press the button on the right side of the page.
+3. Switch to device B, press the button again, and the data will be synchronized. Now, go ahead and paste (`Ctrl+V`)!
 
 ## Background
 
