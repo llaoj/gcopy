@@ -52,7 +52,7 @@
       "fileInputText": "Choose a file"
     },
     "logs": {
-      "clickToSync": "Click the button to sync clipboard 👉",
+      "pressToSync": "Press the button to sync clipboard 👉",
       "fetching": "Fetching...",
       "upToDate": "Already up to date.",
       "readSuccess": "Read data from the clipboard successfully.",
@@ -60,8 +60,8 @@
       "autoDownload": "File download should start shortly. if not, please click the file link below.",
       "denyRead": "Not allowed to read clipboard!",
       "fileTooLarge": "Sorry, the file cannot exceed 10mb!",
-      "clickAgain": "Click again due to browser security policies 👉",
-      "clickPaste": "If the \"Paste\" appears on the page, click it to allow reading the clipboard.",
+      "pressAgain": "Press again due to browser security policies 👉",
+      "pressPaste": "If the \"Paste\" appears, press it to allow reading the clipboard.",
       "unchanged": "Clipboard unchanged.",
       "uploading": "Uploading...",
       "uploaded": "Uploaded {type}({index}).",
