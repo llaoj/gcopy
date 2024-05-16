@@ -1,6 +1,6 @@
 {
   "name": "gcopy",
-  "version": "1.2.15",
+  "version": "1.2.16",
   "private": true,
   "scripts": {
     "dev": "next dev -p 3375 --experimental-https",

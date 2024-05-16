@@ -52,7 +52,7 @@
       "fileInputText": "选择一个文件"
     },
     "logs": {
-      "clickToSync": "点击按钮同步剪切板 👉",
+      "pressToSync": "按下按钮同步剪切板 👉",
       "fetching": "正在获取...",
       "upToDate": "已经是最新.",
       "readSuccess": "成功读取剪切板.",
@@ -60,8 +60,8 @@
       "autoDownload": "文件会很快自动下载. 如果没有, 点击下面的文件链接.",
       "denyRead": "不允许读取剪切板!",
       "fileTooLarge": "对不起, 文件大小不能超过10mb!",
-      "clickAgain": "因为浏览器安全策略, 请再次点击 👉",
-      "clickPaste": "如果页面出现\"粘贴\", 点击它以允许读取剪切板.",
+      "pressAgain": "因为浏览器安全策略, 请再次按下 👉",
+      "pressPaste": "如果出现\"粘贴\"按钮, 按下它以允许读取剪切板.",
       "unchanged": "剪切板没有改变.",
       "uploading": "正在上传...",
       "uploaded": "已上传 {type}({index}).",

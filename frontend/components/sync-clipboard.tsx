@@ -46,7 +46,7 @@ export default function SyncClipboard() {
   let initLogs = [
     {
       level: Level.Warn,
-      message: t("logs.clickToSync"),
+      message: t("logs.pressToSync"),
     },
   ];
   const recommendedBrowsers = [
@@ -135,8 +135,8 @@ export default function SyncClipboard() {
 
       if (browserName.includes("Safari")) {
         setStatus("interrupted-r");
-        addLog(t("logs.clickAgain"), Level.Warn);
-        addLog(t("logs.clickPaste"), Level.Warn);
+        addLog(t("logs.pressAgain"), Level.Warn);
+        addLog(t("logs.pressPaste"), Level.Warn);
         return;
       }
 
@@ -176,7 +176,7 @@ export default function SyncClipboard() {
           blob: blob,
         });
         setStatus("interrupted-w");
-        addLog(t("logs.clickAgain"), Level.Warn);
+        addLog(t("logs.pressAgain"), Level.Warn);
         return;
       }
 
