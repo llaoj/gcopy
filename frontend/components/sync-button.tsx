@@ -1,7 +1,7 @@
 import { CursorArrowRippleIcon } from "@heroicons/react/24/solid";
 import { useTranslations } from "next-intl";
 import { useRef, useState } from "react";
-import { useShortcut } from "@/lib/shortcut";
+import { useShortcut } from "@/lib/use-shortcut";
 
 export default function SyncButton({
   syncFunc,
@@ -19,8 +19,7 @@ export default function SyncButton({
   };
 
   useShortcut({
-    key: "Enter",
-    onKeyPressed: () => {
+    eventHandler: () => {
       buttonRef.current?.click();
     },
   });
@@ -34,16 +33,6 @@ export default function SyncButton({
         onClick={onClick}
       >
         <CursorArrowRippleIcon className="h-6 w-6" />
-        &#47;
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 -960 960 960"
-          stroke="currentColor"
-          fill="currentColor"
-          className="h-6 w-6"
-        >
-          <path d="M360-240 120-480l240-240 56 56-144 144h488v-160h80v240H272l144 144-56 56Z" />
-        </svg>
         {t("syncButtonText")}
       </button>
     </>

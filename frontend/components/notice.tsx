@@ -1,4 +1,3 @@
-import Title from "./title";
 import { useTranslations } from "next-intl";
 
 export default function Notice() {
@@ -6,7 +5,7 @@ export default function Notice() {
 
   return (
     <>
-      <Title title={t("title")}></Title>
+      <div className="pb-2 text-base font-bold">{t("title")}</div>
       <div className="prose max-w-none">
         <ul className="list-decimal">
           <li>

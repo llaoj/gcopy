@@ -7,7 +7,6 @@ import { Log, Level } from "@/lib/log";
 import { DragEvent, useRef, useState } from "react";
 import clsx from "clsx";
 import { useRouter, usePathname } from "next/navigation";
-import Title from "@/components/title";
 import { useLocale, useTranslations, useFormatter } from "next-intl";
 import {
   TmpClipboard,
@@ -23,6 +22,7 @@ import {
 // Chrome | Safari | Mobile Safari
 import { osName, browserName, isAndroid } from "react-device-detect";
 import SyncButton from "@/components/sync-button";
+import SyncShortcut from "@/components/sync-shortcut";
 
 // route: /locale?ci=123&cbi=abc
 // - ci: clipboard index
@@ -411,7 +411,11 @@ export default function SyncClipboard() {
   return (
     <>
       <div className="pb-4">
-        <Title title={t("title")} subTitle={t("subTitle")}></Title>
+        <div className="pb-2 text-base font-bold">{t("title")}</div>
+        <div className="pb-2 text-sm opacity-70">
+          {t("subTitle")}
+          <SyncShortcut />
+        </div>
         <div className="grid grid-cols-9 gap-3 w-full">
           <LogBox logs={logs} />
           <SyncButton syncFunc={syncFunc} />
