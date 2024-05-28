@@ -2,6 +2,7 @@ import { Inter } from "next/font/google";
 import "@/app/globals.css";
 import { ReactNode } from "react";
 import { getTranslations } from "next-intl/server";
+import type { Viewport } from "next";
 
 export async function generateMetadata({
   params: { locale },
@@ -14,6 +15,13 @@ export async function generateMetadata({
     description: t("description"),
   };
 }
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+};
 
 const inter = Inter({ subsets: ["latin"] });
 

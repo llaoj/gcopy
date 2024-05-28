@@ -51,11 +51,15 @@
       "dragDropTip": "把文件拖拽到这里",
       "fileInputText": "选择一个文件"
     },
+    "quickInput": {
+      "title": "快捷输入",
+      "subTitle": "输入文字后按下回车, 就能在不同设备间同步."
+    },
     "logs": {
       "pressToSync": "按下按钮同步剪切板 👉",
       "fetching": "正在获取...",
       "upToDate": "已经是最新.",
-      "readSuccess": "成功读取剪切板.",
+      "readClipboardSuccess": "成功读取剪切板.",
       "writeSuccess": "数据成功写入剪切板.",
       "autoDownload": "文件会很快自动下载. 如果没有, 点击下面的文件链接.",
       "denyRead": "不允许读取剪切板!",
@@ -68,7 +72,8 @@
       "received": "已接收 {type}({index}) 来自 {clientname}.",
       "unsupportedFormat": "不支持的格式: {format}.",
       "emptyClipboard": "剪切板是空的.",
-      "recommendedBrowsers": "在{os}上, 推荐使用{browsers}浏览器."
+      "recommendedBrowsers": "在{os}上, 推荐使用{browsers}浏览器.",
+      "readQuickInputSuccess": "成功读取快捷输入区文字."
     }
   }
 }
