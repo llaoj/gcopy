@@ -1,7 +1,7 @@
 import { CursorArrowRippleIcon } from "@heroicons/react/24/solid";
 import { useTranslations } from "next-intl";
-import { useRef, useState } from "react";
-import { useShortcut } from "@/lib/use-shortcut";
+import { useRef, useState, useEffect } from "react";
+import { isDesktop, isMacOs } from "react-device-detect";
 
 export default function SyncButton({
   syncFunc,
@@ -18,10 +18,28 @@ export default function SyncButton({
     setClicked(false);
   };
 
-  useShortcut({
-    eventHandler: () => {
-      buttonRef.current?.click();
-    },
+  // shortcut
+  useEffect(() => {
+    function keyDownHandler(e: globalThis.KeyboardEvent) {
+      if (!isDesktop) {
+        return;
+      }
+      // refer: https://support.google.com/chrome/answer/157179
+      if (
+        (!e.ctrlKey &&
+          !e.metaKey &&
+          !e.altKey &&
+          !e.shiftKey &&
+          e.key === "Enter") ||
+        (isMacOs && e.metaKey && e.key == "1") ||
+        (!isMacOs && e.ctrlKey && e.key == "1")
+      ) {
+        e.preventDefault();
+        buttonRef.current?.click();
+      }
+    }
+    document.addEventListener("keydown", keyDownHandler);
+    return () => document.removeEventListener("keydown", keyDownHandler);
   });
 
   return (

@@ -53,7 +53,8 @@
     },
     "quickInput": {
       "title": "Quick input",
-      "subTitle": "Type text, hit Enter and the text synced between devices."
+      "subTitle": "Type text, hit Enter and the text synced between devices.",
+      "newline": "Newline"
     },
     "logs": {
       "pressToSync": "Press the button to sync clipboard 👉",
