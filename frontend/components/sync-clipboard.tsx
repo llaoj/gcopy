@@ -437,7 +437,7 @@ export default function SyncClipboard() {
           <SyncButton syncFunc={syncFunc} />
         </div>
       </div>
-
+      <QuickInput textareaRef={textareaRef} />
       <div className="pb-4">
         <div className="pb-2 text-sm opacity-70">
           <strong>{t("syncFile.title") + ": "}</strong>
@@ -502,7 +502,6 @@ export default function SyncClipboard() {
           />
         </div>
       </div>
-      <QuickInput textareaRef={textareaRef} />
     </>
   );
 }

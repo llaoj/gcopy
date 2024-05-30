@@ -58,7 +58,7 @@ export default function QuickInput({
         </div>
         <textarea
           ref={textareaRef}
-          className="textarea block leading-tight w-full min-h-0 h-0  p-0 border-none peer-checked/showTextarea:border-solid peer-checked/showTextarea:textarea-bordered peer-checked/showTextarea:min-h-28 peer-checked/showTextarea:p-1 transition-all duration-400"
+          className="textarea block resize-none leading-tight w-full min-h-0 h-0  p-0 border-none peer-checked/showTextarea:border-solid peer-checked/showTextarea:textarea-bordered peer-checked/showTextarea:min-h-28 peer-checked/showTextarea:p-1 transition-all duration-400"
         ></textarea>
       </label>
     </div>
