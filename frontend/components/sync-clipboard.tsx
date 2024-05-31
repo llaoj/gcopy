@@ -23,6 +23,7 @@ import {
 import { osName, browserName, isAndroid } from "react-device-detect";
 import SyncButton from "@/components/sync-button";
 import SyncShortcut from "@/components/sync-shortcut";
+import QuickInput from "@/components/quick-input";
 
 // route: /locale?ci=123&cbi=abc
 // - ci: clipboard index
@@ -37,7 +38,8 @@ export default function SyncClipboard() {
   const [status, setStatus] = useState<string>("");
   const [dragging, setDragging] = useState(false);
 
-  const inputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const locale = useLocale();
   const { isLoading, loggedIn } = useAuth();
   const router = useRouter();
@@ -232,10 +234,20 @@ export default function SyncClipboard() {
   };
 
   const pushClipboard = async () => {
-    if (!navigator.clipboard || !navigator.clipboard.read) {
-      return;
+    let blob = null;
+    if (textareaRef.current && textareaRef.current.value != "") {
+      blob = new Blob([textareaRef.current.value], { type: "text/plain" });
+      addLog(t("logs.readQuickInputSuccess"));
     }
-    let blob = await clipboardRead();
+
+    if (textareaRef.current?.value == "") {
+      if (!navigator.clipboard || !navigator.clipboard.read) {
+        return;
+      }
+      blob = await clipboardRead();
+      addLog(t("logs.readClipboardSuccess"));
+    }
+
     if (!blob) {
       addLog(t("logs.emptyClipboard"));
       return;
@@ -265,7 +277,6 @@ export default function SyncClipboard() {
       addLog(t("logs.unchanged"));
       return;
     }
-    addLog(t("logs.readSuccess"));
     addLog(t("logs.uploading"));
 
     const response = await fetch("/api/v1/clipboard", {
@@ -288,6 +299,11 @@ export default function SyncClipboard() {
       addLog(body.message, Level.Error);
       return;
     }
+
+    if (textareaRef.current && textareaRef.current.value != "") {
+      textareaRef.current.value = "";
+    }
+
     const xindex = response.headers.get("x-index");
     if (xindex == null || xindex == "0") {
       return;
@@ -421,7 +437,7 @@ export default function SyncClipboard() {
           <SyncButton syncFunc={syncFunc} />
         </div>
       </div>
-
+      <QuickInput textareaRef={textareaRef} />
       <div className="pb-4">
         <div className="pb-2 text-sm opacity-70">
           <strong>{t("syncFile.title") + ": "}</strong>
@@ -466,7 +482,7 @@ export default function SyncClipboard() {
                   if (!ensureLoggedIn()) {
                     return;
                   }
-                  inputRef.current?.click();
+                  fileInputRef.current?.click();
                 }}
               >
                 {t("syncFile.fileInputText")}
@@ -476,10 +492,10 @@ export default function SyncClipboard() {
           <input
             type="file"
             hidden
-            ref={inputRef}
+            ref={fileInputRef}
             onChange={async () => {
-              if (inputRef.current?.files) {
-                const selectedFile = inputRef.current.files[0];
+              if (fileInputRef.current?.files) {
+                const selectedFile = fileInputRef.current.files[0];
                 await uploadFileHandler(selectedFile);
               }
             }}

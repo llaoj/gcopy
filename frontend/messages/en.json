@@ -51,11 +51,16 @@
       "dragDropTip": "Drag and drop a file here",
       "fileInputText": "Choose a file"
     },
+    "quickInput": {
+      "title": "Quick input",
+      "subTitle": "Type text, press the button and the text synced between devices.",
+      "newline": "Newline"
+    },
     "logs": {
       "pressToSync": "Press the button to sync clipboard 👉",
       "fetching": "Fetching...",
       "upToDate": "Already up to date.",
-      "readSuccess": "Read data from the clipboard successfully.",
+      "readClipboardSuccess": "Read data from the clipboard successfully.",
       "writeSuccess": "Written data to the clipboard successfully.",
       "autoDownload": "File download should start shortly. if not, please click the file link below.",
       "denyRead": "Not allowed to read clipboard!",
@@ -68,7 +73,8 @@
       "received": "Received {type}({index}) from {clientname}.",
       "unsupportedFormat": "Unsupported format: {format}.",
       "emptyClipboard": "Clipboard is empty.",
-      "recommendedBrowsers": "On {os}, recommend using {browsers} browser."
+      "recommendedBrowsers": "On {os}, recommend using {browsers} browser.",
+      "readQuickInputSuccess": "Read text from quick input area successfully."
     }
   }
 }
