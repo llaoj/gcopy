@@ -1,7 +1,7 @@
 import { ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/24/solid";
-import { useEffect, useState, RefObject } from "react";
+import { useState, RefObject } from "react";
 import { useTranslations } from "next-intl";
-import { isDesktop, isMacOs } from "react-device-detect";
+import { isDesktop } from "react-device-detect";
 
 export default function QuickInput({
   textareaRef,
@@ -11,25 +11,11 @@ export default function QuickInput({
   const [checked, setChecked] = useState<boolean>(false);
   const t = useTranslations("SyncClipboard");
 
-  // shortcut
-  useEffect(() => {
-    function keyDownHandler(e: globalThis.KeyboardEvent) {
-      if (!isDesktop) {
-        return;
-      }
-      if (e.altKey && e.key === "Enter" && textareaRef.current) {
-        e.preventDefault();
-        textareaRef.current.value += "\r\n";
-      }
-    }
-    document.addEventListener("keydown", keyDownHandler);
-    return () => document.removeEventListener("keydown", keyDownHandler);
-  });
-
   const onChange = async () => {
     setChecked((current) => !current);
     if (textareaRef.current) {
       textareaRef.current.value = "";
+      !checked && textareaRef.current.focus();
     }
   };
 
@@ -46,8 +32,8 @@ export default function QuickInput({
             <span className="font-bold">{t("quickInput.title")}:</span>
             <span>{" " + t("quickInput.subTitle")}</span>
             {isDesktop && (
-              <span className="ml-1 text-xs opacity-50 inline-block align-bottom">
-                {t("quickInput.newline")}: Alt+Enter
+              <span className="ml-1 text-xs opacity-50">
+                {t("quickInput.newline") + ": Shift+Enter"}
               </span>
             )}
           </div>
@@ -58,7 +44,7 @@ export default function QuickInput({
         </div>
         <textarea
           ref={textareaRef}
-          className="textarea block resize-none leading-tight w-full min-h-0 h-0  p-0 border-none peer-checked/showTextarea:border-solid peer-checked/showTextarea:textarea-bordered peer-checked/showTextarea:min-h-28 peer-checked/showTextarea:p-1 transition-all duration-400"
+          className="textarea block rounded-box resize-none leading-tight w-full min-h-0 h-0  p-0 border-none peer-checked/showTextarea:border-solid peer-checked/showTextarea:textarea-bordered peer-checked/showTextarea:min-h-20 peer-checked/showTextarea:p-2 transition-all duration-400"
         ></textarea>
       </label>
     </div>
