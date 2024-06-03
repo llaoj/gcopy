@@ -87,3 +87,4 @@ Safari on iOS
 ## More
 
 - [How to deploy](/docs/how-to-deploy.md)
+- [Deployment GCopy in OpenWrt with source code](./docs/deploy-in-openwrt.md)
