@@ -90,4 +90,5 @@ Safari on iOS
 
 ## 更多
 
-- [如何部署](/docs/how-to-deploy.md)
+- [如何部署](./how-to-deploy.md)
+- [在OpenWrt上源码部署gcopy](./deploy-in-openwrt.md)
