@@ -21,7 +21,7 @@ cd gcopy
 The backend primarily responsible for temporary storage of clipboard data and authentication. It does not store user data long-term, instead, it temporarily stores the latest clipboard data in memory, which expires after a period of time.
 
 ### Direct run
-You can quickly start the local server using the `go run` command. The backend service is configured via command-line arguments. You need to manually replace `<var-name>`. The `-app-key` parameter in the configuration is a custom encryption key used for data encryption, recommended to be at least 8 characters long. Parameters starting with `-smtp-*` are all related to email services because gcopy relies on email login. Common email service providers offer SMTP services, such as Gmail, QQ Mail etc.
+You can quickly start the local server using the `go run` command. The backend service is configured via command-line arguments. You need to manually replace `<var-name>`. The `-app-key` parameter in the configuration is a custom encryption key used for data encryption, recommended to be at least 8 characters long. Parameters starting with `-smtp-*` are all related to email service because gcopy relies on email login. Common email service providers offer SMTP services, such as Gmail, QQ Mail etc.
 
 ```bash
 go run cmd/gcopy.go \
@@ -52,7 +52,7 @@ chmod +x ./bin/gcopy
 ## Frontend
 The frontend primarily handles user interaction and is implemented based on the browser. It relies on the backend service to temporarily store user clipboard data, thereby achieving the goal of cross-device sharing.
 
-### 配置文件
+### Configuration file
 The frontend service is configured using a configuration file, mainly declaring information such as the backend service's address. Different environment configurations are stored in files with different `.env` file extensions.
 
 ```bash
