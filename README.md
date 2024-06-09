@@ -86,5 +86,5 @@ Safari on iOS
 
 ## More
 
-- [How to deploy](/docs/how-to-deploy.md)
-- [Deployment GCopy in OpenWrt with source code](./docs/deploy-in-openwrt.md)
+- [Deploy by docker](/docs/deploy-by-docker.md)
+- [Deploy from source code](./docs/deploy-from-source.md)
