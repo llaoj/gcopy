@@ -3,3 +3,4 @@ dist/
 frontend/.env
 output/
 bin/
+.vscode
