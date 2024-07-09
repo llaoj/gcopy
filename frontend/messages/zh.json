@@ -47,7 +47,7 @@
     "file": "文件",
     "syncFile": {
       "title": "同步文件",
-      "subTitle": "把文件拖拽到这里就能在不同设备间同步它.",
+      "subTitle": "选择一个文件然后在不同设备间同步它.",
       "dragDropTip": "把文件拖拽到这里",
       "fileInputText": "选择一个文件"
     },
@@ -58,7 +58,7 @@
     },
     "history": {
       "title": "历史记录",
-      "subTitle": "历史记录仅存在本地浏览器端并且可以随时删除.",
+      "subTitle": "仅存储在本地浏览器并且可以随时删除.",
       "delete": "删除",
       "use": "使用"
     },

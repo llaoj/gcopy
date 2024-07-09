@@ -441,8 +441,8 @@ export default function SyncClipboard() {
       <QuickInput textareaRef={textareaRef} />
       <div className="pb-4">
         <div className="pb-2 text-sm opacity-70">
-          <strong>{t("syncFile.title") + ": "}</strong>
-          {t("syncFile.subTitle")}
+          <span className="font-bold">{t("syncFile.title")}</span>
+          <span>{" " + t("syncFile.subTitle")}</span>
         </div>
         <div
           className={clsx(
@@ -474,7 +474,7 @@ export default function SyncClipboard() {
           {!dragging && (
             <>
               <FileLink fileInfo={fileInfo} />
-              <div className="text-lg opacity-40">
+              <div className="text-lg opacity-40 hidden md:block">
                 {t("syncFile.dragDropTip")}
               </div>
               <button

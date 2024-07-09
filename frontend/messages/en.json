@@ -47,7 +47,7 @@
     "file": "FILE",
     "syncFile": {
       "title": "Sync the files",
-      "subTitle": "Drag and drop a file here to sync it to different devices.",
+      "subTitle": "Choose a file and sync it between different devices.",
       "dragDropTip": "Drag and drop a file here",
       "fileInputText": "Choose a file"
     },
@@ -58,7 +58,7 @@
     },
     "history": {
       "title": "History",
-      "subTitle": "History is stored only locally on the browser side and can be cleared at any time.",
+      "subTitle": "Stored only locally on the browser and can be deleted at any time.",
       "delete": "Delete",
       "use": "Use"
     },
