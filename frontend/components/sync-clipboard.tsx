@@ -24,6 +24,7 @@ import { osName, browserName, isAndroid } from "react-device-detect";
 import SyncButton from "@/components/sync-button";
 import SyncShortcut from "@/components/sync-shortcut";
 import QuickInput from "@/components/quick-input";
+import History from "@/components/history";
 
 // route: /locale?ci=123&cbi=abc
 // - ci: clipboard index
@@ -502,6 +503,7 @@ export default function SyncClipboard() {
           />
         </div>
       </div>
+      <History />
     </>
   );
 }

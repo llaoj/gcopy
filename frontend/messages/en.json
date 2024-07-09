@@ -56,6 +56,12 @@
       "subTitle": "Type text, press the button and the text synced between devices.",
       "newline": "Newline"
     },
+    "history": {
+      "title": "History",
+      "subTitle": "History is stored only locally on the browser side and can be cleared at any time.",
+      "delete": "Delete",
+      "use": "Use"
+    },
     "logs": {
       "pressToSync": "Press the button to sync clipboard 👉",
       "fetching": "Fetching...",

@@ -56,6 +56,12 @@
       "subTitle": "输入文字后按下同步按钮就能在不同设备间同步.",
       "newline": "换行"
     },
+    "history": {
+      "title": "历史记录",
+      "subTitle": "历史记录仅存在本地浏览器端并且可以随时删除.",
+      "delete": "删除",
+      "use": "使用"
+    },
     "logs": {
       "pressToSync": "按下按钮同步剪切板 👉",
       "fetching": "正在获取...",
