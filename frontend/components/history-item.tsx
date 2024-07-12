@@ -11,14 +11,9 @@ export default function HistoryItem() {
         {/* <span className="text-sm">1</span> */}
         <LockClosedIcon className="w-4 h-4" />
       </td>
-      <td className="p-2">
-        <p className="line-clamp-1 opacity-70">
-          Cy GandertonCy GandertonCy GandertonCy GandertonCy GandertonCy
-          GandertonCy GandertonCy GandertonCy GandertonCy GandertonCy
-          GandertonCy GandertonCy GandertonCy GandertonCy GandertonCy
-          GandertonCy Ganderton
-        </p>
-        {/* <div className="h-9 relative">
+      <td className="h-12 p-2 w-full">
+        <p className="line-clamp-1 opacity-70">Cy Ganderton</p>
+        {/* <div className="relative">
           <Image
             className="object-left object-contain"
             src="/WechatIMG54720.jpeg"
@@ -30,17 +25,19 @@ export default function HistoryItem() {
           />
         </div> */}
       </td>
-      <td className="w-min p-2 text-xs text-nowrap opacity-50">2月前</td>
+      <td className="w-min p-2 text-xs text-nowrap break-keep opacity-50">
+        2月前
+      </td>
       <td className="w-min p-2">
         <div className="flex flex-row flex-nowrap">
-          <button className="btn btn-sm rounded-r-none px-2 flex-auto text-nowrap">
+          <button className="btn btn-xs rounded-r-none flex-auto text-nowrap break-keep">
             {t("history.use")}
           </button>
           <div className="dropdown dropdown-end">
             <div
               tabIndex={0}
               role="button"
-              className="btn btn-sm border-l-neutral-content rounded-l-none px-2"
+              className="btn btn-xs border-l-neutral-content rounded-l-none"
             >
               <ChevronDownIcon className="h-4 w-4" />
             </div>

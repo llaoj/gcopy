@@ -1,3 +1,5 @@
+import { Clipboard } from "@/models/clipboard";
+
 export interface FileInfo {
   fileName: string;
   fileURL: string;
@@ -8,16 +10,10 @@ export const initFileInfo: FileInfo = {
   fileURL: "",
 };
 
-export interface TmpClipboard {
-  blobId: string;
-  index: string;
-  blob: Blob;
-}
-
-export const initTmpClipboard: TmpClipboard = {
+export const initTmpClipboard: Clipboard = {
   blobId: "",
   index: "",
-  blob: new Blob([]),
+  data: new Blob([]),
 };
 
 export function clipboardWriteBlob(blob: Blob) {

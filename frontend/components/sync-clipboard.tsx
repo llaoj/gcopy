@@ -8,8 +8,8 @@ import { DragEvent, useRef, useState } from "react";
 import clsx from "clsx";
 import { useRouter, usePathname } from "next/navigation";
 import { useLocale, useTranslations, useFormatter } from "next-intl";
+import { Clipboard } from "@/models/clipboard";
 import {
-  TmpClipboard,
   initTmpClipboard,
   clipboardWriteBlob,
   clipboardWriteBlobPromise,
@@ -25,6 +25,8 @@ import SyncButton from "@/components/sync-button";
 import SyncShortcut from "@/components/sync-shortcut";
 import QuickInput from "@/components/quick-input";
 import History from "@/components/history";
+import { db } from "@/models/db";
+import moment from "moment";
 
 // route: /locale?ci=123&cbi=abc
 // - ci: clipboard index
@@ -33,8 +35,7 @@ export default function SyncClipboard() {
   const t = useTranslations("SyncClipboard");
   const format = useFormatter();
   const [fileInfo, setFileInfo] = useState<FileInfo>(initFileInfo);
-  const [tmpClipboard, setTmpClipboard] =
-    useState<TmpClipboard>(initTmpClipboard);
+  const [tmpClipboard, setTmpClipboard] = useState<Clipboard>(initTmpClipboard);
   // "" | interrupted-[r|w] | finished
   const [status, setStatus] = useState<string>("");
   const [dragging, setDragging] = useState(false);
@@ -176,7 +177,7 @@ export default function SyncClipboard() {
         setTmpClipboard({
           blobId: nextBlobId,
           index: xindex,
-          blob: blob,
+          data: blob,
         });
         setStatus("interrupted-w");
         addLog(t("logs.pressAgain"), Level.Warn);
@@ -210,6 +211,15 @@ export default function SyncClipboard() {
         document.title,
         "?" + searchParams.toString(),
       );
+
+      await db.clipboards.put({
+        index: xindex,
+        blobId: searchParams.get("cbi") ?? "",
+        data: blob,
+        type: xtype,
+        createdAt: moment().format(),
+      });
+
       return;
     }
 
@@ -230,6 +240,15 @@ export default function SyncClipboard() {
         document.title,
         "?" + searchParams.toString(),
       );
+
+      await db.clipboards.put({
+        index: xindex,
+        data: blob,
+        type: xtype,
+        filename: xfilename,
+        createdAt: moment().format(),
+      });
+
       return;
     }
   };
@@ -315,6 +334,15 @@ export default function SyncClipboard() {
       document.title,
       `${pathname}?ci=${xindex}&cbi=${nextBlobId}`,
     );
+
+    await db.clipboards.put({
+      index: xindex,
+      blobId: nextBlobId,
+      data: blob,
+      type: xtype,
+      createdAt: moment().format(),
+    });
+
     addLog(
       t("logs.uploaded", { type: t(xtype), index: xindex }),
       Level.Success,
@@ -362,6 +390,15 @@ export default function SyncClipboard() {
       document.title,
       `${pathname}?ci=${xindex}&cbi=${searchParams.get("cbi") ?? ""}`,
     );
+
+    await db.clipboards.put({
+      index: xindex,
+      data: file,
+      type: "file",
+      filename: file.name,
+      createdAt: moment().format(),
+    });
+
     addLog(
       t("logs.uploaded", { type: t("file"), index: xindex }),
       Level.Success,
@@ -392,7 +429,7 @@ export default function SyncClipboard() {
       // Safari requires that every call to the clipboard API must be triggered by the user.
       // So we have to interrupt before the next call to the clipboard API.
       if (status == "interrupted-w") {
-        await clipboardWriteBlobPromise(tmpClipboard.blob);
+        await clipboardWriteBlobPromise(tmpClipboard.data);
         // Known bug:
         //   This blobId is hashed by the fetched blob
         //   which is different from the blob read from clipboard.
