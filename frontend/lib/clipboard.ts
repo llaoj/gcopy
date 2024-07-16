@@ -1,4 +1,11 @@
-import { Clipboard } from "@/models/clipboard";
+export interface Clipboard {
+  index: string;
+  data: Blob;
+  blobId?: string;
+  type?: string;
+  filename?: string;
+  clientName?: string;
+}
 
 export interface FileInfo {
   fileName: string;

@@ -1,12 +1,12 @@
 import Dexie, { Table } from "dexie";
-import { Clipboard } from "./clipboard";
+import { HistoryItem } from "./history";
 
 export class DB extends Dexie {
-  clipboards!: Table<Clipboard, string>;
+  history!: Table<HistoryItem, string>;
   constructor() {
-    super("ClipboardDB");
+    super("HistoryDB");
     this.version(1).stores({
-      clipboards: "index",
+      history: "createdAt, blobId, pin",
     });
   }
 }

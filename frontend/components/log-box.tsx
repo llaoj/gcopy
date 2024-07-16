@@ -1,4 +1,4 @@
-import { Log, Level } from "@/lib/log";
+import { Log, LogLevel } from "@/lib/log";
 import { useRef, useEffect } from "react";
 
 export default function LogBox({ logs }: { logs: Log[] }) {
@@ -13,13 +13,13 @@ export default function LogBox({ logs }: { logs: Log[] }) {
   const listItems = logs.map((log, index) => {
     let level;
     switch (log.level) {
-      case Level.Warn:
+      case LogLevel.Warn:
         level = "text-warning";
         break;
-      case Level.Success:
+      case LogLevel.Success:
         level = "text-green-600";
         break;
-      case Level.Error:
+      case LogLevel.Error:
         level = "text-rose-600";
         break;
       default:
