@@ -1,8 +1,8 @@
 import Dexie, { Table } from "dexie";
-import { HistoryItem } from "./history";
+import { HistoryItemEntity } from "./history";
 
 export class DB extends Dexie {
-  history!: Table<HistoryItem, string>;
+  history!: Table<HistoryItemEntity, string>;
   constructor() {
     super("HistoryDB");
     this.version(1).stores({

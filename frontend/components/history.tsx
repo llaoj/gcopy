@@ -1,8 +1,12 @@
 import { useTranslations } from "next-intl";
 import HistoryItem from "./history-item";
+import { useLiveQuery } from "dexie-react-hooks";
+import { db } from "@/models/db";
 
 export default function History() {
   const t = useTranslations("SyncClipboard.history");
+  const items = useLiveQuery(() => db.history.reverse().toArray());
+  if (!items) return null;
 
   return (
     <div className="pb-4">
@@ -11,9 +15,12 @@ export default function History() {
       <div className="bg-base-100 rounded-box border mb-2 px-2">
         <table className="table">
           <tbody>
-            <HistoryItem />
-            <HistoryItem />
-            <HistoryItem />
+            {items.map(
+              (item) => item.pin == "true" && <HistoryItem item={item} />,
+            )}
+            {items.map(
+              (item) => item.pin == "false" && <HistoryItem item={item} />,
+            )}
           </tbody>
         </table>
       </div>

@@ -26,7 +26,7 @@ import SyncShortcut from "@/components/sync-shortcut";
 import QuickInput from "@/components/quick-input";
 import History from "@/components/history";
 import { db } from "@/models/db";
-import { HistoryItem } from "@/models/history";
+import { HistoryItemEntity } from "@/models/history";
 import moment from "moment";
 
 // route: /locale?ci=123&cbi=abc
@@ -56,7 +56,7 @@ export default function SyncClipboard() {
     );
   }
 
-  const addHistoryItem = async (history: HistoryItem) => {
+  const addHistoryItem = async (history: HistoryItemEntity) => {
     if (history.pin != "true") history.pin = "false";
     history.createdAt = moment().format();
     await db.history.put(history);

@@ -1,6 +1,6 @@
 import { Clipboard } from "@/lib/clipboard";
 
-export interface HistoryItem extends Clipboard {
+export interface HistoryItemEntity extends Clipboard {
   createdAt?: string;
   pin?: string;
 }

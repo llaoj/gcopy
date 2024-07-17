@@ -1,32 +1,57 @@
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { ChevronDownIcon, LockClosedIcon } from "@heroicons/react/24/solid";
 import Image from "next/image";
+import { useEffect, useState } from "react";
+import { HistoryItemEntity } from "@/models/history";
+import moment from "moment/min/moment-with-locales";
 
-export default function HistoryItem() {
+export default function HistoryItem({ item }: { item: HistoryItemEntity }) {
   const t = useTranslations("SyncClipboard");
+  const locale = useLocale();
+  moment.locale(locale == "zh" ? "zh-cn" : "en");
+
+  const [text, setText] = useState<string>("");
+  useEffect(() => {
+    setText("");
+    if (item.type == "text") {
+      const parseText = async () => {
+        setText(await item.data.text());
+      };
+      parseText();
+    }
+  }, [item]);
 
   return (
     <tr>
       <td className="w-4 p-2 opacity-50">
-        {/* <span className="text-sm">1</span> */}
-        <LockClosedIcon className="w-4 h-4" />
+        {item.pin == "true" ? (
+          <LockClosedIcon className="w-4 h-4" />
+        ) : (
+          <span className="text-sm">{item.index}</span>
+        )}
       </td>
-      <td className="h-12 p-2 w-full">
-        <p className="line-clamp-1 opacity-70">Cy Ganderton</p>
-        {/* <div className="relative">
-          <Image
-            className="object-left object-contain"
-            src="/WechatIMG54720.jpeg"
-            // src="/LWScreenShot 2024-02-24 at 17.10.59.png"
-            // src="/WX20240705-140031.png"
-            // src="/WX20240705-140216.png"
-            alt="user's screenshot"
-            fill
-          />
-        </div> */}
+      <td className="h-12 p-2 w-auto">
+        {item.type == "text" && (
+          <p className="line-clamp-1 opacity-70 break-normal">{text}</p>
+        )}
+        {item.type == "screenshot" && (
+          <div className="relative h-full">
+            <Image
+              className="object-left object-contain"
+              src={(window.URL || window.webkitURL).createObjectURL(item.data)}
+              alt="user's screenshot"
+              fill
+            />
+          </div>
+        )}
+        {item.type == "file" && (
+          <p className="line-clamp-1 opacity-70 break-normal">
+            {"[" + t("file") + "]" + item.filename}
+          </p>
+        )}
       </td>
-      <td className="w-min p-2 text-xs text-nowrap break-keep opacity-50">
-        2月前
+      <td className="w-min p-2 text-xs text-nowrap break-keep opacity-50 text-right">
+        {moment(item.createdAt).fromNow()}
       </td>
       <td className="w-min p-2">
         <div className="flex flex-row flex-nowrap">
