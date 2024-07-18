@@ -4,14 +4,16 @@ import {
   LockClosedIcon,
 } from "@heroicons/react/24/solid";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { HistoryItemEntity } from "@/models/history";
 import moment from "moment/min/moment-with-locales";
+import { db } from "@/models/db";
 
 export default function HistoryItem({ item }: { item: HistoryItemEntity }) {
   const t = useTranslations("SyncClipboard");
   const locale = useLocale();
   moment.locale(locale == "zh" ? "zh-cn" : "en");
+  const ulRef = useRef<HTMLUListElement>(null);
 
   const [text, setText] = useState<string>("");
   useEffect(() => {
@@ -64,6 +66,7 @@ export default function HistoryItem({ item }: { item: HistoryItemEntity }) {
           <ul
             tabIndex={0}
             className="dropdown-content menu bg-base-100 rounded-box z-[1] w-fit p-2 shadow"
+            ref={ulRef}
           >
             <li>
               <a>{t("history.use")}</a>
@@ -79,7 +82,14 @@ export default function HistoryItem({ item }: { item: HistoryItemEntity }) {
               </li>
             )}
             <li>
-              <a>{t("history.delete")}</a>
+              <a
+                onClick={() => {
+                  item.createdAt && db.history.delete(item.createdAt);
+                  ulRef.current && ulRef.current.blur();
+                }}
+              >
+                {t("history.delete")}
+              </a>
             </li>
           </ul>
         </div>
