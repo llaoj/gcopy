@@ -73,12 +73,29 @@ export default function HistoryItem({ item }: { item: HistoryItemEntity }) {
             </li>
             {item.pin == "true" && (
               <li>
-                <a>Unpin</a>
+                <a
+                  onClick={() => {
+                    db.history.update(item, { pin: "false" });
+                  }}
+                >
+                  Unpin
+                </a>
               </li>
             )}
             {item.pin == "false" && (
               <li>
-                <a>Pin</a>
+                <a
+                  onClick={async () => {
+                    const count = await db.history
+                      .where("pin")
+                      .equals("true")
+                      .count();
+                    if (count < 10) db.history.update(item, { pin: "true" });
+                    ulRef.current && ulRef.current.blur();
+                  }}
+                >
+                  Pin
+                </a>
               </li>
             )}
             <li>
