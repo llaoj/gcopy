@@ -80,7 +80,8 @@
       "unsupportedFormat": "不支持的格式: {format}.",
       "emptyClipboard": "剪切板是空的.",
       "recommendedBrowsers": "在{os}上, 推荐使用{browsers}浏览器.",
-      "readQuickInputSuccess": "成功读取快捷输入区文字."
+      "readQuickInputSuccess": "成功读取快捷输入区文字.",
+      "pinLimit": "最多可以Pin 10条记录."
     }
   }
 }

@@ -8,8 +8,17 @@ import { useEffect, useRef, useState } from "react";
 import { HistoryItemEntity } from "@/models/history";
 import moment from "moment/min/moment-with-locales";
 import { db } from "@/models/db";
+import { Log, LogLevel } from "@/lib/log";
+import { clipboardWriteBlob, clipboardWriteBlobPromise } from "@/lib/clipboard";
+import { browserName } from "react-device-detect";
 
-export default function HistoryItem({ item }: { item: HistoryItemEntity }) {
+export default function HistoryItem({
+  item,
+  addLog,
+}: {
+  item: HistoryItemEntity;
+  addLog: (log: Log) => void;
+}) {
   const t = useTranslations("SyncClipboard");
   const locale = useLocale();
   moment.locale(locale == "zh" ? "zh-cn" : "en");
@@ -65,11 +74,35 @@ export default function HistoryItem({ item }: { item: HistoryItemEntity }) {
           </div>
           <ul
             tabIndex={0}
-            className="dropdown-content menu bg-base-100 rounded-box z-[1] w-fit p-2 shadow"
+            className="dropdown-content menu bg-base-100 rounded-box z-[1] w-28 p-2 shadow"
             ref={ulRef}
           >
             <li>
-              <a>{t("history.use")}</a>
+              <a
+                onClick={async () => {
+                  ulRef.current && ulRef.current.blur();
+                  if (item.type == "file") {
+                    return;
+                  }
+
+                  if (browserName.includes("Safari")) {
+                    await clipboardWriteBlobPromise(item.data);
+                    addLog({
+                      message: t("logs.writeSuccess"),
+                      level: LogLevel.Success,
+                    });
+                    return;
+                  }
+
+                  await clipboardWriteBlob(item.data);
+                  addLog({
+                    message: t("logs.writeSuccess"),
+                    level: LogLevel.Success,
+                  });
+                }}
+              >
+                {t("history.use")}
+              </a>
             </li>
             {item.pin == "true" && (
               <li>
@@ -86,12 +119,19 @@ export default function HistoryItem({ item }: { item: HistoryItemEntity }) {
               <li>
                 <a
                   onClick={async () => {
+                    ulRef.current && ulRef.current.blur();
                     const count = await db.history
                       .where("pin")
                       .equals("true")
                       .count();
-                    if (count < 10) db.history.update(item, { pin: "true" });
-                    ulRef.current && ulRef.current.blur();
+                    if (count >= 10) {
+                      addLog({
+                        message: t("logs.pinLimit"),
+                        level: LogLevel.Warn,
+                      });
+                      return;
+                    }
+                    db.history.update(item, { pin: "true" });
                   }}
                 >
                   Pin

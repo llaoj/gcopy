@@ -2,8 +2,9 @@ import { useTranslations } from "next-intl";
 import HistoryItem from "./history-item";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/models/db";
+import { Log } from "@/lib/log";
 
-export default function History() {
+export default function History({ addLog }: { addLog: (log: Log) => void }) {
   const t = useTranslations("SyncClipboard.history");
   const items = useLiveQuery(() => db.history.reverse().toArray());
   if (!items) return null;
@@ -16,10 +17,16 @@ export default function History() {
         <table className="table">
           <tbody>
             {items.map(
-              (item) => item.pin == "true" && <HistoryItem item={item} />,
+              (item) =>
+                item.pin == "true" && (
+                  <HistoryItem item={item} addLog={addLog} />
+                ),
             )}
             {items.map(
-              (item) => item.pin == "false" && <HistoryItem item={item} />,
+              (item) =>
+                item.pin == "false" && (
+                  <HistoryItem item={item} addLog={addLog} />
+                ),
             )}
           </tbody>
         </table>

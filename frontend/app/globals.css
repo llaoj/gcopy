@@ -66,3 +66,32 @@ body {
   padding-right: 0.3rem;
   margin-left: -1.75rem;
 }
+
+.logbox ::-webkit-scrollbar-track {
+  background: var(--fallback-n, oklch(var(--n)));
+}
+
+.logbox ::-webkit-scrollbar-thumb {
+  background: var(--fallback-b3, oklch(var(--b3)));
+}
+
+.logbox ::-webkit-scrollbar-thumb:hover {
+  background: var(--fallback-b1, oklch(var(--b1)));
+}
+
+::-webkit-scrollbar {
+  width: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--fallback-b2, oklch(var(--b2)));
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--fallback-b3, oklch(var(--b3)));
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--fallback-bc, oklch(var(--bc)));
+}

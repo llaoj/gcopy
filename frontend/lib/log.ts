@@ -10,7 +10,7 @@ export enum LogLevel {
 }
 
 export interface Log {
-  level: LogLevel;
+  level?: LogLevel;
   message: string;
 }
 
@@ -49,10 +49,10 @@ export function useLog() {
 
   const [logs, setLogs] = useState<Log[]>(initLogs);
 
-  const addLog = (message: string, level?: LogLevel) => {
+  const addLog = (log: Log) => {
     setLogs((current) => [
       ...current,
-      { level: level ?? LogLevel.Info, message: message },
+      { level: log.level ?? LogLevel.Info, message: log.message },
     ]);
   };
 

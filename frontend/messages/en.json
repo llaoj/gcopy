@@ -80,7 +80,8 @@
       "unsupportedFormat": "Unsupported format: {format}.",
       "emptyClipboard": "Clipboard is empty.",
       "recommendedBrowsers": "On {os}, recommend using {browsers} browser.",
-      "readQuickInputSuccess": "Read text from quick input area successfully."
+      "readQuickInputSuccess": "Read text from quick input area successfully.",
+      "pinLimit": "Up to 10 items can be pinned."
     }
   }
 }

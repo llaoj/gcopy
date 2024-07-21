@@ -84,7 +84,7 @@ export default function SyncClipboard() {
 
   const pullClipboard = async () => {
     resetLog();
-    addLog(t("logs.fetching"));
+    addLog({ message: t("logs.fetching") });
     const searchParams = new URLSearchParams(window.location.search);
     const response = await fetch("/api/v1/clipboard", {
       headers: {
@@ -99,7 +99,7 @@ export default function SyncClipboard() {
 
     if (response.status != 200) {
       const body = await response.json();
-      addLog(body.message, LogLevel.Error);
+      addLog({ message: body.message, level: LogLevel.Error });
       return;
     }
     const xindex = response.headers.get("x-index");
@@ -111,12 +111,12 @@ export default function SyncClipboard() {
       xtype == "" ||
       xtype == null
     ) {
-      addLog(t("logs.upToDate"));
+      addLog({ message: t("logs.upToDate") });
 
       if (browserName.includes("Safari")) {
         setStatus("interrupted-r");
-        addLog(t("logs.pressAgain"), LogLevel.Warn);
-        addLog(t("logs.pressPaste"), LogLevel.Warn);
+        addLog({ message: t("logs.pressAgain"), level: LogLevel.Warn });
+        addLog({ message: t("logs.pressPaste"), level: LogLevel.Warn });
         return;
       }
 
@@ -124,16 +124,16 @@ export default function SyncClipboard() {
       return;
     }
     const xclientname = response.headers.get("x-clientname");
-    addLog(
-      t("logs.received", {
+    addLog({
+      message: t("logs.received", {
         type: t(xtype),
         index: xindex,
         clientname: xclientname ?? "UNKNOWN",
       }),
-    );
+    });
 
     if (xtype == "file") {
-      addLog(t("logs.autoDownload"), LogLevel.Success);
+      addLog({ message: t("logs.autoDownload"), level: LogLevel.Success });
     }
 
     let blob = await response.blob();
@@ -156,13 +156,13 @@ export default function SyncClipboard() {
           data: blob,
         });
         setStatus("interrupted-w");
-        addLog(t("logs.pressAgain"), LogLevel.Warn);
+        addLog({ message: t("logs.pressAgain"), level: LogLevel.Warn });
         return;
       }
 
       await clipboardWriteBlob(blob);
       searchParams.set("ci", xindex);
-      addLog(t("logs.writeSuccess"), LogLevel.Success);
+      addLog({ message: t("logs.writeSuccess"), level: LogLevel.Success });
 
       // Cannot read the clipboard after writing immediately on Chrome for Android, Edge for Android, Edge for HarmonyOS.
       // So, after writing, you need to wait for a while before you can read it.
@@ -231,7 +231,7 @@ export default function SyncClipboard() {
     let blob = null;
     if (textareaRef.current && textareaRef.current.value != "") {
       blob = new Blob([textareaRef.current.value], { type: "text/plain" });
-      addLog(t("logs.readQuickInputSuccess"));
+      addLog({ message: t("logs.readQuickInputSuccess") });
     }
 
     if (textareaRef.current?.value == "") {
@@ -239,11 +239,11 @@ export default function SyncClipboard() {
         return;
       }
       blob = await clipboardRead();
-      addLog(t("logs.readClipboardSuccess"));
+      addLog({ message: t("logs.readClipboardSuccess") });
     }
 
     if (!blob) {
-      addLog(t("logs.emptyClipboard"));
+      addLog({ message: t("logs.emptyClipboard") });
       return;
     }
     let xtype;
@@ -258,10 +258,10 @@ export default function SyncClipboard() {
         xtype = "screenshot";
         break;
       default:
-        addLog(
-          t("logs.unsupportedFormat", { format: blob.type }),
-          LogLevel.Error,
-        );
+        addLog({
+          message: t("logs.unsupportedFormat", { format: blob.type }),
+          level: LogLevel.Error,
+        });
         xtype = "";
     }
     if (xtype == "") {
@@ -271,10 +271,10 @@ export default function SyncClipboard() {
     const nextBlobId = await hashBlob(blob);
     const searchParams = new URLSearchParams(window.location.search);
     if (nextBlobId == searchParams.get("cbi")) {
-      addLog(t("logs.unchanged"));
+      addLog({ message: t("logs.unchanged") });
       return;
     }
-    addLog(t("logs.uploading"));
+    addLog({ message: t("logs.uploading") });
 
     const response = await fetch("/api/v1/clipboard", {
       method: "POST",
@@ -293,7 +293,7 @@ export default function SyncClipboard() {
 
     if (response.status != 200) {
       const body = await response.json();
-      addLog(body.message, LogLevel.Error);
+      addLog({ message: body.message, level: LogLevel.Error });
       return;
     }
 
@@ -319,16 +319,16 @@ export default function SyncClipboard() {
       type: xtype,
     });
 
-    addLog(
-      t("logs.uploaded", { type: t(xtype), index: xindex }),
-      LogLevel.Success,
-    );
+    addLog({
+      message: t("logs.uploaded", { type: t(xtype), index: xindex }),
+      level: LogLevel.Success,
+    });
   };
 
   const uploadFileHandler = async (file: File) => {
     resetLog();
 
-    addLog(t("logs.uploading"));
+    addLog({ message: t("logs.uploading") });
     const response = await fetch("/api/v1/clipboard", {
       method: "POST",
       headers: {
@@ -346,7 +346,7 @@ export default function SyncClipboard() {
 
     if (response.status != 200) {
       const body = await response.json();
-      addLog(body.message, LogLevel.Error);
+      addLog({ message: body.message, level: LogLevel.Error });
       return;
     }
     const xindex = response.headers.get("x-index");
@@ -374,10 +374,10 @@ export default function SyncClipboard() {
       filename: file.name,
     });
 
-    addLog(
-      t("logs.uploaded", { type: t("file"), index: xindex }),
-      LogLevel.Success,
-    );
+    addLog({
+      message: t("logs.uploaded", { type: t("file"), index: xindex }),
+      level: LogLevel.Success,
+    });
 
     setStatus("finished");
   };
@@ -396,7 +396,7 @@ export default function SyncClipboard() {
           name: permissionClipboardRead,
         });
         if (permission.state === "denied") {
-          addLog(t("logs.denyRead"), LogLevel.Error);
+          addLog({ message: t("logs.denyRead"), level: LogLevel.Error });
           return;
         }
       }
@@ -414,7 +414,7 @@ export default function SyncClipboard() {
           document.title,
           `${pathname}?ci=${tmpClipboard.index}&cbi=${tmpClipboard.blobId}`,
         );
-        addLog(t("logs.writeSuccess"), LogLevel.Success);
+        addLog({ message: t("logs.writeSuccess"), level: LogLevel.Success });
 
         setTmpClipboard(initTmpClipboard);
         setStatus("finished");
@@ -432,7 +432,7 @@ export default function SyncClipboard() {
         current.startsWith("interrupted") ? current : "finished",
       );
     } catch (err) {
-      addLog(String(err), LogLevel.Error);
+      addLog({ message: String(err), level: LogLevel.Error });
       setStatus("finished");
     }
   };
@@ -515,7 +515,7 @@ export default function SyncClipboard() {
           />
         </div>
       </div>
-      <History />
+      <History addLog={addLog} />
     </>
   );
 }
