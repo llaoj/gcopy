@@ -3,8 +3,15 @@ import HistoryItem from "./history-item";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/models/db";
 import { Log } from "@/lib/log";
+import { FileInfo } from "@/lib/clipboard";
 
-export default function History({ addLog }: { addLog: (log: Log) => void }) {
+export default function History({
+  addLog,
+  updateFileLink,
+}: {
+  addLog: (log: Log) => void;
+  updateFileLink: (fileInfo: FileInfo) => void;
+}) {
   const t = useTranslations("SyncClipboard.history");
   const items = useLiveQuery(() => db.history.reverse().toArray());
   if (!items) return null;
@@ -19,13 +26,21 @@ export default function History({ addLog }: { addLog: (log: Log) => void }) {
             {items.map(
               (item) =>
                 item.pin == "true" && (
-                  <HistoryItem item={item} addLog={addLog} />
+                  <HistoryItem
+                    item={item}
+                    addLog={addLog}
+                    updateFileLink={updateFileLink}
+                  />
                 ),
             )}
             {items.map(
               (item) =>
                 item.pin == "false" && (
-                  <HistoryItem item={item} addLog={addLog} />
+                  <HistoryItem
+                    item={item}
+                    addLog={addLog}
+                    updateFileLink={updateFileLink}
+                  />
                 ),
             )}
           </tbody>

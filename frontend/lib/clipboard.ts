@@ -3,7 +3,7 @@ export interface Clipboard {
   data: Blob;
   blobId?: string;
   type?: string;
-  filename?: string;
+  fileName?: string;
   clientName?: string;
 }
 

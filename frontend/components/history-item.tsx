@@ -11,13 +11,16 @@ import { db } from "@/models/db";
 import { Log, LogLevel } from "@/lib/log";
 import { clipboardWriteBlob, clipboardWriteBlobPromise } from "@/lib/clipboard";
 import { browserName } from "react-device-detect";
+import { FileInfo } from "@/lib/clipboard";
 
 export default function HistoryItem({
   item,
   addLog,
+  updateFileLink,
 }: {
   item: HistoryItemEntity;
   addLog: (log: Log) => void;
+  updateFileLink: (fileInfo: FileInfo) => void;
 }) {
   const t = useTranslations("SyncClipboard");
   const locale = useLocale();
@@ -60,7 +63,7 @@ export default function HistoryItem({
         )}
         {item.type == "file" && (
           <p className="line-clamp-1 opacity-70 break-all">
-            {"[" + t("file") + "]" + item.filename}
+            {"[" + t("file") + "]" + item.fileName}
           </p>
         )}
       </td>
@@ -82,23 +85,36 @@ export default function HistoryItem({
                 onClick={async () => {
                   ulRef.current && ulRef.current.blur();
                   if (item.type == "file") {
+                    updateFileLink({
+                      fileName: item.fileName ?? "",
+                      fileURL: (window.URL || window.webkitURL).createObjectURL(
+                        item.data,
+                      ),
+                    });
+                    addLog({
+                      message: t("logs.autoDownload"),
+                      level: LogLevel.Success,
+                    });
                     return;
                   }
 
-                  if (browserName.includes("Safari")) {
-                    await clipboardWriteBlobPromise(item.data);
+                  if (item.type == "text" || item.type == "screenshot") {
+                    if (browserName.includes("Safari")) {
+                      await clipboardWriteBlobPromise(item.data);
+                      addLog({
+                        message: t("logs.writeSuccess"),
+                        level: LogLevel.Success,
+                      });
+                      return;
+                    }
+
+                    await clipboardWriteBlob(item.data);
                     addLog({
                       message: t("logs.writeSuccess"),
                       level: LogLevel.Success,
                     });
                     return;
                   }
-
-                  await clipboardWriteBlob(item.data);
-                  addLog({
-                    message: t("logs.writeSuccess"),
-                    level: LogLevel.Success,
-                  });
                 }}
               >
                 {t("history.use")}

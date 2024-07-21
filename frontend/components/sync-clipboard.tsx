@@ -56,6 +56,10 @@ export default function SyncClipboard() {
     );
   }
 
+  const updateFileLink = (fileInfo: FileInfo) => {
+    setFileInfo(fileInfo);
+  };
+
   const addHistoryItem = async (history: HistoryItemEntity) => {
     if (history.pin != "true") history.pin = "false";
     history.createdAt = moment().format();
@@ -132,18 +136,14 @@ export default function SyncClipboard() {
       }),
     });
 
-    if (xtype == "file") {
-      addLog({ message: t("logs.autoDownload"), level: LogLevel.Success });
-    }
-
     let blob = await response.blob();
 
-    // Format or rebuild blob
-    if (xtype == "text") {
-      blob = await toTextBlob(blob);
-    }
-
     if (xtype == "text" || xtype == "screenshot") {
+      // Format or rebuild blob
+      if (xtype == "text") {
+        blob = await toTextBlob(blob);
+      }
+
       const nextBlobId: string = await hashBlob(blob);
       if (nextBlobId == searchParams.get("cbi")) {
         return;
@@ -203,10 +203,11 @@ export default function SyncClipboard() {
       if (xfilename == null || xfilename == "") {
         return;
       }
-      setFileInfo({
+      updateFileLink({
         fileName: decodeURI(xfilename),
         fileURL: URL.createObjectURL(blob),
       });
+      addLog({ message: t("logs.autoDownload"), level: LogLevel.Success });
       // The file did not enter the clipboard,
       // so only update the index.
       searchParams.set("ci", xindex);
@@ -220,7 +221,7 @@ export default function SyncClipboard() {
         index: xindex,
         data: blob,
         type: xtype,
-        filename: xfilename,
+        fileName: xfilename,
       });
 
       return;
@@ -354,7 +355,7 @@ export default function SyncClipboard() {
       return;
     }
 
-    setFileInfo({
+    updateFileLink({
       fileName: file.name,
       fileURL: "",
     });
@@ -371,7 +372,7 @@ export default function SyncClipboard() {
       index: xindex,
       data: file,
       type: "file",
-      filename: file.name,
+      fileName: file.name,
     });
 
     addLog({
@@ -515,7 +516,7 @@ export default function SyncClipboard() {
           />
         </div>
       </div>
-      <History addLog={addLog} />
+      <History addLog={addLog} updateFileLink={updateFileLink} />
     </>
   );
 }
