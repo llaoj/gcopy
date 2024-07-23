@@ -60,7 +60,8 @@
       "title": "历史记录",
       "subTitle": "仅存储在本地浏览器并且可以随时删除.",
       "delete": "删除",
-      "use": "使用"
+      "use": "使用",
+      "empty": "空"
     },
     "logs": {
       "pressToSync": "按下按钮同步剪切板 👉",

@@ -60,7 +60,8 @@
       "title": "History",
       "subTitle": "Stored only locally on the browser and can be deleted at any time.",
       "delete": "Delete",
-      "use": "Use"
+      "use": "Use",
+      "empty": "Empty"
     },
     "logs": {
       "pressToSync": "Press the button to sync clipboard 👉",

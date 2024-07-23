@@ -23,6 +23,11 @@ export default function History({
       <div className="bg-base-100 rounded-box border mb-2 px-2">
         <table className="table">
           <tbody>
+            {items.length == 0 && (
+              <tr>
+                <td className="w-4 p-2 opacity-50 text-center">{t("empty")}</td>
+              </tr>
+            )}
             {items.map(
               (item) =>
                 item.pin == "true" && (

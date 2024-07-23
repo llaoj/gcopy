@@ -154,6 +154,7 @@ export default function SyncClipboard() {
           blobId: nextBlobId,
           index: xindex,
           data: blob,
+          type: xtype,
         });
         setStatus("interrupted-w");
         addLog({ message: t("logs.pressAgain"), level: LogLevel.Warn });
@@ -328,7 +329,6 @@ export default function SyncClipboard() {
 
   const uploadFileHandler = async (file: File) => {
     resetLog();
-
     addLog({ message: t("logs.uploading") });
     const response = await fetch("/api/v1/clipboard", {
       method: "POST",
@@ -415,6 +415,14 @@ export default function SyncClipboard() {
           document.title,
           `${pathname}?ci=${tmpClipboard.index}&cbi=${tmpClipboard.blobId}`,
         );
+
+        await addHistoryItem({
+          index: tmpClipboard.index,
+          blobId: tmpClipboard.blobId,
+          data: tmpClipboard.data,
+          type: tmpClipboard.type,
+        });
+
         addLog({ message: t("logs.writeSuccess"), level: LogLevel.Success });
 
         setTmpClipboard(initTmpClipboard);
@@ -459,7 +467,7 @@ export default function SyncClipboard() {
         </div>
         <div
           className={clsx(
-            "preview min-h-52 border rounded-box flex flex-col items-center justify-center gap-y-1 px-4",
+            "preview min-h-24 md:min-h-52 border rounded-box flex flex-col items-center justify-center gap-y-1 px-4",
             { "border-primary text-primary": dragging },
             { "border-base-300": !dragging },
           )}
