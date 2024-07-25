@@ -1,4 +1,4 @@
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import {
   EllipsisHorizontalIcon,
   LockClosedIcon,
@@ -23,8 +23,6 @@ export default function HistoryItem({
   updateFileLink: (fileInfo: FileInfo) => void;
 }) {
   const t = useTranslations("SyncClipboard");
-  const locale = useLocale();
-  moment.locale(locale == "zh" ? "zh-cn" : "en");
   const ulRef = useRef<HTMLUListElement>(null);
 
   const [text, setText] = useState<string>("");
@@ -32,7 +30,13 @@ export default function HistoryItem({
     setText("");
     if (item.type == "text") {
       const parseText = async () => {
-        setText(await item.data.text());
+        if (item.dataArrayBuffer) {
+          setText(
+            await new Blob([item.dataArrayBuffer], {
+              type: item.dataType,
+            }).text(),
+          );
+        }
       };
       parseText();
     }
@@ -55,7 +59,13 @@ export default function HistoryItem({
           <div className="relative h-full">
             <Image
               className="object-left object-contain"
-              src={(window.URL || window.webkitURL).createObjectURL(item.data)}
+              src={
+                item.dataArrayBuffer
+                  ? (window.URL || window.webkitURL).createObjectURL(
+                      new Blob([item.dataArrayBuffer], { type: item.dataType }),
+                    )
+                  : ""
+              }
               alt="user's screenshot"
               fill
             />
@@ -67,10 +77,10 @@ export default function HistoryItem({
           </p>
         )}
       </td>
-      <td className="w-min p-2 text-xs text-nowrap break-keep opacity-50 text-right">
+      <td className="w-min pr-0 whitespace-pre p-2 text-xs text-nowrap break-keep opacity-50 text-right">
         {moment(item.createdAt).fromNow()}
       </td>
-      <td className="w-min p-2">
+      <td className="w-9 px-0">
         <div className="dropdown dropdown-end">
           <div tabIndex={0} role="button" className="btn btn-ghost btn-xs">
             <EllipsisHorizontalIcon className="h-4 w-4" />
@@ -135,12 +145,12 @@ export default function HistoryItem({
               <li>
                 <a
                   onClick={async () => {
-                    ulRef.current && ulRef.current.blur();
                     const count = await db.history
                       .where("pin")
                       .equals("true")
                       .count();
                     if (count >= 10) {
+                      ulRef.current && ulRef.current.blur();
                       addLog({
                         message: t("logs.pinLimit"),
                         level: LogLevel.Warn,

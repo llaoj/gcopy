@@ -20,7 +20,7 @@ export default function History({
     <div className="pb-4">
       <div className="pb-2 text-base font-bold">{t("title")}</div>
       <div className="pb-2 text-sm opacity-70">{t("subTitle")}</div>
-      <div className="bg-base-100 rounded-box border mb-2 px-2">
+      <div className="bg-base-100 rounded-box mb-2 px-2 border border-base-300">
         <table className="table">
           <tbody>
             {items.length == 0 && (
@@ -32,6 +32,7 @@ export default function History({
               (item) =>
                 item.pin == "true" && (
                   <HistoryItem
+                    key={item.createdAt}
                     item={item}
                     addLog={addLog}
                     updateFileLink={updateFileLink}
@@ -42,6 +43,7 @@ export default function History({
               (item) =>
                 item.pin == "false" && (
                   <HistoryItem
+                    key={item.createdAt}
                     item={item}
                     addLog={addLog}
                     updateFileLink={updateFileLink}

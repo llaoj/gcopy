@@ -3,12 +3,14 @@ import SyncClipboard from "@/components/sync-clipboard";
 import Notice from "@/components/notice";
 import Footer from "@/components/footer";
 import { NextIntlClientProvider, useMessages } from "next-intl";
+import moment from "moment/min/moment-with-locales";
 
 export default function Home({
   params: { locale },
 }: {
   params: { locale: string };
 }) {
+  moment.locale(locale == "zh" ? "zh-cn" : "en");
   const messages = useMessages();
   return (
     <div className="min-h-screen flex flex-col items-center justify-between mx-auto  max-w-5xl">

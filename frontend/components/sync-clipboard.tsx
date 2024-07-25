@@ -63,6 +63,8 @@ export default function SyncClipboard() {
   const addHistoryItem = async (history: HistoryItemEntity) => {
     if (history.pin != "true") history.pin = "false";
     history.createdAt = moment().format();
+    history.dataArrayBuffer = await history.data.arrayBuffer();
+    history.dataType = history.data.type;
     await db.history.put(history);
     const items = await db.history
       .where("pin")

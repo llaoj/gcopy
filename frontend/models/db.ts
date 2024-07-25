@@ -6,7 +6,7 @@ export class DB extends Dexie {
   constructor() {
     super("GCopyDB");
     this.version(1).stores({
-      history: "createdAt, blobId, pin",
+      history: "createdAt, pin",
     });
   }
 }
