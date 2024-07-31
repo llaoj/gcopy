@@ -77,7 +77,7 @@ export default function HistoryItem({
           </p>
         )}
       </td>
-      <td className="w-min pr-0 whitespace-pre p-2 text-xs text-nowrap break-keep opacity-50 text-right">
+      <td className="w-min pr-1 whitespace-pre p-2 text-xs text-nowrap break-keep opacity-50 text-right">
         {moment(item.createdAt).fromNow()}
       </td>
       <td className="w-9 px-0">
@@ -87,43 +87,48 @@ export default function HistoryItem({
           </div>
           <ul
             tabIndex={0}
-            className="dropdown-content menu bg-base-100 rounded-box z-[1] w-28 p-2 shadow"
+            className="dropdown-content menu bg-base-100 rounded-box z-[1] w-28 p-2 shadow-lg border border-base-300"
             ref={ulRef}
           >
             <li>
               <a
+                className="hover:bg-base-300 opacity-70"
                 onClick={async () => {
-                  ulRef.current && ulRef.current.blur();
-                  if (item.type == "file") {
-                    updateFileLink({
-                      fileName: item.fileName ?? "",
-                      fileURL: (window.URL || window.webkitURL).createObjectURL(
-                        item.data,
-                      ),
-                    });
-                    addLog({
-                      message: t("logs.autoDownload"),
-                      level: LogLevel.Success,
-                    });
-                    return;
-                  }
+                  try {
+                    ulRef.current && ulRef.current.blur();
+                    if (item.type == "file") {
+                      updateFileLink({
+                        fileName: item.fileName ?? "",
+                        fileURL: (
+                          window.URL || window.webkitURL
+                        ).createObjectURL(item.data),
+                      });
+                      addLog({
+                        message: t("logs.autoDownload"),
+                        level: LogLevel.Success,
+                      });
+                      return;
+                    }
 
-                  if (item.type == "text" || item.type == "screenshot") {
-                    if (browserName.includes("Safari")) {
-                      await clipboardWriteBlobPromise(item.data);
+                    if (item.type == "text" || item.type == "screenshot") {
+                      if (browserName.includes("Safari")) {
+                        await clipboardWriteBlobPromise(item.data);
+                        addLog({
+                          message: t("logs.writeSuccess"),
+                          level: LogLevel.Success,
+                        });
+                        return;
+                      }
+
+                      await clipboardWriteBlob(item.data);
                       addLog({
                         message: t("logs.writeSuccess"),
                         level: LogLevel.Success,
                       });
                       return;
                     }
-
-                    await clipboardWriteBlob(item.data);
-                    addLog({
-                      message: t("logs.writeSuccess"),
-                      level: LogLevel.Success,
-                    });
-                    return;
+                  } catch (err) {
+                    addLog({ message: String(err), level: LogLevel.Error });
                   }
                 }}
               >
@@ -133,6 +138,7 @@ export default function HistoryItem({
             {item.pin == "true" && (
               <li>
                 <a
+                  className="hover:bg-base-300 opacity-70"
                   onClick={() => {
                     db.history.update(item, { pin: "false" });
                   }}
@@ -144,6 +150,7 @@ export default function HistoryItem({
             {item.pin == "false" && (
               <li>
                 <a
+                  className="hover:bg-base-300 opacity-70"
                   onClick={async () => {
                     const count = await db.history
                       .where("pin")
@@ -166,6 +173,7 @@ export default function HistoryItem({
             )}
             <li>
               <a
+                className="hover:bg-base-300 opacity-70"
                 onClick={() => {
                   item.createdAt && db.history.delete(item.createdAt);
                   ulRef.current && ulRef.current.blur();
