@@ -47,7 +47,7 @@
     "file": "FILE",
     "syncFile": {
       "title": "Sync the files",
-      "subTitle": "Drag and drop a file here to sync it to different devices.",
+      "subTitle": "Choose a file and sync it between different devices.",
       "dragDropTip": "Drag and drop a file here",
       "fileInputText": "Choose a file"
     },
@@ -55,6 +55,13 @@
       "title": "Quick input",
       "subTitle": "Type text, press the button and the text synced between devices.",
       "newline": "Newline"
+    },
+    "history": {
+      "title": "History",
+      "subTitle": "Stored only locally on the browser and can be deleted at any time.",
+      "delete": "Delete",
+      "use": "Use",
+      "empty": "Empty"
     },
     "logs": {
       "pressToSync": "Press the button to sync clipboard 👉",
@@ -74,7 +81,8 @@
       "unsupportedFormat": "Unsupported format: {format}.",
       "emptyClipboard": "Clipboard is empty.",
       "recommendedBrowsers": "On {os}, recommend using {browsers} browser.",
-      "readQuickInputSuccess": "Read text from quick input area successfully."
+      "readQuickInputSuccess": "Read text from quick input area successfully.",
+      "pinLimit": "Up to 10 items can be pinned."
     }
   }
 }

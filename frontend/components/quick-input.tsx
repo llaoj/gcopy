@@ -29,7 +29,7 @@ export default function QuickInput({
         />
         <div className="flex justify-between items-center text-sm select-none opacity-70 peer-checked/showTextarea:pb-2 cursor-pointer">
           <div>
-            <span className="font-bold">{t("quickInput.title")}:</span>
+            <span className="font-bold">{t("quickInput.title")}</span>
             <span>{" " + t("quickInput.subTitle")}</span>
             {isDesktop && (
               <span className="ml-1 text-xs opacity-50">

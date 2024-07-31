@@ -1,3 +1,12 @@
+export interface Clipboard {
+  index: string;
+  data: Blob;
+  blobId?: string;
+  type?: string;
+  fileName?: string;
+  clientName?: string;
+}
+
 export interface FileInfo {
   fileName: string;
   fileURL: string;
@@ -8,16 +17,10 @@ export const initFileInfo: FileInfo = {
   fileURL: "",
 };
 
-export interface TmpClipboard {
-  blobId: string;
-  index: string;
-  blob: Blob;
-}
-
-export const initTmpClipboard: TmpClipboard = {
+export const initTmpClipboard: Clipboard = {
   blobId: "",
   index: "",
-  blob: new Blob([]),
+  data: new Blob([]),
 };
 
 export function clipboardWriteBlob(blob: Blob) {
