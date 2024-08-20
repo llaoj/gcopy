@@ -108,6 +108,7 @@ func (s *Server) getClipboardHandler(c *gin.Context) {
 	}
 
 	c.Status(http.StatusOK)
+	c.Header("Content-Type", cb.MIMEType)
 	c.Header("X-Index", strconv.Itoa(cb.Index))
 	c.Header("X-Type", cb.Type)
 	c.Header("X-FileName", cb.FileName)
@@ -179,6 +180,7 @@ func (s *Server) updateClipboardHandler(c *gin.Context) {
 		Data:       data,
 		CreatedAt:  time.Now(),
 		ClientName: clientName,
+		MIMEType:   c.Request.Header.Get("Content-Type"),
 	}
 	s.log.Infof("[%s] Received %s(%v)", utils.StrMaskMiddle(sub), cb.Type, cb.Index)
 	s.wall.Set(sub, cb)

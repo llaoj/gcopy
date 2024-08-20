@@ -15,4 +15,5 @@ type Clipboard struct {
 	CreatedAt time.Time
 	// The client where the clipboard data from, format: <os-name> <browser-name>
 	ClientName string
+	MIMEType   string
 }
