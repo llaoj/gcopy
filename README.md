@@ -62,6 +62,10 @@ The tested browsers and its versions are listed below:
 - At any given time, only one file can be synchronized.
 - Due to limited server memory, the size of the files you synchronize must not exceed `--max-content-length` MB.
 
+## Sponsor
+
+[Buy me a coffee](docs/sponsor.md)
+
 ## Community
 
 Welcome to join GCopy, whether you're a user or a contributor!
