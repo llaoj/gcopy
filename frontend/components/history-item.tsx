@@ -73,7 +73,7 @@ export default function HistoryItem({
         )}
         {item.type == "file" && (
           <p className="line-clamp-1 opacity-70 break-all">
-            {"[" + t("file") + "]" + item.fileName}
+            {"[" + t("file") + "]" + decodeURI(item.fileName ?? "")}
           </p>
         )}
       </td>

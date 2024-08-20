@@ -67,6 +67,10 @@ GCopy依赖浏览器的Clipboard API. 它的浏览器兼容性请参考: [browse
 - 同时只能同步一个文件.
 - 因为服务器内存有限, 您同步的文件不能超过`--max-content-length`MB.
 
+## 感谢支持
+
+[打赏杯咖啡吧](../sponsor.md)
+
 ## 社区
 
 欢迎你参与到GCopy中来, 不管你是用户还是贡献者,  
@@ -86,7 +90,7 @@ GCopy依赖浏览器的Clipboard API. 它的浏览器兼容性请参考: [browse
 
 Safari on iOS
 
-<img width="300" alt="screenshot on ios safari" src="../screenshot-ios-safari.png">
+<img width="300" alt="screenshot on ios safari" src="../screenshot-ios-safari.jpeg">
 
 ## 更多
 
