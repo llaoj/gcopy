@@ -90,7 +90,7 @@ GCopy依赖浏览器的Clipboard API. 它的浏览器兼容性请参考: [browse
 
 Safari on iOS
 
-<img width="300" alt="screenshot on ios safari" src="../screenshot-ios-safari.png">
+<img width="300" alt="screenshot on ios safari" src="../screenshot-ios-safari.jpeg">
 
 ## 更多
 

@@ -86,7 +86,7 @@ Server link: https://discord.gg/pyTrT3aAaC
 
 Safari on iOS
 
-<img width="300" alt="screenshot on ios safari" src="docs/screenshot-ios-safari.png">
+<img width="300" alt="screenshot on ios safari" src="docs/screenshot-ios-safari.jpeg">
 
 ## More
 
