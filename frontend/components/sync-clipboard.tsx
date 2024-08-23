@@ -202,13 +202,15 @@ export default function SyncClipboard() {
     }
 
     if (xtype == "file") {
-      const xfilename = response.headers.get("x-filename");
+      let xfilename = response.headers.get("x-filename");
       if (xfilename == null || xfilename == "") {
         return;
       }
+      xfilename = decodeURI(xfilename);
+      let downloadedFile = new File([blob], xfilename, { type: blob.type });
       updateFileLink({
-        fileName: decodeURI(xfilename),
-        fileURL: URL.createObjectURL(blob),
+        fileName: xfilename,
+        fileURL: URL.createObjectURL(downloadedFile),
       });
       addLog({ message: t("logs.autoDownload"), level: LogLevel.Success });
       // The file did not enter the clipboard,
@@ -222,7 +224,7 @@ export default function SyncClipboard() {
 
       await addHistoryItem({
         index: xindex,
-        data: blob,
+        data: downloadedFile,
         type: xtype,
         fileName: xfilename,
       });
