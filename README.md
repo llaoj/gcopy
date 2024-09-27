@@ -90,5 +90,5 @@ Safari on iOS
 
 ## More
 
-- [Deploy by docker](/docs/deploy-by-docker.md)
+- [Deploy by Docker](/docs/deploy-by-docker.md)
 - [Deploy from source code](./docs/deploy-from-source.md)

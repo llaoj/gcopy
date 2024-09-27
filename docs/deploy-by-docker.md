@@ -1,4 +1,4 @@
-# Deploy by docker
+# Deploy by Docker
 We have prepared the container image for you. Deploying directly using Docker is the most convenient option.
 
 ## Standalone
