@@ -3,7 +3,7 @@ import "@/app/globals.css";
 import { ReactNode } from "react";
 import { getTranslations } from "next-intl/server";
 import type { Viewport } from "next";
-import { GoogleAnalytics } from '@next/third-parties/google'
+import { GoogleAnalytics } from "@next/third-parties/google";
 
 export async function generateMetadata({
   params: { locale },
