@@ -3,7 +3,7 @@ import "@/app/globals.css";
 import { ReactNode } from "react";
 import { getTranslations } from "next-intl/server";
 import type { Viewport } from "next";
-import GoogleAdsense from "@/components/google-adsense";
+import { GoogleAnalytics } from '@next/third-parties/google'
 
 export async function generateMetadata({
   params: { locale },
@@ -36,7 +36,9 @@ export default function RootLayout({
   return (
     <html lang={locale}>
       <body className={`${inter.className} bg-base-200`}>{children}</body>
-      <GoogleAdsense pId={process.env.GoogleAdsensePId} />
+      {process.env.GOOGLE_ANALYTICS_ID && (
+        <GoogleAnalytics gaId={process.env.GOOGLE_ANALYTICS_ID} />
+      )}
     </html>
   );
 }

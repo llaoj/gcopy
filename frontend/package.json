@@ -13,6 +13,7 @@
   "dependencies": {
     "@formatjs/intl-localematcher": "^0.5.4",
     "@heroicons/react": "^2.1.1",
+    "@next/third-parties": "^15.0.1",
     "clsx": "^2.1.0",
     "dexie": "^4.0.8",
     "dexie-react-hooks": "^1.1.7",
