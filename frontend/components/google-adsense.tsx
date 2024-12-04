@@ -8,7 +8,10 @@ export default function GoogleAdsense({ pId }: { pId?: string }) {
   return (
     <Script
       async
-      src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-${pId}"
+      src={
+        "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-" +
+        pId
+      }
       crossOrigin="anonymous"
     />
   );
