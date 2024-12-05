@@ -97,3 +97,7 @@ Safari on iOS
 - [使用Docker部署](./deploy-by-docker.md)
 - [使用源代码部署](./deploy-from-source.md)
 - [ArchLinux从AUR安装](./deploy-from-aur.md)
+
+## Star历史
+
+[![Star历史图表](https://api.star-history.com/svg?repos=llaoj/gcopy&type=Date)](https://star-history.com/#llaoj/gcopy&Date)
