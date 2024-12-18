@@ -1,0 +1,21 @@
+services:
+  gcopy:
+    image: llaoj/gcopy-all:latest  # 或者使用你的镜像名称
+    container_name: gcopy
+    restart: unless-stopped
+    ports:
+      - "3375:3375"  # 前端端口
+      - "3376:3376"  # 后端端口
+    environment:
+      - APP_KEY=your_app_key_here        # 必需
+      - SMTP_HOST=smtp.example.com        # 必需
+      - SMTP_USERNAME=your_email@example.com  # 必需
+      - SMTP_PASSWORD=your_smtp_password  # 必需
+      # 可选配置，使用默认值
+      - SMTP_PORT=587
+      - SMTP_SSL=true
+      - SMTP_SENDER=${SMTP_USERNAME}
+      - MAX_CONTENT_LENGTH=10
+
+volumes:
+  gcopy_data:
