@@ -25,7 +25,7 @@ export default function HistoryItem({
 }) {
   const locale = useLocale();
   moment.locale(locale == "zh" ? "zh-cn" : "en");
-  
+
   const t = useTranslations("SyncClipboard");
   const ulRef = useRef<HTMLUListElement>(null);
 
