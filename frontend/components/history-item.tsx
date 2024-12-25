@@ -12,6 +12,7 @@ import { Log, LogLevel } from "@/lib/log";
 import { clipboardWriteBlob, clipboardWriteBlobPromise } from "@/lib/clipboard";
 import { browserName } from "react-device-detect";
 import { FileInfo } from "@/lib/clipboard";
+import { useLocale } from "next-intl";
 
 export default function HistoryItem({
   item,
@@ -22,6 +23,9 @@ export default function HistoryItem({
   addLog: (log: Log) => void;
   updateFileLink: (fileInfo: FileInfo) => void;
 }) {
+  const locale = useLocale();
+  moment.locale(locale == "zh" ? "zh-cn" : "en");
+  
   const t = useTranslations("SyncClipboard");
   const ulRef = useRef<HTMLUListElement>(null);
 
