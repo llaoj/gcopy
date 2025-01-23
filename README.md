@@ -94,7 +94,3 @@ Safari on iOS
 - [Deploy by Docker](/docs/deploy-by-docker.md)
 - [Deploy from source code](/docs/deploy-from-source.md)
 - [Install from AUR on Arch Linux](/docs/deploy-from-aur.md)
-
-## Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=llaoj/gcopy&type=Date)](https://star-history.com/#llaoj/gcopy&Date)
