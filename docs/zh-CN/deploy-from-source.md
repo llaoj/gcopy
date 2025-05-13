@@ -84,7 +84,7 @@ npm ci
 npm run dev
 ```
 
-由于浏览器限制使用https, 我们使用`--experimental-https`为web服务器开启https, 使用过的自签证书.
+由于浏览器限制, 我门必须要使用https, 通过`--experimental-https`为web服务器开启https, 使用自签证书.
 好了, 下面就可以使用`https://<hostip-or-localhost>:3375`来访问gcopy了, 您无需在前面增加代理.
 
 #### 生产环境
