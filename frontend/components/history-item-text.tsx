@@ -3,12 +3,11 @@ import { HistoryItemEntity } from "@/models/history";
 import { isValidURL } from "@/lib/clipboard";
 
 export default function HistoryItemText({ item }: { item: HistoryItemEntity }) {
-  if (item.type !== "text" || !item.dataArrayBuffer) return null;
-
   const [text, setText] = useState<string>("");
+
   useEffect(() => {
     const parseText = async () => {
-      if (item.dataArrayBuffer) {
+      if (item.type == "text" && item.dataArrayBuffer) {
         setText(
           await new Blob([item.dataArrayBuffer], {
             type: item.dataType,
@@ -17,7 +16,7 @@ export default function HistoryItemText({ item }: { item: HistoryItemEntity }) {
       }
     };
     parseText();
-  }, [item.dataArrayBuffer, item.dataType]);
+  }, [item]);
 
   if (!text) return null;
 
