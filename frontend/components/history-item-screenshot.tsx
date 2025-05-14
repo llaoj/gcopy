@@ -17,15 +17,20 @@ export default function HistoryItemScreenshot({
   if (!blobUrl) return null;
 
   return (
-    <a href={blobUrl} target="_blank" rel="noopener noreferrer">
-      <div className="relative h-full">
+    <div className="h-full">
+      <a
+        href={blobUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="relative block w-full h-full"
+      >
         <Image
           src={blobUrl}
           alt="history item screenshot"
           className="object-left object-contain"
           fill
         />
-      </div>
-    </a>
+      </a>
+    </div>
   );
 }
