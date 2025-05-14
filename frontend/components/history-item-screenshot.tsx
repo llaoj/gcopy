@@ -12,7 +12,7 @@ export default function HistoryItemScreenshot({
     return (window.URL || window.webkitURL).createObjectURL(
       new Blob([item.dataArrayBuffer], { type: item.dataType }),
     );
-  }, [item.dataArrayBuffer, item.dataType]);
+  }, [item.type, item.dataArrayBuffer, item.dataType]);
 
   if (!blobUrl) return null;
 
