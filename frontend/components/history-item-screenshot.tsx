@@ -7,10 +7,8 @@ export default function HistoryItemScreenshot({
 }: {
   item: HistoryItemEntity;
 }) {
-  if (item.type !== "screenshot" || !item.dataArrayBuffer) return null;
-
   const blobUrl = useMemo(() => {
-    if (!item.dataArrayBuffer) return "";
+    if (item.type !== "screenshot" || !item.dataArrayBuffer) return "";
     return (window.URL || window.webkitURL).createObjectURL(
       new Blob([item.dataArrayBuffer], { type: item.dataType }),
     );
