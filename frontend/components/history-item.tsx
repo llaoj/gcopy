@@ -3,10 +3,12 @@ import {
   EllipsisHorizontalIcon,
   LockClosedIcon,
 } from "@heroicons/react/24/solid";
-import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import HistoryItemScreenshot from "@/components/history-item-screenshot";
+import HistoryItemText from "@/components/history-item-text";
+import { useRef, useMemo } from "react";
 import { HistoryItemEntity } from "@/models/history";
-import moment from "moment/min/moment-with-locales";
+import moment from "moment";
+import "moment/locale/zh-cn";
 import { db } from "@/models/db";
 import { Log, LogLevel } from "@/lib/log";
 import { clipboardWriteBlob, clipboardWriteBlobPromise } from "@/lib/clipboard";
@@ -29,22 +31,10 @@ export default function HistoryItem({
   const t = useTranslations("SyncClipboard");
   const ulRef = useRef<HTMLUListElement>(null);
 
-  const [text, setText] = useState<string>("");
-  useEffect(() => {
-    setText("");
-    if (item.type == "text") {
-      const parseText = async () => {
-        if (item.dataArrayBuffer) {
-          setText(
-            await new Blob([item.dataArrayBuffer], {
-              type: item.dataType,
-            }).text(),
-          );
-        }
-      };
-      parseText();
-    }
-  }, [item]);
+  const blobFileURL = useMemo(() => {
+    if (item.type !== "file") return "";
+    return (window.URL || window.webkitURL).createObjectURL(item.data);
+  }, [item.type, item.data]);
 
   return (
     <tr>
@@ -56,29 +46,26 @@ export default function HistoryItem({
         )}
       </td>
       <td className="h-14 p-2 w-auto">
-        {item.type == "text" && (
-          <p className="line-clamp-1 opacity-70 break-all">{text}</p>
-        )}
-        {item.type == "screenshot" && (
-          <div className="relative h-full">
-            <Image
-              className="object-left object-contain"
-              src={
-                item.dataArrayBuffer
-                  ? (window.URL || window.webkitURL).createObjectURL(
-                      new Blob([item.dataArrayBuffer], { type: item.dataType }),
-                    )
-                  : ""
-              }
-              alt="user's screenshot"
-              fill
-            />
-          </div>
-        )}
+        {item.type == "text" && <HistoryItemText item={item} />}
+        {item.type == "screenshot" && <HistoryItemScreenshot item={item} />}
         {item.type == "file" && (
-          <p className="line-clamp-1 opacity-70 break-all">
+          <a
+            onClick={() => {
+              updateFileLink({
+                fileName: item.fileName ?? "",
+                fileURL: blobFileURL,
+              });
+              addLog({
+                message: t("logs.autoDownload"),
+                level: LogLevel.Success,
+              });
+            }}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="line-clamp-1 opacity-70 break-all cursor-pointer hover:underline"
+          >
             {"[" + t("file") + "]" + decodeURI(item.fileName ?? "")}
-          </p>
+          </a>
         )}
       </td>
       <td className="w-min pr-1 whitespace-pre p-2 text-xs text-nowrap break-keep opacity-50 text-right">
@@ -103,9 +90,7 @@ export default function HistoryItem({
                     if (item.type == "file") {
                       updateFileLink({
                         fileName: item.fileName ?? "",
-                        fileURL: (
-                          window.URL || window.webkitURL
-                        ).createObjectURL(item.data),
+                        fileURL: blobFileURL,
                       });
                       addLog({
                         message: t("logs.autoDownload"),

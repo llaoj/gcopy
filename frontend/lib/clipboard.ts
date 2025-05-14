@@ -82,3 +82,12 @@ export function toTextBlob(blob: Blob) {
     return new Blob([text], { type: "text/plain" });
   });
 }
+
+export function isValidURL(str: string): boolean {
+  try {
+    const url = new URL(str);
+    return ["http:", "https:", "ftp:"].includes(url.protocol);
+  } catch (_) {
+    return false;
+  }
+}
