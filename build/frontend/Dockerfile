@@ -11,6 +11,7 @@ COPY frontend/.env.sample .env.production
 RUN apk add --no-cache libc6-compat
 RUN npm config delete proxy
 RUN npm ci
+RUN npx update-browserslist-db@latest --force
 RUN npm run build
 
 FROM base AS runner
