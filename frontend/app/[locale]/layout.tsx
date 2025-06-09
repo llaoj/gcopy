@@ -4,7 +4,6 @@ import { ReactNode } from "react";
 import { getTranslations } from "next-intl/server";
 import type { Viewport } from "next";
 import { GoogleAnalytics } from "@next/third-parties/google";
-import GoogleAdsense from "@/components/google-adsense";
 
 export async function generateMetadata({
   params: { locale },
@@ -40,10 +39,6 @@ export default function RootLayout({
       {process.env.GOOGLE_ANALYTICS_ID && (
         <GoogleAnalytics gaId={process.env.GOOGLE_ANALYTICS_ID} />
       )}
-      {process.env.NODE_ENV == "production" &&
-        process.env.GOOGLE_ADSENSE_PID && (
-          <GoogleAdsense pId={process.env.GOOGLE_ADSENSE_PID} />
-        )}
     </html>
   );
 }
