@@ -12,6 +12,7 @@ export enum LogLevel {
 export interface Log {
   level?: LogLevel;
   message: string;
+  isProgress?: boolean; // 标识是否为进度日志
 }
 
 const recommendedBrowsers = [
@@ -52,13 +53,32 @@ export function useLog() {
   const addLog = (log: Log) => {
     setLogs((current) => [
       ...current,
-      { level: log.level ?? LogLevel.Info, message: log.message },
+      {
+        level: log.level ?? LogLevel.Info,
+        message: log.message,
+        isProgress: log.isProgress,
+      },
     ]);
+  };
+
+  const updateProgressLog = (message: string) => {
+    setLogs((current) => {
+      const lastIndex = current.length - 1;
+      if (lastIndex >= 0 && current[lastIndex].isProgress) {
+        // 更新最后一条进度日志
+        const updated = [...current];
+        updated[lastIndex] = { ...updated[lastIndex], message };
+        return updated;
+      } else {
+        // 添加新的进度日志
+        return [...current, { message, isProgress: true }];
+      }
+    });
   };
 
   const resetLog = () => {
     setLogs([]);
   };
 
-  return { logs, addLog, resetLog };
+  return { logs, addLog, resetLog, updateProgressLog };
 }

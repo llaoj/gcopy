@@ -46,7 +46,7 @@ export default function SyncClipboard() {
   const { isLoading, loggedIn } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
-  const { logs, addLog, resetLog } = useLog();
+  const { logs, addLog, resetLog, updateProgressLog } = useLog();
 
   if (isLoading) {
     return (
@@ -88,15 +88,124 @@ export default function SyncClipboard() {
     return new Promise((resolve) => setTimeout(resolve, ms));
   };
 
+  // 带进度跟踪的fetch下载
+  const fetchWithProgress = async (
+    url: string,
+    options: RequestInit,
+    onProgress: (progress: number) => void,
+  ): Promise<{ response: Response; blob: () => Promise<Blob> }> => {
+    const response = await fetch(url, options);
+
+    if (!response.ok) {
+      return {
+        response,
+        blob: () => response.blob(),
+      };
+    }
+
+    const contentLength = response.headers.get("content-length");
+    if (!contentLength) {
+      return {
+        response,
+        blob: () => response.blob(),
+      };
+    }
+
+    const total = parseInt(contentLength, 10);
+    let loaded = 0;
+
+    const reader = response.body?.getReader();
+    if (!reader) {
+      return {
+        response,
+        blob: () => response.blob(),
+      };
+    }
+
+    // 立即读取所有数据并跟踪进度
+    const chunks: Uint8Array[] = [];
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      chunks.push(value);
+      loaded += value.length;
+      const progress = Math.round((loaded / total) * 100);
+      onProgress(progress);
+    }
+
+    // 合并所有数据块
+    const blob = new Blob(chunks);
+
+    return {
+      response,
+      blob: async () => blob,
+    };
+  };
+
+  // 带进度跟踪的XMLHttpRequest上传
+  const uploadWithProgress = (
+    url: string,
+    method: string,
+    headers: Record<string, string>,
+    body: Blob,
+    onProgress: (progress: number) => void,
+  ): Promise<{ status: number; headers: Headers; body: string }> => {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open(method, url);
+
+      // 设置headers
+      Object.entries(headers).forEach(([key, value]) => {
+        xhr.setRequestHeader(key, value);
+      });
+
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable) {
+          const progress = Math.round((event.loaded / event.total) * 100);
+          onProgress(progress);
+        }
+      };
+
+      xhr.onload = () => {
+        const headers = new Headers();
+        xhr
+          .getAllResponseHeaders()
+          .split("\r\n")
+          .forEach((line) => {
+            const [key, value] = line.split(": ");
+            if (key && value) {
+              headers.set(key, value);
+            }
+          });
+        resolve({
+          status: xhr.status,
+          headers,
+          body: xhr.responseText,
+        });
+      };
+
+      xhr.onerror = () => reject(new Error("Upload failed"));
+      xhr.send(body);
+    });
+  };
+
   const pullClipboard = async () => {
     resetLog();
-    addLog({ message: t("logs.fetching") });
+    addLog({ message: t("logs.fetching"), isProgress: true });
     const searchParams = new URLSearchParams(window.location.search);
-    const response = await fetch("/api/v1/clipboard", {
-      headers: {
-        "X-Index": searchParams.get("ci") ?? "",
+
+    // 使用带进度的fetch
+    const { response, blob: getBlob } = await fetchWithProgress(
+      "/api/v1/clipboard",
+      {
+        headers: {
+          "X-Index": searchParams.get("ci") ?? "",
+        },
       },
-    });
+      (progress) => {
+        updateProgressLog(`${t("logs.fetching")} ${progress}%`);
+      },
+    );
 
     if (response.status == 401) {
       router.push(`/${locale}/user/email-code`);
@@ -138,7 +247,7 @@ export default function SyncClipboard() {
       }),
     });
 
-    let blob = await response.blob();
+    let blob = await getBlob();
 
     if (xtype == "text" || xtype == "screenshot") {
       // Format or rebuild blob
@@ -280,17 +389,21 @@ export default function SyncClipboard() {
       addLog({ message: t("logs.unchanged") });
       return;
     }
-    addLog({ message: t("logs.uploading") });
+    addLog({ message: t("logs.uploading"), isProgress: true });
 
-    const response = await fetch("/api/v1/clipboard", {
-      method: "POST",
-      headers: {
+    const response = await uploadWithProgress(
+      "/api/v1/clipboard",
+      "POST",
+      {
         "Content-Type": blob.type,
         "X-Type": xtype,
         "X-FileName": "",
       },
-      body: blob,
-    });
+      blob,
+      (progress) => {
+        updateProgressLog(`${t("logs.uploading")} ${progress}%`);
+      },
+    );
 
     if (response.status == 401) {
       router.push(`/${locale}/user/email-code`);
@@ -298,8 +411,12 @@ export default function SyncClipboard() {
     }
 
     if (response.status != 200) {
-      const body = await response.json();
-      addLog({ message: body.message, level: LogLevel.Error });
+      try {
+        const body = JSON.parse(response.body);
+        addLog({ message: body.message, level: LogLevel.Error });
+      } catch {
+        addLog({ message: response.body, level: LogLevel.Error });
+      }
       return;
     }
 
@@ -333,16 +450,21 @@ export default function SyncClipboard() {
 
   const uploadFileHandler = async (file: File) => {
     resetLog();
-    addLog({ message: t("logs.uploading") });
-    const response = await fetch("/api/v1/clipboard", {
-      method: "POST",
-      headers: {
+    addLog({ message: t("logs.uploading"), isProgress: true });
+
+    const response = await uploadWithProgress(
+      "/api/v1/clipboard",
+      "POST",
+      {
         "Content-Type": file.type,
         "X-Type": "file",
         "X-FileName": encodeURI(file.name),
       },
-      body: file,
-    });
+      file,
+      (progress) => {
+        updateProgressLog(`${t("logs.uploading")} ${progress}%`);
+      },
+    );
 
     if (response.status == 401) {
       router.push(`/${locale}/user/email-code`);
@@ -350,8 +472,12 @@ export default function SyncClipboard() {
     }
 
     if (response.status != 200) {
-      const body = await response.json();
-      addLog({ message: body.message, level: LogLevel.Error });
+      try {
+        const body = JSON.parse(response.body);
+        addLog({ message: body.message, level: LogLevel.Error });
+      } catch {
+        addLog({ message: response.body, level: LogLevel.Error });
+      }
       return;
     }
     const xindex = response.headers.get("x-index");

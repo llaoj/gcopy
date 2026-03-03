@@ -109,6 +109,7 @@ func (s *Server) getClipboardHandler(c *gin.Context) {
 
 	c.Status(http.StatusOK)
 	c.Header("Content-Type", cb.MIMEType)
+	c.Header("Content-Length", strconv.Itoa(len(cb.Data)))
 	c.Header("X-Index", strconv.Itoa(cb.Index))
 	c.Header("X-Type", cb.Type)
 	c.Header("X-FileName", cb.FileName)
@@ -131,6 +132,9 @@ func (s *Server) updateClipboardHandler(c *gin.Context) {
 		return
 	}
 
+	// 限制请求体大小
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, int64(s.config.MaxContentLength)*1024*1024)
+
 	contentLength, err := strconv.Atoi(c.Request.Header.Get("Content-Length"))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
@@ -143,7 +147,9 @@ func (s *Server) updateClipboardHandler(c *gin.Context) {
 
 	data, err := io.ReadAll(c.Request.Body)
 	if err != nil {
-		s.log.Error(err)
+		s.log.Errorf("Failed to read request body: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"message": fmt.Sprintf("Failed to read request body: %v", err)})
+		return
 	}
 	defer c.Request.Body.Close()
 	if data == nil {
