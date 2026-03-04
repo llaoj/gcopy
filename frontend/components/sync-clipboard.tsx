@@ -28,6 +28,8 @@ import History from "@/components/history";
 import { db } from "@/models/db";
 import { HistoryItemEntity } from "@/models/history";
 import moment from "moment";
+import { getSystemInfo } from "@/lib/system-info";
+import { validateFileSize } from "@/lib/file-utils";
 
 // route: /locale?ci=123&cbi=abc
 // - ci: clipboard index
@@ -450,6 +452,23 @@ export default function SyncClipboard() {
 
   const uploadFileHandler = async (file: File) => {
     resetLog();
+
+    // Get system info and validate file size
+    const sysInfo = await getSystemInfo();
+    if (sysInfo) {
+      const validation = validateFileSize(file, sysInfo.maxContentLength);
+      if (!validation.valid) {
+        addLog({
+          message: t("logs.fileTooLarge", {
+            size: (file.size / (1024 * 1024)).toFixed(2),
+            limit: sysInfo.maxContentLength,
+          }),
+          level: LogLevel.Error,
+        });
+        return;
+      }
+    }
+
     addLog({ message: t("logs.uploading"), isProgress: true });
 
     const response = await uploadWithProgress(

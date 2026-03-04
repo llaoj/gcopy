@@ -71,7 +71,7 @@
       "writeSuccess": "数据成功写入剪切板.",
       "autoDownload": "文件会很快自动下载. 如果没有, 点击下面的文件链接.",
       "denyRead": "不允许读取剪切板!",
-      "fileTooLarge": "对不起, 文件大小不能超过10mb!",
+      "fileTooLarge": "文件大小 ({size} MiB) 超过最大限制 ({limit} MiB).",
       "pressAgain": "因为浏览器安全策略, 请再次按下 👉",
       "pressPaste": "如果出现\"粘贴\"按钮, 按下它以允许读取剪切板.",
       "unchanged": "剪切板没有改变.",
