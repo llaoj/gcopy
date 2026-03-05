@@ -6,7 +6,6 @@ import (
 	"math/big"
 	"net/http"
 	"regexp"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/sessions"
@@ -96,21 +95,9 @@ func (p *TokenAuthProvider) generateTokenHandler(c *gin.Context) {
 		return
 	}
 
-	// Check language for localized warning message
-	language := c.Request.Header.Get("Accept-Language")
-	var warning, warningEn string
-	if strings.HasPrefix(language, "zh-CN") {
-		warning = "请妥善保管令牌，令牌泄露可能导致数据泄露。推荐在内网环境使用。"
-		warningEn = "Please keep the token secure. Token leakage may lead to data breaches. Recommended for intranet environments."
-	} else {
-		warning = "Please keep the token secure. Token leakage may lead to data breaches. Recommended for intranet environments."
-		warningEn = ""
-	}
-
 	c.JSON(http.StatusOK, gin.H{
-		"userId":    token,
-		"warning":   warning,
-		"warningEn": warningEn,
+		"userId":  token,
+		"warning": "Please keep the token secure. Token leakage may lead to data breaches. Recommended for intranet environments.",
 	})
 }
 

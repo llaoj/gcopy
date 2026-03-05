@@ -105,12 +105,11 @@ export default function SyncClipboard() {
         const item = e.clipboardData.items[i];
 
         // 如果是图片文件
-        if (item.kind === 'file' && item.type.startsWith('image/')) {
+        if (item.kind === "file" && item.type.startsWith("image/")) {
           e.preventDefault();
 
           const file = item.getAsFile();
           if (file) {
-
             // 重置等待状态
             setWaitingForPaste(false);
             addLog({ message: t("logs.readClipboardSuccess") });
@@ -124,11 +123,11 @@ export default function SyncClipboard() {
     };
 
     // 添加 paste 事件监听器
-    document.addEventListener('paste', handlePaste);
+    document.addEventListener("paste", handlePaste);
 
     // 清理
     return () => {
-      document.removeEventListener('paste', handlePaste);
+      document.removeEventListener("paste", handlePaste);
     };
   }, [waitingForPaste, loggedIn, authMode, locale, router]);
 
@@ -136,7 +135,7 @@ export default function SyncClipboard() {
    * 处理从 paste 事件获取的图片
    */
   const handlePastedImage = async (file: File) => {
-    if (!await ensureLoggedIn()) {
+    if (!(await ensureLoggedIn())) {
       return;
     }
 
@@ -144,15 +143,15 @@ export default function SyncClipboard() {
     let xtype: string;
 
     // 确定类型并转换格式
-    if (blob.type.startsWith('image/')) {
-      xtype = 'screenshot';
+    if (blob.type.startsWith("image/")) {
+      xtype = "screenshot";
 
       // 如果不是 PNG，转换为 PNG（浏览器剪贴板标准格式）
-      if (blob.type !== 'image/png') {
+      if (blob.type !== "image/png") {
         blob = await toPngBlob(blob);
       }
-    } else if (blob.type.startsWith('text/')) {
-      xtype = 'text';
+    } else if (blob.type.startsWith("text/")) {
+      xtype = "text";
       blob = await toTextBlob(blob);
     } else {
       addLog({
@@ -751,7 +750,7 @@ export default function SyncClipboard() {
 
   const syncFunc = async () => {
     try {
-      if (!ensureLoggedIn()) {
+      if (!(await ensureLoggedIn())) {
         return;
       }
 
@@ -848,7 +847,7 @@ export default function SyncClipboard() {
           }}
           onDrop={async (ev: DragEvent<HTMLElement>) => {
             ev.preventDefault();
-            if (!ensureLoggedIn()) {
+            if (!(await ensureLoggedIn())) {
               return;
             }
             if (ev.dataTransfer && ev.dataTransfer.files) {
@@ -866,8 +865,8 @@ export default function SyncClipboard() {
               </div>
               <button
                 className="btn btn-sm"
-                onClick={() => {
-                  if (!ensureLoggedIn()) {
+                onClick={async () => {
+                  if (!(await ensureLoggedIn())) {
                     return;
                   }
                   fileInputRef.current?.click();

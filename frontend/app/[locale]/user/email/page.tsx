@@ -12,7 +12,7 @@ export default function Email({
 }) {
   const [clicked, setClicked] = useState<boolean>(false);
   const [step, setStep] = useState<"email" | "code">(
-    searchParams.email ? "code" : "email"
+    searchParams.email ? "code" : "email",
   );
   const [email, setEmail] = useState<string>(searchParams.email || "");
   const [errorMessage, setErrorMessage] = useState("");
@@ -46,7 +46,11 @@ export default function Email({
     if (res.status === 200) {
       setEmail(emailValue);
       setStep("code");
-      window.history.pushState({}, "", `/${locale}/user/email?email=${emailValue}`);
+      window.history.pushState(
+        {},
+        "",
+        `/${locale}/user/email?email=${emailValue}`,
+      );
     } else {
       setErrorMessage(t("sendEmailFailed"));
     }
@@ -129,9 +133,7 @@ export default function Email({
               />
             </svg>
           </button>
-          <span className="ml-1">
-            {step === "code" ? email : t("back")}
-          </span>
+          <span className="ml-1">{step === "code" ? email : t("back")}</span>
         </div>
         {step === "email" ? (
           <>
@@ -171,11 +173,7 @@ export default function Email({
         )}
         {errorMessage && <p className="text-error">{errorMessage}</p>}
         <div className="card-actions justify-end">
-          <button
-            className="btn btn-primary"
-            type="submit"
-            disabled={clicked}
-          >
+          <button className="btn btn-primary" type="submit" disabled={clicked}>
             {step === "email" ? t("buttonText") : t("codeButtonText")}
           </button>
         </div>

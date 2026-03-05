@@ -153,16 +153,13 @@ export async function toPngBlob(blob: Blob): Promise<Blob> {
 
       ctx.drawImage(img, 0, 0);
 
-      canvas.toBlob(
-        (pngBlob) => {
-          if (pngBlob) {
-            resolve(pngBlob);
-          } else {
-            reject(new Error("Failed to convert image to PNG"));
-          }
-        },
-        "image/png"
-      );
+      canvas.toBlob((pngBlob) => {
+        if (pngBlob) {
+          resolve(pngBlob);
+        } else {
+          reject(new Error("Failed to convert image to PNG"));
+        }
+      }, "image/png");
     };
 
     img.onerror = () => {
