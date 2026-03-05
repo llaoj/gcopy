@@ -17,14 +17,35 @@ git clone https://github.com/llaoj/gcopy.git
 cd gcopy
 ```
 
+## Authentication Modes
+
+GCopy supports two authentication modes:
+
+### Email Authentication (Default)
+- Requires SMTP configuration
+- Sends 6-digit verification code to email
+- Session valid for 5 minutes
+- Best for public internet usage
+
+### Token Authentication
+- No SMTP required
+- 6-character token for quick access
+- Session valid for 7 days (sliding expiration)
+- Best for intranet/LAN environments
+
+See [TOKEN_AUTH.md](TOKEN_AUTH.md) for detailed configuration and security considerations.
+
 ## Backend
 The backend primarily responsible for temporary storage of clipboard data and authentication. It does not store user data long-term, instead, it temporarily stores the latest clipboard data in memory, which expires after a period of time.
 
 ### Direct run
-You can quickly start the local server using the `go run` command. The backend service is configured via command-line arguments. You need to manually replace `<var-name>`. The `-app-key` parameter in the configuration is a custom encryption key used for data encryption, recommended to be at least 8 characters long. Parameters starting with `-smtp-*` are all related to email service because gcopy relies on email login. Common email service providers offer SMTP services, such as Gmail, QQ Mail etc.
+You can quickly start the local server using the `go run` command. The backend service is configured via command-line arguments. You need to manually replace `<var-name>`. The `-app-key` parameter in the configuration is a custom encryption key used for data encryption, recommended to be at least 8 characters long.
+
+#### Email Authentication Mode
 
 ```bash
 go run cmd/gcopy.go \
+    -auth-mode=email \
     -app-key=<app-key> \
     -smtp-host=<smtp-host> \
     -smtp-port=<smtp-port> \
@@ -34,19 +55,43 @@ go run cmd/gcopy.go \
     -debug
 ```
 
+#### Token Authentication Mode
+
+```bash
+go run cmd/gcopy.go \
+    -auth-mode=token \
+    -app-key=<app-key> \
+    -debug
+```
+
+**Note:** Token mode does not require SMTP configuration, making it ideal for quick deployment in trusted environments.
+
 ### Build and run
 You can also build before running. This way, you don't need to build before each run.
+
+#### Email Authentication Mode
 
 ```shell
 make ./bin/gcopy
 chmod +x ./bin/gcopy
 /opt/gcopy/bin/gcopy \
+    -auth-mode=email \
     -app-key=<app-key> \
     -smtp-host=<smtp-host> \
     -smtp-port=<smtp-port> \
     -smtp-username=<smtp-username> \
     -smtp-password=<smtp-password> \
     -smtp-ssl
+```
+
+#### Token Authentication Mode
+
+```shell
+make ./bin/gcopy
+chmod +x ./bin/gcopy
+/opt/gcopy/bin/gcopy \
+    -auth-mode=token \
+    -app-key=<app-key>
 ```
 
 ## Frontend
@@ -82,7 +127,7 @@ npm ci
 npm run dev
 ```
 
-Due to browser restrictions on using HTTPS, we'll use `--experimental-https` to enable HTTPS for the web server, using a self-signed certificate. 
+Due to browser restrictions on using HTTPS, we'll use `--experimental-https` to enable HTTPS for the web server, using a self-signed certificate.
 Now, you can access gcopy using `https://<hostip-or-localhost>:3375`, and you don't need to add a proxy in front of it.
 
 #### Production environment
@@ -97,5 +142,5 @@ cp -r .next/static .next/standalone/.next/
 NODE_ENV=production PORT=3375 node .next/standalone/server.js
 ```
 
-In production mode, we recommend deploying behind a reverse proxy such as Nginx or Kong. This way, you can easily manage certificates and configure proxies. You'll need to prepare a domain name and its corresponding certificate for this setup.  
+In production mode, we recommend deploying behind a reverse proxy such as Nginx or Kong. This way, you can easily manage certificates and configure proxies. You'll need to prepare a domain name and its corresponding certificate for this setup.
 We'll use Nginx as an example, referring to `deploy/nginx-example.conf`.

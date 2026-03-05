@@ -3,6 +3,18 @@
 
 The AUR package maintained by [@devome](https://github.com/devome) uses the stable version of GCopy for building.
 
+## Authentication Modes
+
+GCopy supports two authentication modes:
+
+### Email Authentication (Default)
+Requires SMTP configuration for sending verification codes.
+
+### Token Authentication
+No SMTP required, simpler setup for trusted environments.
+
+See [TOKEN_AUTH.md](TOKEN_AUTH.md) for detailed configuration and security considerations.
+
 ## Installation
 
 Since the GCopy frontend and backend can be installed separately, the AUR package splits them into two packages: the backend [gcopy](https://aur.archlinux.org/packages/gcopy) and the frontend [gcopy-web](https://aur.archlinux.org/packages/gcopy-web). You can install them on different hosts, or you can install them on the same host.
@@ -19,11 +31,24 @@ paru -Sy gcopy-web
 
 ### Backend
 
-For the backend, the configuration file is located at `/etc/gcopy/gcopy.env`. Edit it according to the comments, for example:
+For the backend, the configuration file is located at `/etc/gcopy/gcopy.env`. Edit it according to the comments.
+
+#### Email Authentication Mode
 
 ```shell
-APPEND_ARGS="-app-key='rqMrHprILwYintES4UeQc0wM/252SLy59y7LMYKXJE0=' -smtp-host='smtp.example.com' -smtp-password='your_password' -smtp-username='username@example.com'"
+APPEND_ARGS="-auth-mode=email -app-key='rqMrHprILwYintES4UeQc0wM/252SLy59y7LMYKXJE0=' -smtp-host='smtp.example.com' -smtp-port='587' -smtp-username='username@example.com' -smtp-password='your_password'"
 ```
+
+#### Token Authentication Mode
+
+```shell
+APPEND_ARGS="-auth-mode=token -app-key='rqMrHprILwYintES4UeQc0wM/252SLy59y7LMYKXJE0='"
+```
+
+**Note:** Token mode does not require SMTP configuration, making it ideal for:
+- Intranet/LAN environments
+- Personal use
+- Trusted team environments
 
 For the `app-key`, you can generate a random string using the following command:
 

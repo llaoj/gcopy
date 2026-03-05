@@ -17,16 +17,36 @@ git clone https://github.com/llaoj/gcopy.git
 cd gcopy
 ```
 
+## 认证模式
+
+GCopy 支持两种认证模式：
+
+### 邮箱认证（默认）
+- 需要配置 SMTP 服务
+- 发送 6 位验证码到邮箱
+- 会话有效期 5 分钟
+- 适合公网环境
+
+### 令牌认证
+- 无需 SMTP 配置
+- 6 位字符令牌快速访问
+- 会话有效期 7 天（滑动过期）
+- 适合内网/局域网环境
+
+详细配置和安全说明请参考 [TOKEN_AUTH.md](../TOKEN_AUTH.md)。
+
 ## 后端
 后端是服务端, 主要负责剪切板数据的临时存储和身份认证. 它不会长期存储用户数据, 仅是在内存中临时存储用户最新剪切板数据, 一段时间后会数据就会过期.
 
 ### 直接启动
-使用`go run`命令可以快速启动本地服务端. 后端服务是通过命令行参数来配置的. 
-你需要手动把`<var-name>`替换掉, 配置参数中的`-apk-key`参数是自定义加密密钥, 用于数据加密, 建议8位以上. 
-`-smtp-*`开头的参数都是和邮箱服务相关的参数, 因为gcopy依赖邮箱登录, 常见的邮箱服务商都会提供SMTP服务, 比如QQ邮箱, 163邮箱等.
+使用`go run`命令可以快速启动本地服务端. 后端服务是通过命令行参数来配置的.
+你需要手动把`<var-name>`替换掉, 配置参数中的`-apk-key`参数是自定义加密密钥, 用于数据加密, 建议8位以上。
+
+#### 邮箱认证模式
 
 ```bash
 go run cmd/gcopy.go \
+    -auth-mode=email \
     -app-key=<app-key> \
     -smtp-host=<smtp-host> \
     -smtp-port=<smtp-port> \
@@ -36,19 +56,43 @@ go run cmd/gcopy.go \
     -debug
 ```
 
+#### 令牌认证模式
+
+```bash
+go run cmd/gcopy.go \
+    -auth-mode=token \
+    -app-key=<app-key> \
+    -debug
+```
+
+**注意：** 令牌模式无需 SMTP 配置，适合快速部署在内网/局域网等可信环境。
+
 ### 编译安装
 当然, 你也可以选择先编译, 再运行它. 这样就不用在每次运行前执行编译了.
+
+#### 邮箱认证模式
 
 ```shell
 make ./bin/gcopy
 chmod +x ./bin/gcopy
 /opt/gcopy/bin/gcopy \
+    -auth-mode=email \
     -app-key=<app-key> \
     -smtp-host=<smtp-host> \
     -smtp-port=<smtp-port> \
     -smtp-username=<smtp-username> \
     -smtp-password=<smtp-password> \
     -smtp-ssl
+```
+
+#### 令牌认证模式
+
+```shell
+make ./bin/gcopy
+chmod +x ./bin/gcopy
+/opt/gcopy/bin/gcopy \
+    -auth-mode=token \
+    -app-key=<app-key>
 ```
 
 ## 前端
@@ -65,7 +109,7 @@ cp .env.sample .env.local
 cp .env.sample .env.production
 ```
 
-修改配置文件, 修改后端服务的地址`SERVER_URL`, 因为我们是在本地部署, 将host修改成`localhost`, 代表本地请求. 
+修改配置文件, 修改后端服务的地址`SERVER_URL`, 因为我们是在本地部署, 将host修改成`localhost`, 代表本地请求.
 
 ```ini
 - SERVER_URL=http://gcopy:3376
@@ -99,5 +143,5 @@ cp -r .next/static .next/standalone/.next/
 NODE_ENV=production PORT=3375 node .next/standalone/server.js
 ```
 
-在生产模式, 我们推荐部署在反向代理的后面, 例如 Nginx、Apisix等. 这样您就可以方便的管理证书和配置代理, 你需要准备好域名和对应的证书.  
+在生产模式, 我们推荐部署在反向代理的后面, 例如 Nginx、Apisix等. 这样您就可以方便的管理证书和配置代理, 你需要准备好域名和对应的证书.
 我们以nginx为例, 参考`deploy/nginx-example.conf`.

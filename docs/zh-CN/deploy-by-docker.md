@@ -1,5 +1,22 @@
 # 使用Docker单机部署
-我们已经为您准备好了容器镜像. 直接使用Docker进行部署最方便. 
+我们已经为您准备好了容器镜像. 直接使用Docker进行部署最方便.
+
+## 认证模式
+
+GCopy 支持两种认证模式：
+
+### 邮箱认证（默认）
+- 需要配置 SMTP 服务发送验证码
+- 安全性更高
+- 适合公网环境
+
+### 令牌认证
+- 无需 SMTP 配置，部署更简单
+- 6 位字符令牌快速访问
+- 会话有效期 7 天（滑动过期）
+- 适合内网/局域网环境
+
+详细配置和安全说明请参考 [TOKEN_AUTH.md](../TOKEN_AUTH.md)。
 
 ## 单机部署
 借助docker-compose的容器编排能力, 我们部署gcopy的前后端服务.
@@ -13,17 +30,51 @@ mkdir -p /opt/gcopy
 wget -O /opt/gcopy/docker-compose.yml https://raw.githubusercontent.com/llaoj/gcopy/main/deploy/docker-compose.yml
 ```
 
+### 配置示例
+
+#### 邮箱认证模式（默认）
+
+编辑 `docker-compose.yml`：
+
+```yaml
+environment:
+  - APP_KEY=your-secret-key-min-8-chars
+  - AUTH_MODE=email
+  - SMTP_HOST=smtp.example.com
+  - SMTP_PORT=587
+  - SMTP_USERNAME=your-email@example.com
+  - SMTP_PASSWORD=your-smtp-password
+  - SMTP_SSL=false
+```
+
+#### 令牌认证模式
+
+编辑 `docker-compose.yml`：
+
+```yaml
+environment:
+  - APP_KEY=your-secret-key-min-8-chars
+  - AUTH_MODE=token
+```
+
+**注意：** 令牌模式无需 SMTP 配置，适合以下场景：
+- 内网/局域网环境
+- 个人使用
+- 可信团队环境
+
 命令参数的修改参考gcopy的使用方法:
 
 ```bash
-$ /gcopy --help
+$ gcopy --help
 gcopy 使用方法：
     -app-key string
         用于加密和解密数据的密钥，建议使用 8 个字符以上的随机字符串。
+    -auth-mode string
+        认证模式：email 或 token（默认 "email"）
     -debug
         启用调试模式
     -listen string
-        服务器将监听此 ip 和端口，格式：[ip]:port（默认“:3376”）
+        服务器将监听此 ip 和端口，格式：[ip]:port（默认":3376"）
     -max-content-length int
         最大同步内容大小，单位：MiB。（默认 10）
     -smtp-host string
@@ -63,7 +114,7 @@ docker-compose up -d
 ```
 
 ## 反向代理
-由于浏览器安全限制, 需要https才能正常使用, 我们推荐部署在反向代理的后面, 例如 Nginx, Apisix等. 所以, 你需要准备好域名和对应的证书.  
+由于浏览器安全限制, 需要https才能正常使用, 我们推荐部署在反向代理的后面, 例如 Nginx, Apisix等. 所以, 你需要准备好域名和对应的证书.
 我们以nginx为例, 参考`deploy/nginx-example.conf`.
 
 至此, 部署结束, 使用gcopy吧!

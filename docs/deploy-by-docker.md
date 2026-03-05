@@ -1,10 +1,22 @@
 # Deploy by Docker
 We have prepared the container image for you. Deploying directly using Docker is the most convenient option.
 
+## Authentication Modes
+
+GCopy supports two authentication modes:
+
+### Email Authentication (Default)
+Requires SMTP configuration for sending verification codes.
+
+### Token Authentication
+No SMTP required, simpler setup for trusted environments.
+
+See [TOKEN_AUTH.md](TOKEN_AUTH.md) for detailed configuration and security considerations.
+
 ## Standalone
 By leveraging the container orchestration capabilities of Docker Compose, we can deploy the frontend and backend services of gcopy.
 
-#### Create`docker-compose.yml`
+### Create `docker-compose.yml`
 
 Create directory and download `deploy/docker-compose.yml` to the directory, then modify the parameter `<var-name>` of `docker-compose.yml`.
 
@@ -14,13 +26,47 @@ mkdir -p /opt/gcopy
 wget -O /opt/gcopy/docker-compose.yml https://raw.githubusercontent.com/llaoj/gcopy/main/deploy/docker-compose.yml
 ```
 
+### Configuration Examples
+
+#### Email Authentication Mode (Default)
+
+Edit `docker-compose.yml`:
+
+```yaml
+environment:
+  - APP_KEY=your-secret-key-min-8-chars
+  - AUTH_MODE=email
+  - SMTP_HOST=smtp.example.com
+  - SMTP_PORT=587
+  - SMTP_USERNAME=your-email@example.com
+  - SMTP_PASSWORD=your-smtp-password
+  - SMTP_SSL=false
+```
+
+#### Token Authentication Mode
+
+Edit `docker-compose.yml`:
+
+```yaml
+environment:
+  - APP_KEY=your-secret-key-min-8-chars
+  - AUTH_MODE=token
+```
+
+**Note:** Token mode does not require SMTP configuration, making it ideal for:
+- Intranet/LAN environments
+- Personal use
+- Trusted team environments
+
 Refer the usage of the gcopy:
 
 ```bash
-$ /gcopy --help
+$ gcopy --help
 Usage of gcopy:
     -app-key string
         Secret used to encrypt and decrypt data, recommend using random strings over 8 characters.
+    -auth-mode string
+        Authentication mode: email or token (default "email")
     -debug
         Enable debug mode
     -listen string

@@ -13,13 +13,32 @@ A clipboard synchronization service between different operating systems.
 
 GCopy values your data privacy, it does not persistently store your data; it is all kept in memory. If you are inactive for 24h, the data will expire.
 
+## Authentication Modes
+
+GCopy supports two authentication modes:
+
+### Email Authentication (Default)
+- Higher security with email verification
+- 6-digit verification code sent to email
+- Session valid for 5 minutes
+- Best for public internet usage
+
+### Token Authentication
+- Simpler setup without SMTP configuration
+- 6-character token for quick access
+- Session valid for 7 days (sliding expiration)
+- Best for intranet/LAN environments
+- Multiple devices can share the same token
+
+See [TOKEN_AUTH.md](docs/TOKEN_AUTH.md) for detailed configuration and security considerations.
+
 ## Usage
 
 ![screanshot on chrome](docs/screenshot-chrome.png)
 
 Steps:
 
-1. Open the website [https://gcopy.llaoj.cn](https://gcopy.llaoj.cn) on two devices, A and B, using a browser and log in with the same email.
+1. Open the website [https://gcopy.llaoj.cn](https://gcopy.llaoj.cn) on two devices, A and B, using a browser and log in with the same email (or use the same token).
 2. On device A, copy (e.g., `Ctrl+C`) and then press the button on the right side of the page.
 3. Switch to device B, press the button again, and the data will be synchronized. Now, go ahead and paste (`Ctrl+V`)!
 
