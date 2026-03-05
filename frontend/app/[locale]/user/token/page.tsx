@@ -139,10 +139,9 @@ export default function TokenLogin() {
                 name="token"
                 type="text"
                 placeholder={t("placeholder")}
-                className="input input-bordered w-full text-center text-2xl font-mono"
+                className="input input-bordered w-full text-center text-xl font-mono"
                 maxLength={6}
                 autoFocus
-                style={{ textTransform: "uppercase" }}
               />
             </div>
 

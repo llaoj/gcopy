@@ -39,7 +39,7 @@ func (p *EmailAuthProvider) GetName() string {
 // RegisterRoutes registers email authentication routes
 func (p *EmailAuthProvider) RegisterRoutes(router *gin.RouterGroup) {
 	router.POST("/user/email/code", p.emailCodeHandler)
-	router.POST("/user/email/verify", p.loginHandler)
+	router.POST("/user/email/verify", p.emailVerifyHandler)
 }
 
 // Login represents the request body for email login
@@ -115,8 +115,8 @@ func (p *EmailAuthProvider) emailCodeHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Success"})
 }
 
-// loginHandler verifies the email verification code
-func (p *EmailAuthProvider) loginHandler(c *gin.Context) {
+// emailVerifyHandler verifies the email verification code
+func (p *EmailAuthProvider) emailVerifyHandler(c *gin.Context) {
 	var login Login
 	if err := c.ShouldBindJSON(&login); err != nil {
 		c.JSON(http.StatusUnprocessableEntity, gin.H{"message": err.Error()})

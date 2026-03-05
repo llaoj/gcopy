@@ -1,8 +1,0 @@
-{
-  "hooks": {
-    "pre-commit": {
-      "command": "make fmt && cd frontend && npm run prettier && cd .. && git add -u",
-      "timeout": 60000
-    }
-  }
-}
