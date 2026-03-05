@@ -110,6 +110,8 @@ func (s *Server) loginHandler(c *gin.Context) {
 	if login.Email == session.Values["email"] && login.Code == session.Values["code"] && time.Now().Unix()-session.Values["validateAt"].(int64) <= 5*60 {
 		session.Values["loggedIn"] = true
 		session.Values["validateAt"] = time.Now().Unix()
+		// Set session to expire in 7 days
+		session.Options.MaxAge = 7 * 24 * 3600
 		if err = session.Save(c.Request, c.Writer); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
 			return

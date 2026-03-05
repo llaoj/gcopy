@@ -52,9 +52,8 @@ func (s *Server) generateTokenHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"token":     token,
-		"warning":   "请妥善保管令牌，令牌泄露可能导致数据泄露。推荐在内网环境使用。",
-		"warningEn": "Please keep the token secure. Token leakage may lead to data breaches. Recommended for intranet environments.",
+		"token":   token,
+		"warning": "Please keep the token secure. Token leakage may lead to data breaches. Recommended for intranet environments.",
 	})
 }
 
