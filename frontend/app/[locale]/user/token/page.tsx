@@ -46,7 +46,16 @@ export default function TokenLogin() {
     const formData = new FormData(event.currentTarget as HTMLFormElement);
     const token = formData.get("token") as string;
 
+    // 前端校验：长度必须为6
     if (!token || token.length !== 6) {
+      setErrorMessage(t("invalidToken"));
+      setClicked(false);
+      return;
+    }
+
+    // 前端校验：只允许字母和数字（A-Z, a-z, 0-9）
+    const tokenPattern = /^[A-Za-z0-9]{6}$/;
+    if (!tokenPattern.test(token)) {
       setErrorMessage(t("invalidToken"));
       setClicked(false);
       return;
@@ -66,7 +75,13 @@ export default function TokenLogin() {
       return;
     }
 
-    setErrorMessage(t("verifyFailed"));
+    // 处理后端返回的错误
+    try {
+      const data = await res.json();
+      setErrorMessage(data.message || t("verifyFailed"));
+    } catch {
+      setErrorMessage(t("verifyFailed"));
+    }
     setClicked(false);
   };
 

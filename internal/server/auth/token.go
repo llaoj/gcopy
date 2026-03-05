@@ -2,8 +2,10 @@ package auth
 
 import (
 	"crypto/rand"
+	"errors"
 	"math/big"
 	"net/http"
+	"regexp"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -38,7 +40,22 @@ func (p *TokenAuthProvider) RegisterRoutes(router *gin.RouterGroup) {
 
 // TokenRequest represents the request body for token operations
 type TokenRequest struct {
-	Token string `form:"token" json:"token" binding:"omitempty,len=6"`
+	Token string `form:"token" json:"token" binding:"required,len=6"`
+}
+
+// validateTokenFormat validates that a token contains only alphanumeric characters
+func validateTokenFormat(token string) error {
+	if len(token) != 6 {
+		return errors.New("token must be exactly 6 characters")
+	}
+	matched, err := regexp.MatchString("^[A-Za-z0-9]{6}$", token)
+	if err != nil {
+		return err
+	}
+	if !matched {
+		return errors.New("token must contain only letters and numbers (A-Z, a-z, 0-9)")
+	}
+	return nil
 }
 
 // generateToken generates a 6-character token using crypto/rand
@@ -101,11 +118,17 @@ func (p *TokenAuthProvider) generateTokenHandler(c *gin.Context) {
 func (p *TokenAuthProvider) verifyTokenHandler(c *gin.Context) {
 	var req TokenRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{"message": err.Error()})
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"message": "Invalid token format: must be exactly 6 characters"})
 		return
 	}
 
-	// For now, any 6-character token is considered valid
+	// 后端校验：验证令牌格式（只允许字母和数字）
+	if err := validateTokenFormat(req.Token); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
+		return
+	}
+
+	// For now, any valid 6-character token is considered valid
 	// In a production system, you might want to validate against a database
 	session, err := p.sessionStore.Get(c.Request, userSessionName)
 	if err != nil {
