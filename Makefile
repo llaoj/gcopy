@@ -37,6 +37,7 @@ vet:
 
 fmt:
 	find . -type f -name "*.go" | grep -v "./vendor/*" | xargs gofmt -s -w -l
+	cd frontend && npm run prettier && cd ..
 
 test: vet fmt
 	go test -timeout=1m -v -race -short ./...

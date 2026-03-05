@@ -38,6 +38,29 @@
     "incorrectCode": "Incorrect code. Please go back and retry.",
     "authenticationFailed": "Authentication failed. Please go back and retry."
   },
+  "TokenLogin": {
+    "title": "Token Login",
+    "back": "Back",
+    "generateTitle": "Generate New Token",
+    "generateSubTitle": "Generate a token for clipboard sync",
+    "verifyTitle": "Enter Token",
+    "verifySubTitle": "Enter an existing token to access shared clipboard",
+    "generateButton": "Generate Token",
+    "verifyButton": "Use Token",
+    "placeholder": "Enter 6-character token",
+    "yourToken": "Your Token:",
+    "caseSensitive": "Letters are case-sensitive (uppercase and lowercase are different).",
+    "startUsing": "Start using",
+    "warningMessage": "Token mode is recommended for:",
+    "warningItems": {
+      "intranet": "Intranet/LAN environments",
+      "personal": "Personal use",
+      "trusted": "Trusted team environments"
+    },
+    "invalidToken": "Invalid token. Please check and retry.",
+    "generateFailed": "Failed to generate token. Please retry.",
+    "verifyFailed": "Failed to verify token. Please retry."
+  },
   "SyncClipboard": {
     "title": "Sync the clipboard",
     "subTitle": "Press the button and the clipboard synced between devices.",

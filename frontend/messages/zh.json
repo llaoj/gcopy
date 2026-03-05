@@ -38,6 +38,29 @@
     "incorrectCode": "验证码不正确, 请退回重试.",
     "authenticationFailed": "身份验证失败, 请退回重试."
   },
+  "TokenLogin": {
+    "title": "令牌登录",
+    "back": "返回",
+    "generateTitle": "生成新令牌",
+    "generateSubTitle": "生成一个令牌用于剪切板同步",
+    "verifyTitle": "输入令牌",
+    "verifySubTitle": "输入已有令牌访问共享剪切板",
+    "generateButton": "生成令牌",
+    "verifyButton": "使用令牌",
+    "placeholder": "输入6位令牌",
+    "yourToken": "您的令牌：",
+    "caseSensitive": "字母区分大小写（大写和小写是不同的）。",
+    "startUsing": "开始使用",
+    "warningMessage": "令牌模式推荐使用场景：",
+    "warningItems": {
+      "intranet": "内网环境 / 局域网环境",
+      "personal": "个人使用",
+      "trusted": "受信任的团队内部"
+    },
+    "invalidToken": "无效的令牌，请检查后重试。",
+    "generateFailed": "生成令牌失败，请重试。",
+    "verifyFailed": "验证令牌失败，请重试。"
+  },
   "SyncClipboard": {
     "title": "同步剪切板",
     "subTitle": "按下按钮剪切板就能在不同设备间同步.",

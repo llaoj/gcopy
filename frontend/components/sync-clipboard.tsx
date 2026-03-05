@@ -78,9 +78,14 @@ export default function SyncClipboard() {
     });
   };
 
-  const ensureLoggedIn = () => {
+  const ensureLoggedIn = async () => {
     if (!loggedIn) {
-      router.push(`/${locale}/user/email-code`);
+      const sysInfo = await getSystemInfo();
+      if (sysInfo?.authMode === "token") {
+        router.push(`/${locale}/user/token`);
+      } else {
+        router.push(`/${locale}/user/email-code`);
+      }
       return false;
     }
     return true;

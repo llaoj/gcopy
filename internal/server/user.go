@@ -148,16 +148,35 @@ func (s *Server) getUserHandler(c *gin.Context) {
 		return
 	}
 
-	if session.Values["loggedIn"] == true && session.Values["email"] != "" {
-		if err = session.Save(c.Request, c.Writer); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+	// Email auth mode
+	if s.config.AuthMode == "email" {
+		if session.Values["loggedIn"] == true && session.Values["email"] != "" {
+			if err = session.Save(c.Request, c.Writer); err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+				return
+			}
+			c.JSON(http.StatusOK, gin.H{
+				"email":    session.Values["email"],
+				"loggedIn": session.Values["loggedIn"],
+			})
 			return
 		}
-		c.JSON(http.StatusOK, gin.H{
-			"email":    session.Values["email"],
-			"loggedIn": session.Values["loggedIn"],
-		})
-		return
+	}
+
+	// Token auth mode
+	if s.config.AuthMode == "token" {
+		if session.Values["loggedIn"] == true && session.Values["token"] != "" {
+			// Refresh session (sliding expiration)
+			if err = session.Save(c.Request, c.Writer); err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+				return
+			}
+			c.JSON(http.StatusOK, gin.H{
+				"token":    session.Values["token"],
+				"loggedIn": session.Values["loggedIn"],
+			})
+			return
+		}
 	}
 
 	c.JSON(http.StatusNotFound, gin.H{"message": "User not found"})
@@ -170,10 +189,25 @@ func (s *Server) verifyAuthMiddleware(c *gin.Context) {
 		return
 	}
 
-	if session.Values["loggedIn"] == true && session.Values["email"] != "" {
-		c.Set("subject", session.Values["email"])
-		c.Next()
-		return
+	// Email auth mode
+	if s.config.AuthMode == "email" {
+		if session.Values["loggedIn"] == true && session.Values["email"] != "" {
+			c.Set("subject", session.Values["email"])
+			c.Next()
+			return
+		}
+	}
+
+	// Token auth mode
+	if s.config.AuthMode == "token" {
+		if session.Values["loggedIn"] == true && session.Values["token"] != "" {
+			// Refresh session (sliding expiration)
+			session.Save(c.Request, c.Writer)
+
+			c.Set("subject", session.Values["token"])
+			c.Next()
+			return
+		}
 	}
 
 	c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "Unauthorized"})

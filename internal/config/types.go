@@ -16,4 +16,5 @@ type Config struct {
 	SMTPPassword     string
 	SMTPSender       string
 	MaxContentLength int
+	AuthMode         string // "email" or "token"
 }

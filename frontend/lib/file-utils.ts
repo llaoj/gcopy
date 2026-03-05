@@ -13,7 +13,9 @@ export function validateFileSize(
   if (fileSizeMB > maxContentLengthMB) {
     return {
       valid: false,
-      message: `File size (${fileSizeMB.toFixed(2)} MiB) exceeds the maximum limit (${maxContentLengthMB} MiB)`,
+      message: `File size (${fileSizeMB.toFixed(
+        2,
+      )} MiB) exceeds the maximum limit (${maxContentLengthMB} MiB)`,
     };
   }
 
