@@ -8,13 +8,13 @@ export default function Avator() {
   const t = useTranslations("Avator");
   const [clicked, setClicked] = useState(false);
   const router = useRouter();
-  const { isLoading, email, token, logout } = useAuth();
+  const { isLoading, userId, authMode, logout } = useAuth();
   if (isLoading) {
     return null;
   }
 
-  // Use email or token for display
-  const displayText = email || token || "";
+  // Use userId for display
+  const displayText = userId || "";
   const initials = displayText.substring(0, 2).toUpperCase();
 
   return (
@@ -43,15 +43,9 @@ export default function Avator() {
             onClick={async () => {
               setClicked(true);
               await logout();
-              // Redirect based on auth mode (check system info)
-              const response = await fetch("/api/v1/systeminfo");
-              if (response.ok) {
-                const sysInfo = await response.json();
-                if (sysInfo.authMode === "token") {
-                  router.push(`/${locale}/user/token`);
-                } else {
-                  router.push(`/${locale}/user/email-code`);
-                }
+              // Redirect based on auth mode
+              if (authMode === "token") {
+                router.push(`/${locale}/user/token`);
               } else {
                 router.push(`/${locale}/user/email-code`);
               }

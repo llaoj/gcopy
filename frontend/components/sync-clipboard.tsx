@@ -45,7 +45,7 @@ export default function SyncClipboard() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const locale = useLocale();
-  const { isLoading, loggedIn } = useAuth();
+  const { isLoading, loggedIn, authMode } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const { logs, addLog, resetLog, updateProgressLog } = useLog();
@@ -80,8 +80,7 @@ export default function SyncClipboard() {
 
   const ensureLoggedIn = async () => {
     if (!loggedIn) {
-      const sysInfo = await getSystemInfo();
-      if (sysInfo?.authMode === "token") {
+      if (authMode === "token") {
         router.push(`/${locale}/user/token`);
       } else {
         router.push(`/${locale}/user/email-code`);

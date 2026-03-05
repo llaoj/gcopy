@@ -12,6 +12,7 @@ import (
 	"github.com/gorilla/sessions"
 	"github.com/llaoj/gcopy/internal/config"
 	"github.com/llaoj/gcopy/internal/gcopy"
+	"github.com/llaoj/gcopy/internal/server/auth"
 	"github.com/llaoj/gcopy/pkg/utils"
 	"github.com/mileusna/useragent"
 	"github.com/sirupsen/logrus"
@@ -22,15 +23,26 @@ type Server struct {
 	config       *config.Config
 	log          *logrus.Logger
 	sessionStore sessions.Store
+	authProvider auth.AuthProvider
 }
 
 func NewServer(log *logrus.Logger) *Server {
 	cfg := config.Get()
+	sessionStore := sessions.NewCookieStore([]byte(cfg.AppKey))
+
+	var provider auth.AuthProvider
+	if cfg.AuthMode == "email" {
+		provider = auth.NewEmailAuthProvider(cfg, sessionStore)
+	} else if cfg.AuthMode == "token" {
+		provider = auth.NewTokenAuthProvider(cfg, sessionStore)
+	}
+
 	s := &Server{
 		wall:         NewWall(log),
 		config:       cfg,
 		log:          log,
-		sessionStore: sessions.NewCookieStore([]byte(cfg.AppKey)),
+		sessionStore: sessionStore,
+		authProvider: provider,
 	}
 
 	return s
@@ -63,17 +75,8 @@ func (s *Server) Run() {
 	v1.GET("/ping", func(c *gin.Context) { c.String(200, "pong") })
 	v1.GET("/systeminfo", s.getSystemInfoHandler)
 
-	// Email auth routes
-	if s.config.AuthMode == "email" {
-		v1.POST("/user/email-code", s.emailCodeHandler)
-		v1.POST("/user/login", s.loginHandler)
-	}
-
-	// Token auth routes
-	if s.config.AuthMode == "token" {
-		v1.POST("/user/token/generate", s.generateTokenHandler)
-		v1.POST("/user/token/verify", s.verifyTokenHandler)
-	}
+	// Register auth routes
+	s.authProvider.RegisterRoutes(v1)
 
 	v1.GET("/user/logout", s.logoutHandler)
 	v1.GET("/user", s.getUserHandler)

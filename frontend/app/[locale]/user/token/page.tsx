@@ -29,7 +29,7 @@ export default function TokenLogin() {
 
     if (res.status == 200) {
       const data = await res.json();
-      setGeneratedToken(data.token);
+      setGeneratedToken(data.userId);
       setClicked(false);
       return;
     }
