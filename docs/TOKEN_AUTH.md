@@ -155,8 +155,8 @@ Token mode provides:
 - `POST /api/v1/user/token/verify` - Verify existing token
 
 Email mode provides:
-- `POST /api/v1/user/email-code` - Send verification code
-- `POST /api/v1/user/login` - Verify code
+- `POST /api/v1/user/email/code` - Send verification code
+- `POST /api/v1/user/email/verify` - Verify code
 
 Common endpoints:
 - `GET /api/v1/user` - Get current user info
