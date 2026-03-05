@@ -17,7 +17,7 @@ export default function Email({
   const [email, setEmail] = useState<string>(searchParams.email || "");
   const [errorMessage, setErrorMessage] = useState("");
   const locale = useLocale();
-  const t = useTranslations("Email");
+  const t = useTranslations("EmailLogin");
   const router = useRouter();
 
   const handleEmailSubmit = async (event: FormEvent) => {

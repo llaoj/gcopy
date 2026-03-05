@@ -17,7 +17,7 @@
   "Avator": {
     "logout": "登出"
   },
-  "Email": {
+  "EmailLogin": {
     "back": "返回",
     "title": "登录",
     "smallTitle": "以使用GCopy",
