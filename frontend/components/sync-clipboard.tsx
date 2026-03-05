@@ -83,7 +83,7 @@ export default function SyncClipboard() {
       if (authMode === "token") {
         router.push(`/${locale}/user/token`);
       } else {
-        router.push(`/${locale}/user/email-code`);
+        router.push(`/${locale}/user/email`);
       }
       return false;
     }
@@ -214,7 +214,7 @@ export default function SyncClipboard() {
     );
 
     if (response.status == 401) {
-      router.push(`/${locale}/user/email-code`);
+      router.push(`/${locale}/user/email`);
       return;
     }
 
@@ -412,7 +412,7 @@ export default function SyncClipboard() {
     );
 
     if (response.status == 401) {
-      router.push(`/${locale}/user/email-code`);
+      router.push(`/${locale}/user/email`);
       return;
     }
 
@@ -490,7 +490,7 @@ export default function SyncClipboard() {
     );
 
     if (response.status == 401) {
-      router.push(`/${locale}/user/email-code`);
+      router.push(`/${locale}/user/email`);
       return;
     }
 

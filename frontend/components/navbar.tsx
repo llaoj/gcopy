@@ -101,7 +101,7 @@ export default function Navbar() {
             href={
               authMode === "token"
                 ? `/${locale}/user/token`
-                : `/${locale}/user/email-code`
+                : `/${locale}/user/email`
             }
           >
             {t("signIn")}

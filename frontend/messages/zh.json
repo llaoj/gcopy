@@ -17,7 +17,7 @@
   "Avator": {
     "logout": "登出"
   },
-  "EmailCode": {
+  "Email": {
     "back": "返回",
     "title": "登录",
     "smallTitle": "以使用GCopy",
@@ -26,15 +26,11 @@
     "tip": "你的隐私安全对GCopy很重要!",
     "buttonText": "下一步",
     "invalidEmail": "无效的邮箱地址.",
-    "sendEmailFailed": "发送邮件失败, 请检查并重试."
-  },
-  "Login": {
-    "title": "输入验证码",
-    "subTitle": "我们向{email}发送了一个验证码. 请输入验证码登录.",
-    "placeholder": "输入验证码",
-    "tip": "你的隐私安全对GCopy很重要!",
-    "buttonText": "登录",
-    "invalidEmail": "无效的邮箱地址.",
+    "sendEmailFailed": "发送邮件失败, 请检查并重试.",
+    "codeTitle": "输入验证码",
+    "codeSubTitle": "我们向{email}发送了一个验证码. 请输入验证码登录.",
+    "codePlaceholder": "输入验证码",
+    "codeButtonText": "登录",
     "incorrectCode": "验证码不正确, 请退回重试.",
     "authenticationFailed": "身份验证失败, 请退回重试."
   },

@@ -38,8 +38,8 @@ func (p *EmailAuthProvider) GetName() string {
 
 // RegisterRoutes registers email authentication routes
 func (p *EmailAuthProvider) RegisterRoutes(router *gin.RouterGroup) {
-	router.POST("/user/email-code", p.emailCodeHandler)
-	router.POST("/user/login", p.loginHandler)
+	router.POST("/user/email/code", p.emailCodeHandler)
+	router.POST("/user/email/verify", p.loginHandler)
 }
 
 // Login represents the request body for email login

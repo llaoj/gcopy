@@ -47,7 +47,7 @@ export default function Avator() {
               if (authMode === "token") {
                 router.push(`/${locale}/user/token`);
               } else {
-                router.push(`/${locale}/user/email-code`);
+                router.push(`/${locale}/user/email`);
               }
             }}
           >

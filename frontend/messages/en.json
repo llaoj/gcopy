@@ -17,7 +17,7 @@
   "Avator": {
     "logout": "Logout"
   },
-  "EmailCode": {
+  "Email": {
     "back": "Back",
     "title": "Sign in",
     "smallTitle": "to continue to GCopy",
@@ -26,15 +26,11 @@
     "tip": "Your privacy is important to GCopy!",
     "buttonText": "Next",
     "invalidEmail": "Invalid email.",
-    "sendEmailFailed": "Failed to send email. Please check and retry."
-  },
-  "Login": {
-    "title": "Enter code",
-    "subTitle": "We emailed a code to {email}. Please enter the code to sign in.",
-    "placeholder": "Enter code",
-    "tip": "Your privacy is important to GCopy!",
-    "buttonText": "Sign in",
-    "invalidEmail": "Invalid email.",
+    "sendEmailFailed": "Failed to send email. Please check and retry.",
+    "codeTitle": "Enter code",
+    "codeSubTitle": "We emailed a code to {email}. Please enter the code to sign in.",
+    "codePlaceholder": "Enter code",
+    "codeButtonText": "Sign in",
     "incorrectCode": "Incorrect code. Please go back and retry.",
     "authenticationFailed": "Authentication failed. Please go back and retry."
   },
