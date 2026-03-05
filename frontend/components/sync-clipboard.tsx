@@ -4,7 +4,7 @@ import LogBox from "@/components/log-box";
 import FileLink from "@/components/file-link";
 import useAuth from "@/lib/auth";
 import { LogLevel, useLog } from "@/lib/log";
-import { DragEvent, useRef, useState } from "react";
+import { DragEvent, useRef, useState, useEffect } from "react";
 import clsx from "clsx";
 import { useRouter, usePathname } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
@@ -14,6 +14,7 @@ import {
   clipboardWriteBlobPromise,
   hashBlob,
   toTextBlob,
+  toPngBlob,
   Clipboard,
   FileInfo,
   initFileInfo,
@@ -41,6 +42,8 @@ export default function SyncClipboard() {
   // "" | interrupted-[r|w] | finished
   const [status, setStatus] = useState<string>("");
   const [dragging, setDragging] = useState(false);
+  // 等待用户粘贴特殊剪贴板内容（如微信图片）
+  const [waitingForPaste, setWaitingForPaste] = useState<boolean>(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -49,6 +52,173 @@ export default function SyncClipboard() {
   const router = useRouter();
   const pathname = usePathname();
   const { logs, addLog, resetLog, updateProgressLog } = useLog();
+
+  /**
+   * ============================================================================
+   * paste 事件监听器 - 支持微信图片等特殊剪贴板内容
+   * ============================================================================
+   *
+   * 为什么需要这个监听器？
+   *
+   * 某些应用程序（如微信）复制的图片无法通过 navigator.clipboard.read() API 读取，
+   * 但可以通过 paste 事件的 clipboardData.items 读取。
+   *
+   * 技术原因：
+   * 1. 异步 Clipboard API (navigator.clipboard.read())
+   *    - 可以随时调用（需要权限）
+   *    - 浏览器会"清理"不标准的数据格式
+   *    - 对于微信图片，types 数组为空，无法读取
+   *
+   * 2. 同步 DataTransfer API (paste 事件)
+   *    - 只能在用户触发的 paste 事件中访问
+   *    - 提供原始剪贴板数据，浏览器不进行额外清理
+   *    - 微信图片会以 `image/jpeg` 格式出现在 items 中
+   *
+   * 官方文档：
+   * - W3C Clipboard API (异步): https://w3c.github.io/clipboard-apis/#async-clipboard-api
+   *   "User agents may choose to sanitize clipboard data for privacy or
+   *    security reasons when using the async clipboard API."
+   *
+   * - HTML DataTransfer (同步): https://html.spec.whatwg.org/multipage/dnd.html#the-datatransfer-interface
+   *   DataTransfer 在 paste 事件中提供"原始剪贴板数据"
+   *
+   * - Clipboard Security: https://w3c.github.io/clipboard-apis/#security
+   *   "Browsers may remove or modify clipboard items for security reasons"
+   *
+   * 解决方案：
+   * 当 navigator.clipboard.read() 读不到内容时，提示用户按 Ctrl+V，
+   * 通过 paste 事件读取原始数据。
+   */
+  useEffect(() => {
+    const handlePaste = async (e: ClipboardEvent) => {
+      // 只在等待粘贴状态时处理
+      if (!waitingForPaste) {
+        return;
+      }
+
+      if (!e.clipboardData?.items) {
+        return;
+      }
+
+      // 检查是否有文件类型（图片）
+      for (let i = 0; i < e.clipboardData.items.length; i++) {
+        const item = e.clipboardData.items[i];
+
+        // 如果是图片文件
+        if (item.kind === 'file' && item.type.startsWith('image/')) {
+          e.preventDefault();
+
+          const file = item.getAsFile();
+          if (file) {
+
+            // 重置等待状态
+            setWaitingForPaste(false);
+            addLog({ message: t("logs.readClipboardSuccess") });
+
+            // 处理图片上传
+            await handlePastedImage(file);
+          }
+          break;
+        }
+      }
+    };
+
+    // 添加 paste 事件监听器
+    document.addEventListener('paste', handlePaste);
+
+    // 清理
+    return () => {
+      document.removeEventListener('paste', handlePaste);
+    };
+  }, [waitingForPaste, loggedIn, authMode, locale, router]);
+
+  /**
+   * 处理从 paste 事件获取的图片
+   */
+  const handlePastedImage = async (file: File) => {
+    if (!await ensureLoggedIn()) {
+      return;
+    }
+
+    let blob = file as Blob;
+    let xtype: string;
+
+    // 确定类型并转换格式
+    if (blob.type.startsWith('image/')) {
+      xtype = 'screenshot';
+
+      // 如果不是 PNG，转换为 PNG（浏览器剪贴板标准格式）
+      if (blob.type !== 'image/png') {
+        blob = await toPngBlob(blob);
+      }
+    } else if (blob.type.startsWith('text/')) {
+      xtype = 'text';
+      blob = await toTextBlob(blob);
+    } else {
+      addLog({
+        message: t("logs.unsupportedFormat", { format: blob.type }),
+        level: LogLevel.Error,
+      });
+      return;
+    }
+
+    const nextBlobId = await hashBlob(blob);
+
+    addLog({ message: t("logs.uploading"), isProgress: true });
+
+    const response = await uploadWithProgress(
+      "/api/v1/clipboard",
+      "POST",
+      {
+        "Content-Type": blob.type,
+        "X-Type": xtype,
+        "X-FileName": "",
+      },
+      blob,
+      (progress) => {
+        updateProgressLog(`${t("logs.uploading")} ${progress}%`);
+      },
+    );
+
+    if (response.status == 401) {
+      router.push(`/${locale}/user/email`);
+      return;
+    }
+
+    if (response.status != 200) {
+      try {
+        const body = JSON.parse(response.body);
+        addLog({ message: body.message, level: LogLevel.Error });
+      } catch {
+        addLog({ message: response.body, level: LogLevel.Error });
+      }
+      return;
+    }
+
+    const xindex = response.headers.get("x-index");
+    if (xindex == null || xindex == "0") {
+      return;
+    }
+
+    window.history.replaceState(
+      null,
+      document.title,
+      `${pathname}?ci=${xindex}&cbi=${nextBlobId}`,
+    );
+
+    await addHistoryItem({
+      index: xindex,
+      blobId: nextBlobId,
+      data: blob,
+      type: xtype,
+    });
+
+    addLog({
+      message: t("logs.uploaded", { type: t(xtype), index: xindex }),
+      level: LogLevel.Success,
+    });
+    setStatus("finished");
+  };
 
   if (isLoading) {
     return (
@@ -259,6 +429,9 @@ export default function SyncClipboard() {
       // Format or rebuild blob
       if (xtype == "text") {
         blob = await toTextBlob(blob);
+      } else if (xtype == "screenshot") {
+        // Convert image to PNG for clipboard compatibility
+        blob = await toPngBlob(blob);
       }
 
       const nextBlobId: string = await hashBlob(blob);
@@ -298,6 +471,10 @@ export default function SyncClipboard() {
       if (shadowBlob) {
         const realBlobId = await hashBlob(shadowBlob);
         searchParams.set("cbi", realBlobId);
+      } else {
+        console.warn("Failed to read back clipboard after writing");
+        // Use the blob we just wrote as fallback
+        searchParams.set("cbi", nextBlobId);
       }
 
       window.history.replaceState(
@@ -364,9 +541,39 @@ export default function SyncClipboard() {
     }
 
     if (!blob) {
-      addLog({ message: t("logs.emptyClipboard") });
+      /**
+       * ============================================================
+       * 特殊剪贴板内容处理（如微信图片）
+       * ============================================================
+       *
+       * 当 navigator.clipboard.read() 返回 null 时，可能是：
+       * 1. 剪贴板确实为空
+       * 2. 剪贴板包含特殊格式（如微信图片），异步 API 无法读取
+       *
+       * 对于情况2，我们需要使用 paste 事件来读取。
+       * 提示用户按 Ctrl+V (Mac: Cmd+V) 来粘贴内容。
+       *
+       * 技术细节：
+       * - 微信图片在 navigator.clipboard.read() 中 types 数组为空
+       * - 但在 paste 事件的 clipboardData.items 中可以读取
+       * - 这是浏览器安全模型的差异导致的
+       *
+       * 参考文档：
+       * - https://w3c.github.io/clipboard-apis/#security
+       * - https://w3c.github.io/clipboard-apis/#async-clipboard-api
+       */
+
+      // 尝试提示用户粘贴特殊内容
+      addLog({
+        message: t("logs.specialClipboardPleasePaste"),
+        level: LogLevel.Warn,
+      });
+
+      // 激活 paste 事件监听
+      setWaitingForPaste(true);
       return;
     }
+
     let xtype;
     switch (blob.type) {
       case "text/plain":
@@ -376,7 +583,13 @@ export default function SyncClipboard() {
         blob = await toTextBlob(blob);
         break;
       case "image/png":
+      case "image/jpeg":
+      case "image/webp":
         xtype = "screenshot";
+        // 转换为 PNG 以保证兼容性
+        if (blob.type !== "image/png") {
+          blob = await toPngBlob(blob);
+        }
         break;
       default:
         addLog({

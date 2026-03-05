@@ -35,32 +35,77 @@ export function clipboardWriteBlobPromise(blob: Blob) {
 }
 
 export async function clipboardRead() {
-  let items = await navigator.clipboard.read();
-  let imagePngIndex = null;
-  let textPlainIndex = null;
-  let textHtmlIndex = null;
-  if (items && items.length > 0) {
+  try {
+    let items = await navigator.clipboard.read();
+
+    if (!items || items.length === 0) {
+      return null;
+    }
+
+    // 如果 types 数组为空，无法读取
+    // 这种情况需要使用 paste 事件（见 sync-clipboard.tsx）
+    if (items[0].types.length === 0) {
+      return null;
+    }
+
+    // 支持的图片类型（按优先级）
+    const imageTypes = [
+      "image/png",
+      "image/jpeg",
+      "image/jpg",
+      "image/webp",
+      "image/bmp",
+      "image/gif",
+    ];
+
+    // 支持的文本类型（按优先级）
+    const textTypes = ["text/plain", "text/html", "text/uri-list"];
+
+    // 优先读取图片
+    for (const imageType of imageTypes) {
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].types.includes(imageType)) {
+          try {
+            return await items[i].getType(imageType);
+          } catch (err) {
+            console.warn(`Failed to read ${imageType}:`, err);
+            continue;
+          }
+        }
+      }
+    }
+
+    // 然后读取文本
+    for (const textType of textTypes) {
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].types.includes(textType)) {
+          try {
+            return await items[i].getType(textType);
+          } catch (err) {
+            console.warn(`Failed to read ${textType}:`, err);
+            continue;
+          }
+        }
+      }
+    }
+
+    // Fallback: 尝试读取第一个可用的类型
     for (let i = 0; i < items.length; i++) {
-      if (items[i].types.includes("image/png")) {
-        imagePngIndex = i;
+      for (const type of items[i].types) {
+        try {
+          return await items[i].getType(type);
+        } catch (err) {
+          console.warn(`Failed to read type ${type}:`, err);
+          continue;
+        }
       }
-      if (items[i].types.includes("text/plain")) {
-        textPlainIndex = i;
-      }
-      if (items[i].types.includes("text/html")) {
-        textHtmlIndex = i;
-      }
     }
-    if (imagePngIndex != null) {
-      return items[imagePngIndex].getType("image/png");
-    }
-    if (textPlainIndex != null) {
-      return items[textPlainIndex].getType("text/plain");
-    }
-    if (textHtmlIndex != null) {
-      return items[textHtmlIndex].getType("text/html");
-    }
-    return items[0].getType(items[0].types[0]);
+
+    console.error("All clipboard types failed to read");
+    return null;
+  } catch (err) {
+    console.error("Failed to read clipboard:", err);
+    return null;
   }
 }
 
@@ -80,6 +125,52 @@ export function toTextBlob(blob: Blob) {
   }
   return blob.text().then((text) => {
     return new Blob([text], { type: "text/plain" });
+  });
+}
+
+// Convert image to PNG format for clipboard compatibility
+export async function toPngBlob(blob: Blob): Promise<Blob> {
+  if (blob.type === "image/png") {
+    return blob;
+  }
+
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(blob);
+
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+
+      const canvas = document.createElement("canvas");
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        reject(new Error("Failed to get canvas context"));
+        return;
+      }
+
+      ctx.drawImage(img, 0, 0);
+
+      canvas.toBlob(
+        (pngBlob) => {
+          if (pngBlob) {
+            resolve(pngBlob);
+          } else {
+            reject(new Error("Failed to convert image to PNG"));
+          }
+        },
+        "image/png"
+      );
+    };
+
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("Failed to load image"));
+    };
+
+    img.src = url;
   });
 }
 

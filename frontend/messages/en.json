@@ -101,7 +101,8 @@
       "emptyClipboard": "Clipboard is empty.",
       "recommendedBrowsers": "On {os}, recommend using {browsers} browser.",
       "readQuickInputSuccess": "Read text from quick input area successfully.",
-      "pinLimit": "Up to 10 items can be pinned."
+      "pinLimit": "Up to 10 items can be pinned.",
+      "specialClipboardPleasePaste": "Detected special clipboard content (e.g., WeChat image). Please press Ctrl+V (Mac: Cmd+V) to paste it."
     }
   }
 }
