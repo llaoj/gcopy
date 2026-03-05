@@ -194,6 +194,9 @@ func (s *Server) verifyAuthMiddleware(c *gin.Context) {
 	// Email auth mode
 	if s.config.AuthMode == "email" {
 		if session.Values["loggedIn"] == true && session.Values["email"] != "" {
+			// Refresh session (sliding expiration)
+			session.Save(c.Request, c.Writer)
+
 			c.Set("subject", session.Values["email"])
 			c.Next()
 			return
