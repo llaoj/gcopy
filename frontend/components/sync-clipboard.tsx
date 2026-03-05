@@ -513,8 +513,10 @@ export default function SyncClipboard() {
         "?" + searchParams.toString(),
       );
 
+      const fileBlobId = await hashBlob(blob);
       await addHistoryItem({
         index: xindex,
+        blobId: fileBlobId,
         data: downloadedFile,
         type: xtype,
         fileName: xfilename,
@@ -733,8 +735,10 @@ export default function SyncClipboard() {
       `${pathname}?ci=${xindex}&cbi=${searchParams.get("cbi") ?? ""}`,
     );
 
+    const uploadBlobId = await hashBlob(file);
     await addHistoryItem({
       index: xindex,
+      blobId: uploadBlobId,
       data: file,
       type: "file",
       fileName: file.name,
