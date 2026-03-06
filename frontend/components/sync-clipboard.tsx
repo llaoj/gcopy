@@ -100,7 +100,7 @@ export default function SyncClipboard() {
         return;
       }
 
-      // 检查是否有文件类型（图片）
+      // 检查剪贴板内容类型
       for (let i = 0; i < e.clipboardData.items.length; i++) {
         const item = e.clipboardData.items[i];
 
@@ -115,11 +115,33 @@ export default function SyncClipboard() {
             addLog({ message: t("logs.readClipboardSuccess") });
 
             // 处理图片上传
-            await handlePastedImage(file);
+            await handlePastedContent(file);
           }
-          break;
+          return;
+        }
+
+        // 如果是文字内容
+        if (item.kind === "string") {
+          e.preventDefault();
+
+          const text = e.clipboardData.getData(item.type);
+          if (text) {
+            // 重置等待状态
+            setWaitingForPaste(false);
+            addLog({ message: t("logs.readClipboardSuccess") });
+
+            // 创建 File 对象并处理
+            const file = new File([text], "clipboard.txt", {
+              type: "text/plain",
+            });
+            await handlePastedContent(file);
+          }
+          return;
         }
       }
+
+      addLog({ message: t("logs.emptyClipboard") });
+
     };
 
     // 添加 paste 事件监听器
@@ -132,9 +154,9 @@ export default function SyncClipboard() {
   }, [waitingForPaste, loggedIn, authMode, locale, router]);
 
   /**
-   * 处理从 paste 事件获取的图片
+   * 处理从 paste 事件获取的剪贴板内容（图片或文字）
    */
-  const handlePastedImage = async (file: File) => {
+  const handlePastedContent = async (file: File) => {
     if (!(await ensureLoggedIn())) {
       return;
     }
