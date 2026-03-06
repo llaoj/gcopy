@@ -15,3 +15,30 @@ jobs:
         run: |
           echo "${{ secrets.REGISTRY_PASSWORD }}" | docker login -u "${{ secrets.REGISTRY_USERNAME }}" --password-stdin
           make push-container
+
+  sync-to-acr:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install skopeo
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y skopeo
+
+      - name: Login to Aliyun ACR
+        run: |
+          echo "${{ secrets.ALI_REGISTRY_PASSWORD }}" | skopeo login -u "${{ secrets.ALI_REGISTRY_USERNAME }}" --password-stdin registry.cn-beijing.aliyuncs.com
+
+      - name: Sync images to Aliyun ACR
+        run: |
+          VERSION=$(cat version.txt)
+          IMAGE_LIST="docker.io/llaoj/gcopy:$VERSION docker.io/llaoj/gcopy:latest docker.io/llaoj/gcopy-frontend:$VERSION docker.io/llaoj/gcopy-frontend:latest"
+
+          echo "$IMAGE_LIST" | tr ' ' '\n' | awk '{
+            dst = $1;
+            gsub(/^[^\/]+\//, "", dst);
+            gsub("/", "_", dst);
+            print "skopeo copy --multi-arch all docker://"$1" docker://registry.cn-beijing.aliyuncs.com/llaoj/"dst;
+          }' | xargs -P 5 -I {} sh -c "{}"
