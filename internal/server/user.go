@@ -7,10 +7,8 @@ import (
 	"github.com/llaoj/gcopy/internal/server/auth"
 )
 
-const userSessionName = "user_session"
-
 func (s *Server) logoutHandler(c *gin.Context) {
-	session, err := s.sessionStore.Get(c.Request, userSessionName)
+	session, err := s.sessionStore.Get(c.Request, auth.UserSessionName)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
 		return
@@ -27,7 +25,7 @@ func (s *Server) logoutHandler(c *gin.Context) {
 }
 
 func (s *Server) getUserHandler(c *gin.Context) {
-	session, err := s.sessionStore.Get(c.Request, userSessionName)
+	session, err := s.sessionStore.Get(c.Request, auth.UserSessionName)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
 		return
@@ -54,7 +52,7 @@ func (s *Server) getUserHandler(c *gin.Context) {
 }
 
 func (s *Server) verifyAuthMiddleware(c *gin.Context) {
-	session, err := s.sessionStore.Get(c.Request, userSessionName)
+	session, err := s.sessionStore.Get(c.Request, auth.UserSessionName)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
 		return
@@ -63,7 +61,9 @@ func (s *Server) verifyAuthMiddleware(c *gin.Context) {
 	userId, ok := auth.GetUserIdFromSession(session)
 	if ok && auth.IsAuthenticated(session) {
 		// Refresh session (sliding expiration)
-		session.Save(c.Request, c.Writer)
+		if err := session.Save(c.Request, c.Writer); err != nil {
+			s.log.Warnf("Failed to save session in middleware: %v", err)
+		}
 
 		// Set unified user identifier
 		c.Set("subject", userId)

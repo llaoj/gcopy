@@ -5,6 +5,9 @@ import (
 	"github.com/gorilla/sessions"
 )
 
+// UserSessionName is the shared session cookie name used by all auth providers
+const UserSessionName = "user_session"
+
 // AuthProvider defines the interface for authentication providers
 type AuthProvider interface {
 	// GetName returns the authentication mode name (e.g., "email", "token")

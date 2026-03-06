@@ -180,7 +180,11 @@ export default function SyncClipboard() {
     );
 
     if (response.status == 401) {
-      router.push(`/${locale}/user/email`);
+      if (authMode === "token") {
+        router.push(`/${locale}/user/token`);
+      } else {
+        router.push(`/${locale}/user/email`);
+      }
       return;
     }
 
@@ -242,9 +246,12 @@ export default function SyncClipboard() {
       .equals("false")
       .reverse()
       .primaryKeys();
-    items.map((item, idx) => {
-      if (idx > 19) db.history.where("createdAt").equals(item).delete();
-    });
+    await Promise.all(
+      items.map((item, idx) => {
+        if (idx > 19)
+          return db.history.where("createdAt").equals(item).delete();
+      }),
+    );
   };
 
   const ensureLoggedIn = async () => {
@@ -383,7 +390,11 @@ export default function SyncClipboard() {
     );
 
     if (response.status == 401) {
-      router.push(`/${locale}/user/email`);
+      if (authMode === "token") {
+        router.push(`/${locale}/user/token`);
+      } else {
+        router.push(`/${locale}/user/email`);
+      }
       return;
     }
 
@@ -527,52 +538,53 @@ export default function SyncClipboard() {
   };
 
   const pushClipboard = async () => {
+    if (!textareaRef.current) {
+      return;
+    }
     let blob = null;
-    if (textareaRef.current && textareaRef.current.value != "") {
+    if (textareaRef.current.value != "") {
       blob = new Blob([textareaRef.current.value], { type: "text/plain" });
       addLog({ message: t("logs.readQuickInputSuccess") });
-    }
-
-    if (textareaRef.current?.value == "") {
+    } else {
       if (!navigator.clipboard || !navigator.clipboard.read) {
         return;
       }
       blob = await clipboardRead();
-      addLog({ message: t("logs.readClipboardSuccess") });
-    }
+      if (blob) {
+        addLog({ message: t("logs.readClipboardSuccess") });
+      } else {
+        /**
+         * ============================================================
+         * 特殊剪贴板内容处理（如微信图片）
+         * ============================================================
+         *
+         * 当 navigator.clipboard.read() 返回 null 时，可能是：
+         * 1. 剪贴板确实为空
+         * 2. 剪贴板包含特殊格式（如微信图片），异步 API 无法读取
+         *
+         * 对于情况2，我们需要使用 paste 事件来读取。
+         * 提示用户按 Ctrl+V (Mac: Cmd+V) 来粘贴内容。
+         *
+         * 技术细节：
+         * - 微信图片在 navigator.clipboard.read() 中 types 数组为空
+         * - 但在 paste 事件的 clipboardData.items 中可以读取
+         * - 这是浏览器安全模型的差异导致的
+         *
+         * 参考文档：
+         * - https://w3c.github.io/clipboard-apis/#security
+         * - https://w3c.github.io/clipboard-apis/#async-clipboard-api
+         */
 
-    if (!blob) {
-      /**
-       * ============================================================
-       * 特殊剪贴板内容处理（如微信图片）
-       * ============================================================
-       *
-       * 当 navigator.clipboard.read() 返回 null 时，可能是：
-       * 1. 剪贴板确实为空
-       * 2. 剪贴板包含特殊格式（如微信图片），异步 API 无法读取
-       *
-       * 对于情况2，我们需要使用 paste 事件来读取。
-       * 提示用户按 Ctrl+V (Mac: Cmd+V) 来粘贴内容。
-       *
-       * 技术细节：
-       * - 微信图片在 navigator.clipboard.read() 中 types 数组为空
-       * - 但在 paste 事件的 clipboardData.items 中可以读取
-       * - 这是浏览器安全模型的差异导致的
-       *
-       * 参考文档：
-       * - https://w3c.github.io/clipboard-apis/#security
-       * - https://w3c.github.io/clipboard-apis/#async-clipboard-api
-       */
+        // 尝试提示用户粘贴特殊内容
+        addLog({
+          message: t("logs.specialClipboardPleasePaste"),
+          level: LogLevel.Warn,
+        });
 
-      // 尝试提示用户粘贴特殊内容
-      addLog({
-        message: t("logs.specialClipboardPleasePaste"),
-        level: LogLevel.Warn,
-      });
-
-      // 激活 paste 事件监听
-      setWaitingForPaste(true);
-      return;
+        // 激活 paste 事件监听
+        setWaitingForPaste(true);
+        return;
+      }
     }
 
     let xtype;
@@ -626,7 +638,11 @@ export default function SyncClipboard() {
     );
 
     if (response.status == 401) {
-      router.push(`/${locale}/user/email`);
+      if (authMode === "token") {
+        router.push(`/${locale}/user/token`);
+      } else {
+        router.push(`/${locale}/user/email`);
+      }
       return;
     }
 
@@ -704,7 +720,11 @@ export default function SyncClipboard() {
     );
 
     if (response.status == 401) {
-      router.push(`/${locale}/user/email`);
+      if (authMode === "token") {
+        router.push(`/${locale}/user/token`);
+      } else {
+        router.push(`/${locale}/user/email`);
+      }
       return;
     }
 

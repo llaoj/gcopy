@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/sessions"
 	"github.com/llaoj/gcopy/internal/config"
@@ -59,17 +58,6 @@ func (s *Server) Run() {
 	}
 	r := gin.New()
 	r.Use(gin.Recovery())
-	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"*"},
-		AllowMethods:     []string{"*"},
-		AllowHeaders:     []string{"*"},
-		ExposeHeaders:    []string{"*"},
-		AllowCredentials: true,
-		AllowOriginFunc: func(origin string) bool {
-			return true
-		},
-		MaxAge: 12 * time.Hour,
-	}))
 
 	v1 := r.Group("/api/v1")
 	v1.GET("/ping", func(c *gin.Context) { c.String(200, "pong") })

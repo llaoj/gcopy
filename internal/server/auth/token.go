@@ -79,7 +79,7 @@ func (p *TokenAuthProvider) generateTokenHandler(c *gin.Context) {
 		return
 	}
 
-	session, err := p.sessionStore.Get(c.Request, userSessionName)
+	session, err := p.sessionStore.Get(c.Request, UserSessionName)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
 		return
@@ -117,7 +117,7 @@ func (p *TokenAuthProvider) verifyTokenHandler(c *gin.Context) {
 
 	// For now, any valid 6-character token is considered valid
 	// In a production system, you might want to validate against a database
-	session, err := p.sessionStore.Get(c.Request, userSessionName)
+	session, err := p.sessionStore.Get(c.Request, UserSessionName)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
 		return

@@ -4,22 +4,26 @@ export interface SystemInfo {
   authMode: string; // "email" or "token"
 }
 
-let systemInfo: SystemInfo | null = null;
+let systemInfoPromise: Promise<SystemInfo | null> | null = null;
 
 export async function getSystemInfo(): Promise<SystemInfo | null> {
-  if (systemInfo) {
-    return systemInfo;
+  if (systemInfoPromise) {
+    return systemInfoPromise;
   }
 
-  try {
-    const response = await fetch("/api/v1/systeminfo");
-    if (response.ok) {
-      systemInfo = await response.json();
-      return systemInfo;
-    }
-  } catch (error) {
-    console.error("Failed to get system info:", error);
-  }
+  systemInfoPromise = fetch("/api/v1/systeminfo")
+    .then((response) => {
+      if (response.ok) {
+        return response.json() as Promise<SystemInfo>;
+      }
+      return null;
+    })
+    .catch((error) => {
+      console.error("Failed to get system info:", error);
+      // Reset so next call retries
+      systemInfoPromise = null;
+      return null;
+    });
 
-  return null;
+  return systemInfoPromise;
 }

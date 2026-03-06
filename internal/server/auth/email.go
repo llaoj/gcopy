@@ -1,10 +1,10 @@
 package auth
 
 import (
+	"crypto/rand"
 	"fmt"
-	"math/rand"
+	"math/big"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
@@ -14,8 +14,6 @@ import (
 	"github.com/mileusna/useragent"
 	"gopkg.in/gomail.v2"
 )
-
-const userSessionName = "user_session"
 
 // EmailAuthProvider implements email-based authentication
 type EmailAuthProvider struct {
@@ -57,9 +55,13 @@ func (p *EmailAuthProvider) emailCodeHandler(c *gin.Context) {
 	}
 
 	var code string
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	for i := 0; i < 6; i++ {
-		code += strconv.Itoa(r.Intn(10))
+		num, err := rand.Int(rand.Reader, big.NewInt(10))
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to generate code"})
+			return
+		}
+		code += num.String()
 	}
 	ua := useragent.Parse(c.Request.Header.Get("User-Agent"))
 	language := c.Request.Header.Get("Accept-Language")
@@ -98,7 +100,7 @@ func (p *EmailAuthProvider) emailCodeHandler(c *gin.Context) {
 		return
 	}
 
-	session, err := p.sessionStore.Get(c.Request, userSessionName)
+	session, err := p.sessionStore.Get(c.Request, UserSessionName)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
 		return
@@ -123,7 +125,7 @@ func (p *EmailAuthProvider) emailVerifyHandler(c *gin.Context) {
 		return
 	}
 
-	session, err := p.sessionStore.Get(c.Request, userSessionName)
+	session, err := p.sessionStore.Get(c.Request, UserSessionName)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
 		return
