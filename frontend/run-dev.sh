@@ -2,6 +2,8 @@
 
 set -e
 
+export SERVER_URL=http://localhost:3376
+
 CERT_FILE="127.0.0.1.pem"
 KEY_FILE="127.0.0.1-key.pem"
 OPENSSL_CNF="./openssl.cnf"

@@ -7,11 +7,11 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/sessions"
 	"github.com/llaoj/gcopy/internal/config"
 	"github.com/llaoj/gcopy/internal/gcopy"
+	"github.com/llaoj/gcopy/internal/server/auth"
 	"github.com/llaoj/gcopy/pkg/utils"
 	"github.com/mileusna/useragent"
 	"github.com/sirupsen/logrus"
@@ -22,15 +22,26 @@ type Server struct {
 	config       *config.Config
 	log          *logrus.Logger
 	sessionStore sessions.Store
+	authProvider auth.AuthProvider
 }
 
 func NewServer(log *logrus.Logger) *Server {
 	cfg := config.Get()
+	sessionStore := sessions.NewCookieStore([]byte(cfg.AppKey))
+
+	var provider auth.AuthProvider
+	if cfg.AuthMode == "email" {
+		provider = auth.NewEmailAuthProvider(cfg, sessionStore)
+	} else if cfg.AuthMode == "token" {
+		provider = auth.NewTokenAuthProvider(cfg, sessionStore)
+	}
+
 	s := &Server{
 		wall:         NewWall(log),
 		config:       cfg,
 		log:          log,
-		sessionStore: sessions.NewCookieStore([]byte(cfg.AppKey)),
+		sessionStore: sessionStore,
+		authProvider: provider,
 	}
 
 	return s
@@ -47,24 +58,14 @@ func (s *Server) Run() {
 	}
 	r := gin.New()
 	r.Use(gin.Recovery())
-	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"*"},
-		AllowMethods:     []string{"*"},
-		AllowHeaders:     []string{"*"},
-		ExposeHeaders:    []string{"*"},
-		AllowCredentials: true,
-		AllowOriginFunc: func(origin string) bool {
-			return true
-		},
-		MaxAge: 12 * time.Hour,
-	}))
 
 	v1 := r.Group("/api/v1")
 	v1.GET("/ping", func(c *gin.Context) { c.String(200, "pong") })
 	v1.GET("/systeminfo", s.getSystemInfoHandler)
 
-	v1.POST("/user/email-code", s.emailCodeHandler)
-	v1.POST("/user/login", s.loginHandler)
+	// Register auth routes
+	s.authProvider.RegisterRoutes(v1)
+
 	v1.GET("/user/logout", s.logoutHandler)
 	v1.GET("/user", s.getUserHandler)
 
@@ -109,6 +110,7 @@ func (s *Server) getClipboardHandler(c *gin.Context) {
 
 	c.Status(http.StatusOK)
 	c.Header("Content-Type", cb.MIMEType)
+	c.Header("Content-Length", strconv.Itoa(len(cb.Data)))
 	c.Header("X-Index", strconv.Itoa(cb.Index))
 	c.Header("X-Type", cb.Type)
 	c.Header("X-FileName", cb.FileName)
@@ -131,6 +133,9 @@ func (s *Server) updateClipboardHandler(c *gin.Context) {
 		return
 	}
 
+	// 限制请求体大小
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, int64(s.config.MaxContentLength)*1024*1024)
+
 	contentLength, err := strconv.Atoi(c.Request.Header.Get("Content-Length"))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
@@ -143,7 +148,9 @@ func (s *Server) updateClipboardHandler(c *gin.Context) {
 
 	data, err := io.ReadAll(c.Request.Body)
 	if err != nil {
-		s.log.Error(err)
+		s.log.Errorf("Failed to read request body: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"message": fmt.Sprintf("Failed to read request body: %v", err)})
+		return
 	}
 	defer c.Request.Body.Close()
 	if data == nil {

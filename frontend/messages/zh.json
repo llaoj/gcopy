@@ -17,7 +17,7 @@
   "Avator": {
     "logout": "登出"
   },
-  "EmailCode": {
+  "EmailLogin": {
     "back": "返回",
     "title": "登录",
     "smallTitle": "以使用GCopy",
@@ -26,17 +26,36 @@
     "tip": "你的隐私安全对GCopy很重要!",
     "buttonText": "下一步",
     "invalidEmail": "无效的邮箱地址.",
-    "sendEmailFailed": "发送邮件失败, 请检查并重试."
-  },
-  "Login": {
-    "title": "输入验证码",
-    "subTitle": "我们向{email}发送了一个验证码. 请输入验证码登录.",
-    "placeholder": "输入验证码",
-    "tip": "你的隐私安全对GCopy很重要!",
-    "buttonText": "登录",
-    "invalidEmail": "无效的邮箱地址.",
+    "sendEmailFailed": "发送邮件失败, 请检查并重试.",
+    "codeTitle": "输入验证码",
+    "codeSubTitle": "我们向{email}发送了一个验证码. 请输入验证码登录.",
+    "codePlaceholder": "输入验证码",
+    "codeButtonText": "登录",
     "incorrectCode": "验证码不正确, 请退回重试.",
     "authenticationFailed": "身份验证失败, 请退回重试."
+  },
+  "TokenLogin": {
+    "title": "令牌登录",
+    "back": "返回",
+    "generateTitle": "生成新令牌",
+    "generateSubTitle": "生成一个令牌用于剪切板同步",
+    "verifyTitle": "输入令牌",
+    "verifySubTitle": "输入已有令牌访问共享剪切板",
+    "generateButton": "生成令牌",
+    "verifyButton": "使用令牌",
+    "placeholder": "输入6位令牌",
+    "yourToken": "您的令牌：",
+    "caseSensitive": "字母区分大小写（大写和小写是不同的）。",
+    "startUsing": "开始使用",
+    "warningMessage": "令牌模式推荐使用场景：",
+    "warningItems": {
+      "intranet": "内网环境 / 局域网环境",
+      "personal": "个人使用",
+      "trusted": "受信任的团队内部"
+    },
+    "invalidToken": "无效的令牌，请检查后重试。",
+    "generateFailed": "生成令牌失败，请重试。",
+    "verifyFailed": "验证令牌失败，请重试。"
   },
   "SyncClipboard": {
     "title": "同步剪切板",
@@ -71,7 +90,7 @@
       "writeSuccess": "数据成功写入剪切板.",
       "autoDownload": "文件会很快自动下载. 如果没有, 点击下面的文件链接.",
       "denyRead": "不允许读取剪切板!",
-      "fileTooLarge": "对不起, 文件大小不能超过10mb!",
+      "fileTooLarge": "文件大小 ({size} MiB) 超过最大限制 ({limit} MiB).",
       "pressAgain": "因为浏览器安全策略, 请再次按下 👉",
       "pressPaste": "如果出现\"粘贴\"按钮, 按下它以允许读取剪切板.",
       "unchanged": "剪切板没有改变.",
@@ -82,7 +101,8 @@
       "emptyClipboard": "剪切板是空的.",
       "recommendedBrowsers": "在{os}上, 推荐使用{browsers}浏览器.",
       "readQuickInputSuccess": "成功读取快捷输入区文字.",
-      "pinLimit": "最多可以Pin 10条记录."
+      "pinLimit": "最多可以Pin 10条记录.",
+      "specialClipboardPleasePaste": "检测到特殊剪贴板内容（如微信图片），请按 Ctrl+V（Mac: Cmd+V）粘贴。"
     }
   }
 }

@@ -8,10 +8,14 @@ export default function Avator() {
   const t = useTranslations("Avator");
   const [clicked, setClicked] = useState(false);
   const router = useRouter();
-  const { isLoading, email, logout } = useAuth();
+  const { isLoading, userId, authMode, logout } = useAuth();
   if (isLoading) {
     return null;
   }
+
+  // Use userId for display
+  const displayText = userId || "";
+  const initials = displayText.substring(0, 2).toUpperCase();
 
   return (
     <div className="dropdown dropdown-end">
@@ -21,7 +25,7 @@ export default function Avator() {
         className="btn btn-ghost btn-circle avatar placeholder"
       >
         <div className="w-8 rounded-full bg-neutral text-neutral-content">
-          <span className="text-xs">{email.substring(0, 2).toUpperCase()}</span>
+          <span className="text-xs">{initials}</span>
         </div>
       </div>
       <ul
@@ -30,7 +34,7 @@ export default function Avator() {
       >
         <li>
           <a className="text-neutral-content btn-disabled">
-            <span className="truncate">{email}</span>
+            <span className="truncate">{displayText}</span>
           </a>
         </li>
         <li>
@@ -39,7 +43,12 @@ export default function Avator() {
             onClick={async () => {
               setClicked(true);
               await logout();
-              router.push(`/${locale}/user/email-code`);
+              // Redirect based on auth mode
+              if (authMode === "token") {
+                router.push(`/${locale}/user/token`);
+              } else {
+                router.push(`/${locale}/user/email`);
+              }
             }}
           >
             {t("logout")}

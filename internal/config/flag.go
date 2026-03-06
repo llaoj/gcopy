@@ -29,6 +29,7 @@ func Get() *Config {
 	smtpSender := flag.String("smtp-sender", "", "The Sender of the email, if the field is not given, the username will be used.")
 
 	maxContentLength := flag.Int("max-content-length", 10, "The max synchronized content length, unit: MiB.")
+	authMode := flag.String("auth-mode", "email", "Authentication mode: email or token")
 
 	flag.Parse()
 
@@ -42,8 +43,17 @@ func Get() *Config {
 	if *tls && (*tlsCertFile == "" || *tlsKeyFile == "") {
 		log.Fatal("tls-cert-file & tls-key-file cannot be empty")
 	}
-	if *smtpHost == "" || *smtpUsername == "" || *smtpPassword == "" {
-		log.Fatal("smtp-host & smtp-username & smtp-password cannot be empty")
+
+	// Validate auth-mode
+	if *authMode != "email" && *authMode != "token" {
+		log.Fatal("auth-mode must be: email or token")
+	}
+
+	// SMTP is required for email auth mode
+	if *authMode == "email" {
+		if *smtpHost == "" || *smtpUsername == "" || *smtpPassword == "" {
+			log.Fatal("smtp-host & smtp-username & smtp-password are required for email auth mode")
+		}
 	}
 	if *smtpSender == "" {
 		*smtpSender = *smtpUsername
@@ -63,6 +73,7 @@ func Get() *Config {
 		SMTPPassword:     *smtpPassword,
 		SMTPSender:       *smtpSender,
 		MaxContentLength: *maxContentLength,
+		AuthMode:         *authMode,
 	}
 	return cfg
 }

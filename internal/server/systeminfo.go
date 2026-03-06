@@ -9,6 +9,8 @@ import (
 
 func (s *Server) getSystemInfoHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
-		"time": time.Now(),
+		"time":             time.Now(),
+		"maxContentLength": s.config.MaxContentLength,
+		"authMode":         s.config.AuthMode,
 	})
 }

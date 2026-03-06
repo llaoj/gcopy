@@ -5,11 +5,25 @@ import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import useAuth from "@/lib/auth";
 import pack from "@/package.json";
+import { getSystemInfo } from "@/lib/system-info";
+import { useEffect, useState } from "react";
 
 export default function Navbar() {
   const locale = useLocale();
   const t = useTranslations("Navbar");
   const { isLoading, loggedIn } = useAuth();
+  const [authMode, setAuthMode] = useState<string>("email");
+
+  useEffect(() => {
+    async function fetchAuthMode() {
+      const sysInfo = await getSystemInfo();
+      if (sysInfo?.authMode) {
+        setAuthMode(sysInfo.authMode);
+      }
+    }
+    fetchAuthMode();
+  }, []);
+
   if (isLoading) {
     return null;
   }
@@ -82,7 +96,14 @@ export default function Navbar() {
         {loggedIn ? (
           <Avator />
         ) : (
-          <Link className="btn" href={`/${locale}/user/email-code`}>
+          <Link
+            className="btn"
+            href={
+              authMode === "token"
+                ? `/${locale}/user/token`
+                : `/${locale}/user/email`
+            }
+          >
             {t("signIn")}
           </Link>
         )}

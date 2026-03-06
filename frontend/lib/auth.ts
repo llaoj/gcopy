@@ -2,12 +2,14 @@ import { useSWRConfig } from "swr";
 import useSWR from "swr";
 
 interface User {
-  email: string;
+  userId?: string;
+  authMode?: "email" | "token";
   loggedIn: boolean;
 }
 
 const defaultUser: User = {
-  email: "",
+  userId: "",
+  authMode: undefined,
   loggedIn: false,
 };
 
@@ -26,7 +28,8 @@ export default function useAuth() {
   const { data, isLoading } = useSWR(userApiRoute, fetcher<User>, {
     fallbackData: defaultUser,
   });
-  const email = data.email;
+  const userId = data.userId;
+  const authMode = data.authMode;
   const loggedIn = data.loggedIn;
   const { mutate } = useSWRConfig();
 
@@ -42,5 +45,5 @@ export default function useAuth() {
     }
   };
 
-  return { isLoading, email, loggedIn, logout };
+  return { isLoading, userId, authMode, loggedIn, logout };
 }
