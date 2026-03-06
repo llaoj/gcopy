@@ -90,6 +90,21 @@ go test -v ./pkg/utils/...
 go test -v -run TestFunctionName ./path/to/package
 ```
 
+### Version Management
+When updating the project version:
+
+1. **Modify version.txt file**: Update the version number directly (e.g., `v1.5.0`)
+2. **Run sync command**: Execute `make version` to sync the version to frontend package.json and format code
+
+**Example**:
+```bash
+# 1. Edit version.txt file to change version to v1.5.0
+# 2. Run sync command
+make version
+```
+
+**Note**: Do NOT manually edit frontend/package.json version number. Always use `make version` to sync automatically.
+
 ### Frontend History Storage
 - Uses IndexedDB via Dexie (`frontend/models/db.ts`)
 - Stores up to 20 non-pinned items (auto-deletes older items)
