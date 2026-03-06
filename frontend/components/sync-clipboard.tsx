@@ -4,7 +4,7 @@ import LogBox from "@/components/log-box";
 import FileLink from "@/components/file-link";
 import useAuth from "@/lib/auth";
 import { LogLevel, useLog } from "@/lib/log";
-import { DragEvent, useRef, useState, useEffect } from "react";
+import { DragEvent, useRef, useState, useEffect, useCallback } from "react";
 import clsx from "clsx";
 import { useRouter, usePathname } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
@@ -48,10 +48,188 @@ export default function SyncClipboard() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const locale = useLocale();
-  const { isLoading, loggedIn, authMode } = useAuth();
+  const { loggedIn, authMode } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const { logs, addLog, resetLog, updateProgressLog } = useLog();
+
+  const updateFileLink = (fileInfo: FileInfo) => {
+    setFileInfo(fileInfo);
+  };
+
+  const addHistoryItem = useCallback(async (history: HistoryItemEntity) => {
+    if (history.pin != "true") history.pin = "false";
+    history.createdAt = moment().format();
+    history.dataArrayBuffer = await history.data.arrayBuffer();
+    history.dataType = history.data.type;
+    await db.history.put(history);
+    const items = await db.history
+      .where("pin")
+      .equals("false")
+      .reverse()
+      .primaryKeys();
+    await Promise.all(
+      items.map((item, idx) => {
+        if (idx > 19)
+          return db.history.where("createdAt").equals(item).delete();
+      }),
+    );
+  }, []);
+
+  const ensureLoggedIn = useCallback(async () => {
+    if (!loggedIn) {
+      if (authMode === "token") {
+        router.push(`/${locale}/user/token`);
+      } else {
+        router.push(`/${locale}/user/email`);
+      }
+      return false;
+    }
+    return true;
+  }, [loggedIn, authMode, locale, router]);
+
+  const sleep = function (ms: number) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  };
+
+  // 带进度跟踪的XMLHttpRequest上传
+  const uploadWithProgress = (
+    url: string,
+    method: string,
+    headers: Record<string, string>,
+    body: Blob,
+    onProgress: (progress: number) => void,
+  ): Promise<{ status: number; headers: Headers; body: string }> => {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open(method, url);
+
+      // 设置headers
+      Object.entries(headers).forEach(([key, value]) => {
+        xhr.setRequestHeader(key, value);
+      });
+
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable) {
+          const progress = Math.round((event.loaded / event.total) * 100);
+          onProgress(progress);
+        }
+      };
+
+      xhr.onload = () => {
+        const headers = new Headers();
+        xhr
+          .getAllResponseHeaders()
+          .split("\r\n")
+          .forEach((line) => {
+            const [key, value] = line.split(": ");
+            if (key && value) {
+              headers.set(key, value);
+            }
+          });
+        resolve({
+          status: xhr.status,
+          headers,
+          body: xhr.responseText,
+        });
+      };
+
+      xhr.onerror = () => reject(new Error("Upload failed"));
+      xhr.send(body);
+    });
+  };
+
+  /**
+   * 处理从 paste 事件获取的剪贴板内容（图片或文字）
+   */
+  const handlePastedContent = useCallback(async (file: File) => {
+    if (!(await ensureLoggedIn())) {
+      return;
+    }
+
+    let blob = file as Blob;
+    let xtype: string;
+
+    // 确定类型并转换格式
+    if (blob.type.startsWith("image/")) {
+      xtype = "screenshot";
+
+      // 如果不是 PNG，转换为 PNG（浏览器剪贴板标准格式）
+      if (blob.type !== "image/png") {
+        blob = await toPngBlob(blob);
+      }
+    } else if (blob.type.startsWith("text/")) {
+      xtype = "text";
+      blob = await toTextBlob(blob);
+    } else {
+      addLog({
+        message: t("logs.unsupportedFormat", { format: blob.type }),
+        level: LogLevel.Error,
+      });
+      return;
+    }
+
+    const nextBlobId = await hashBlob(blob);
+
+    addLog({ message: t("logs.uploading"), isProgress: true });
+
+    const response = await uploadWithProgress(
+      "/api/v1/clipboard",
+      "POST",
+      {
+        "Content-Type": blob.type,
+        "X-Type": xtype,
+        "X-FileName": "",
+      },
+      blob,
+      (progress) => {
+        updateProgressLog(`${t("logs.uploading")} ${progress}%`);
+      },
+    );
+
+    if (response.status == 401) {
+      if (authMode === "token") {
+        router.push(`/${locale}/user/token`);
+      } else {
+        router.push(`/${locale}/user/email`);
+      }
+      return;
+    }
+
+    if (response.status != 200) {
+      try {
+        const body = JSON.parse(response.body);
+        addLog({ message: body.message, level: LogLevel.Error });
+      } catch {
+        addLog({ message: response.body, level: LogLevel.Error });
+      }
+      return;
+    }
+
+    const xindex = response.headers.get("x-index");
+    if (xindex == null || xindex == "0") {
+      return;
+    }
+
+    window.history.replaceState(
+      null,
+      document.title,
+      `${pathname}?ci=${xindex}&cbi=${nextBlobId}`,
+    );
+
+    await addHistoryItem({
+      index: xindex,
+      blobId: nextBlobId,
+      data: blob,
+      type: xtype,
+    });
+
+    addLog({
+      message: t("logs.uploaded", { type: t(xtype), index: xindex }),
+      level: LogLevel.Success,
+    });
+    setStatus("finished");
+  }, [addLog, t, ensureLoggedIn, pathname, addHistoryItem, updateProgressLog, authMode, locale, router]);
 
   /**
    * ============================================================================
@@ -150,146 +328,7 @@ export default function SyncClipboard() {
     return () => {
       document.removeEventListener("paste", handlePaste);
     };
-  }, [waitingForPaste, loggedIn, authMode, locale, router]);
-
-  /**
-   * 处理从 paste 事件获取的剪贴板内容（图片或文字）
-   */
-  const handlePastedContent = async (file: File) => {
-    if (!(await ensureLoggedIn())) {
-      return;
-    }
-
-    let blob = file as Blob;
-    let xtype: string;
-
-    // 确定类型并转换格式
-    if (blob.type.startsWith("image/")) {
-      xtype = "screenshot";
-
-      // 如果不是 PNG，转换为 PNG（浏览器剪贴板标准格式）
-      if (blob.type !== "image/png") {
-        blob = await toPngBlob(blob);
-      }
-    } else if (blob.type.startsWith("text/")) {
-      xtype = "text";
-      blob = await toTextBlob(blob);
-    } else {
-      addLog({
-        message: t("logs.unsupportedFormat", { format: blob.type }),
-        level: LogLevel.Error,
-      });
-      return;
-    }
-
-    const nextBlobId = await hashBlob(blob);
-
-    addLog({ message: t("logs.uploading"), isProgress: true });
-
-    const response = await uploadWithProgress(
-      "/api/v1/clipboard",
-      "POST",
-      {
-        "Content-Type": blob.type,
-        "X-Type": xtype,
-        "X-FileName": "",
-      },
-      blob,
-      (progress) => {
-        updateProgressLog(`${t("logs.uploading")} ${progress}%`);
-      },
-    );
-
-    if (response.status == 401) {
-      if (authMode === "token") {
-        router.push(`/${locale}/user/token`);
-      } else {
-        router.push(`/${locale}/user/email`);
-      }
-      return;
-    }
-
-    if (response.status != 200) {
-      try {
-        const body = JSON.parse(response.body);
-        addLog({ message: body.message, level: LogLevel.Error });
-      } catch {
-        addLog({ message: response.body, level: LogLevel.Error });
-      }
-      return;
-    }
-
-    const xindex = response.headers.get("x-index");
-    if (xindex == null || xindex == "0") {
-      return;
-    }
-
-    window.history.replaceState(
-      null,
-      document.title,
-      `${pathname}?ci=${xindex}&cbi=${nextBlobId}`,
-    );
-
-    await addHistoryItem({
-      index: xindex,
-      blobId: nextBlobId,
-      data: blob,
-      type: xtype,
-    });
-
-    addLog({
-      message: t("logs.uploaded", { type: t(xtype), index: xindex }),
-      level: LogLevel.Success,
-    });
-    setStatus("finished");
-  };
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex justify-center items-center">
-        <span className="loading loading-ring loading-lg"></span>
-      </div>
-    );
-  }
-
-  const updateFileLink = (fileInfo: FileInfo) => {
-    setFileInfo(fileInfo);
-  };
-
-  const addHistoryItem = async (history: HistoryItemEntity) => {
-    if (history.pin != "true") history.pin = "false";
-    history.createdAt = moment().format();
-    history.dataArrayBuffer = await history.data.arrayBuffer();
-    history.dataType = history.data.type;
-    await db.history.put(history);
-    const items = await db.history
-      .where("pin")
-      .equals("false")
-      .reverse()
-      .primaryKeys();
-    await Promise.all(
-      items.map((item, idx) => {
-        if (idx > 19)
-          return db.history.where("createdAt").equals(item).delete();
-      }),
-    );
-  };
-
-  const ensureLoggedIn = async () => {
-    if (!loggedIn) {
-      if (authMode === "token") {
-        router.push(`/${locale}/user/token`);
-      } else {
-        router.push(`/${locale}/user/email`);
-      }
-      return false;
-    }
-    return true;
-  };
-
-  const sleep = function (ms: number) {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-  };
+  }, [waitingForPaste, loggedIn, authMode, locale, router, addLog, handlePastedContent, t]);
 
   // 带进度跟踪的fetch下载
   const fetchWithProgress = async (
@@ -343,53 +382,6 @@ export default function SyncClipboard() {
       response,
       blob: async () => blob,
     };
-  };
-
-  // 带进度跟踪的XMLHttpRequest上传
-  const uploadWithProgress = (
-    url: string,
-    method: string,
-    headers: Record<string, string>,
-    body: Blob,
-    onProgress: (progress: number) => void,
-  ): Promise<{ status: number; headers: Headers; body: string }> => {
-    return new Promise((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-      xhr.open(method, url);
-
-      // 设置headers
-      Object.entries(headers).forEach(([key, value]) => {
-        xhr.setRequestHeader(key, value);
-      });
-
-      xhr.upload.onprogress = (event) => {
-        if (event.lengthComputable) {
-          const progress = Math.round((event.loaded / event.total) * 100);
-          onProgress(progress);
-        }
-      };
-
-      xhr.onload = () => {
-        const headers = new Headers();
-        xhr
-          .getAllResponseHeaders()
-          .split("\r\n")
-          .forEach((line) => {
-            const [key, value] = line.split(": ");
-            if (key && value) {
-              headers.set(key, value);
-            }
-          });
-        resolve({
-          status: xhr.status,
-          headers,
-          body: xhr.responseText,
-        });
-      };
-
-      xhr.onerror = () => reject(new Error("Upload failed"));
-      xhr.send(body);
-    });
   };
 
   const pullClipboard = async () => {
