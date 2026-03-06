@@ -141,7 +141,6 @@ export default function SyncClipboard() {
       }
 
       addLog({ message: t("logs.emptyClipboard") });
-
     };
 
     // 添加 paste 事件监听器
