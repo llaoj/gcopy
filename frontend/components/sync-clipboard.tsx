@@ -148,37 +148,40 @@ export default function SyncClipboard() {
   };
 
   /**
-   * 处理从 paste 事件获取的剪贴板内容（图片或文字）
+   * 上传剪贴板内容到服务器
+   * 统一处理文本和图片的上传逻辑
    */
-  const handlePastedContent = useCallback(
-    async (file: File) => {
-      if (!(await ensureLoggedIn())) {
-        return;
-      }
-
-      let blob = file as Blob;
+  const uploadClipboardBlob = useCallback(
+    async (blob: Blob): Promise<boolean> => {
       let xtype: string;
+      let processedBlob = blob;
 
       // 确定类型并转换格式
       if (blob.type.startsWith("image/")) {
         xtype = "screenshot";
-
         // 如果不是 PNG，转换为 PNG（浏览器剪贴板标准格式）
         if (blob.type !== "image/png") {
-          blob = await toPngBlob(blob);
+          processedBlob = await toPngBlob(blob);
         }
       } else if (blob.type.startsWith("text/")) {
         xtype = "text";
-        blob = await toTextBlob(blob);
+        processedBlob = await toTextBlob(blob);
       } else {
         addLog({
           message: t("logs.unsupportedFormat", { format: blob.type }),
           level: LogLevel.Error,
         });
-        return;
+        return false;
       }
 
-      const nextBlobId = await hashBlob(blob);
+      const nextBlobId = await hashBlob(processedBlob);
+      const searchParams = new URLSearchParams(window.location.search);
+
+      // 检查是否与当前剪贴板内容相同
+      if (nextBlobId == searchParams.get("cbi")) {
+        addLog({ message: t("logs.unchanged") });
+        return false;
+      }
 
       addLog({ message: t("logs.uploading"), isProgress: true });
 
@@ -186,11 +189,11 @@ export default function SyncClipboard() {
         "/api/v1/clipboard",
         "POST",
         {
-          "Content-Type": blob.type,
+          "Content-Type": processedBlob.type,
           "X-Type": xtype,
           "X-FileName": "",
         },
-        blob,
+        processedBlob,
         (progress) => {
           updateProgressLog(`${t("logs.uploading")} ${progress}%`);
         },
@@ -202,7 +205,7 @@ export default function SyncClipboard() {
         } else {
           router.push(`/${locale}/user/email`);
         }
-        return;
+        return false;
       }
 
       if (response.status != 200) {
@@ -212,12 +215,12 @@ export default function SyncClipboard() {
         } catch {
           addLog({ message: response.body, level: LogLevel.Error });
         }
-        return;
+        return false;
       }
 
       const xindex = response.headers.get("x-index");
       if (xindex == null || xindex == "0") {
-        return;
+        return false;
       }
 
       window.history.replaceState(
@@ -229,7 +232,7 @@ export default function SyncClipboard() {
       await addHistoryItem({
         index: xindex,
         blobId: nextBlobId,
-        data: blob,
+        data: processedBlob,
         type: xtype,
       });
 
@@ -237,12 +240,12 @@ export default function SyncClipboard() {
         message: t("logs.uploaded", { type: t(xtype), index: xindex }),
         level: LogLevel.Success,
       });
-      setStatus("finished");
+
+      return true;
     },
     [
       addLog,
       t,
-      ensureLoggedIn,
       pathname,
       addHistoryItem,
       updateProgressLog,
@@ -250,6 +253,23 @@ export default function SyncClipboard() {
       locale,
       router,
     ],
+  );
+
+  /**
+   * 处理从 paste 事件获取的剪贴板内容（图片或文字）
+   */
+  const handlePastedContent = useCallback(
+    async (file: File) => {
+      if (!(await ensureLoggedIn())) {
+        return;
+      }
+
+      const success = await uploadClipboardBlob(file);
+      if (success) {
+        setStatus("finished");
+      }
+    },
+    [ensureLoggedIn, uploadClipboardBlob],
   );
 
   /**
@@ -646,101 +666,12 @@ export default function SyncClipboard() {
       return;
     }
 
-    let xtype;
-    switch (blob.type) {
-      case "text/plain":
-      case "text/html":
-      case "text/uri-list":
-        xtype = "text";
-        blob = await toTextBlob(blob);
-        break;
-      case "image/png":
-      case "image/jpeg":
-      case "image/webp":
-        xtype = "screenshot";
-        // 转换为 PNG 以保证兼容性
-        if (blob.type !== "image/png") {
-          blob = await toPngBlob(blob);
-        }
-        break;
-      default:
-        addLog({
-          message: t("logs.unsupportedFormat", { format: blob.type }),
-          level: LogLevel.Error,
-        });
-        xtype = "";
-    }
-    if (xtype == "") {
-      return;
-    }
+    const success = await uploadClipboardBlob(blob);
 
-    const nextBlobId = await hashBlob(blob);
-    const searchParams = new URLSearchParams(window.location.search);
-    if (nextBlobId == searchParams.get("cbi")) {
-      addLog({ message: t("logs.unchanged") });
-      return;
-    }
-    addLog({ message: t("logs.uploading"), isProgress: true });
-
-    const response = await uploadWithProgress(
-      "/api/v1/clipboard",
-      "POST",
-      {
-        "Content-Type": blob.type,
-        "X-Type": xtype,
-        "X-FileName": "",
-      },
-      blob,
-      (progress) => {
-        updateProgressLog(`${t("logs.uploading")} ${progress}%`);
-      },
-    );
-
-    if (response.status == 401) {
-      if (systemInfo?.authMode === "token") {
-        router.push(`/${locale}/user/token`);
-      } else {
-        router.push(`/${locale}/user/email`);
-      }
-      return;
-    }
-
-    if (response.status != 200) {
-      try {
-        const body = JSON.parse(response.body);
-        addLog({ message: body.message, level: LogLevel.Error });
-      } catch {
-        addLog({ message: response.body, level: LogLevel.Error });
-      }
-      return;
-    }
-
-    if (textareaRef.current && textareaRef.current.value != "") {
+    // 清空快速输入框
+    if (success && textareaRef.current && textareaRef.current.value != "") {
       textareaRef.current.value = "";
     }
-
-    const xindex = response.headers.get("x-index");
-    if (xindex == null || xindex == "0") {
-      return;
-    }
-
-    window.history.replaceState(
-      null,
-      document.title,
-      `${pathname}?ci=${xindex}&cbi=${nextBlobId}`,
-    );
-
-    await addHistoryItem({
-      index: xindex,
-      blobId: nextBlobId,
-      data: blob,
-      type: xtype,
-    });
-
-    addLog({
-      message: t("logs.uploaded", { type: t(xtype), index: xindex }),
-      level: LogLevel.Success,
-    });
   };
 
   const uploadFileHandler = async (file: File) => {
