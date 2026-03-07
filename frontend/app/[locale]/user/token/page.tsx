@@ -165,7 +165,7 @@ export default function TokenLogin() {
             {!generatedToken ? (
               <>
                 {/* Warning alert */}
-                <div className="alert alert-warning">
+                <div className="flex flex-row items-center justify-start gap-3 bg-warning text-warning-content p-4 rounded-lg">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     className="stroke-current shrink-0 h-6 w-6"
@@ -179,7 +179,7 @@ export default function TokenLogin() {
                       d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
                     />
                   </svg>
-                  <div className="flex flex-col gap-2">
+                  <div className="flex flex-col gap-2 min-w-0 text-left">
                     <span className="font-bold">{t("warningMessage")}</span>
                     <ul className="list-disc list-inside text-sm">
                       <li>{t("warningItems.intranet")}</li>
