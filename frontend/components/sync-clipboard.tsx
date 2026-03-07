@@ -3,6 +3,7 @@
 import LogBox from "@/components/log-box";
 import FileLink from "@/components/file-link";
 import useAuth from "@/lib/auth";
+import useSystemInfo from "@/hooks/useSystemInfo";
 import { LogLevel, useLog } from "@/lib/log";
 import { DragEvent, useRef, useState, useEffect, useCallback } from "react";
 import clsx from "clsx";
@@ -29,7 +30,6 @@ import History from "@/components/history";
 import { db } from "@/models/db";
 import { HistoryItemEntity } from "@/models/history";
 import moment from "moment";
-import { getSystemInfo } from "@/lib/system-info";
 import { validateFileSize } from "@/lib/file-utils";
 
 // route: /locale?ci=123&cbi=abc
@@ -48,7 +48,8 @@ export default function SyncClipboard() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const locale = useLocale();
-  const { loggedIn, authMode } = useAuth();
+  const { loggedIn } = useAuth();
+  const { authMode } = useSystemInfo();
   const router = useRouter();
   const pathname = usePathname();
   const { logs, addLog, resetLog, updateProgressLog } = useLog();

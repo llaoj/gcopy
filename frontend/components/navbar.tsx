@@ -4,25 +4,14 @@ import Avator from "@/components/avator";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import useAuth from "@/lib/auth";
+import useSystemInfo from "@/hooks/useSystemInfo";
 import pack from "@/package.json";
-import { getSystemInfo } from "@/lib/system-info";
-import { useEffect, useState } from "react";
 
 export default function Navbar() {
   const locale = useLocale();
   const t = useTranslations("Navbar");
   const { isLoading, loggedIn } = useAuth();
-  const [authMode, setAuthMode] = useState<string>("email");
-
-  useEffect(() => {
-    async function fetchAuthMode() {
-      const sysInfo = await getSystemInfo();
-      if (sysInfo?.authMode) {
-        setAuthMode(sysInfo.authMode);
-      }
-    }
-    fetchAuthMode();
-  }, []);
+  const { authMode } = useSystemInfo();
 
   if (isLoading) {
     return null;
@@ -95,7 +84,7 @@ export default function Navbar() {
         </a>
         {loggedIn ? (
           <Avator />
-        ) : (
+        ) : authMode ? (
           <Link
             className="btn"
             href={
@@ -106,7 +95,7 @@ export default function Navbar() {
           >
             {t("signIn")}
           </Link>
-        )}
+        ) : null}
       </div>
     </div>
   );
