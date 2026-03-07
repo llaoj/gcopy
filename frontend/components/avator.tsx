@@ -1,5 +1,6 @@
 import { useState } from "react";
 import useAuth from "@/lib/auth";
+import useSystemInfo from "@/hooks/useSystemInfo";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 
@@ -8,7 +9,9 @@ export default function Avator() {
   const t = useTranslations("Avator");
   const [clicked, setClicked] = useState(false);
   const router = useRouter();
-  const { isLoading, userId, authMode, logout } = useAuth();
+  const { isLoading, userId, logout } = useAuth();
+  const { authMode } = useSystemInfo();
+
   if (isLoading) {
     return null;
   }

@@ -1,7 +1,7 @@
 import { ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/24/solid";
 import { useState, RefObject } from "react";
 import { useTranslations } from "next-intl";
-import { isDesktop } from "react-device-detect";
+import { useDevice } from "@/hooks/useDevice";
 
 export default function QuickInput({
   textareaRef,
@@ -10,6 +10,7 @@ export default function QuickInput({
 }) {
   const [checked, setChecked] = useState<boolean>(false);
   const t = useTranslations("SyncClipboard");
+  const { isDesktop } = useDevice();
 
   const onChange = async () => {
     setChecked((current) => !current);
