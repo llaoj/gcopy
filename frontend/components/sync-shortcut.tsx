@@ -1,8 +1,9 @@
-import { isDesktop, isMacOs, isSafari } from "react-device-detect";
 import { useEffect, useState } from "react";
+import { useDevice } from "@/hooks/useDevice";
 
 export default function SyncShortcut() {
   const [mounted, setMounted] = useState(false);
+  const { isDesktop, isMacOs, isSafari } = useDevice();
 
   useEffect(() => {
     setMounted(true);
@@ -10,7 +11,7 @@ export default function SyncShortcut() {
 
   // 在服务器端和初始渲染时不显示，避免 hydration 错误
   if (!mounted || !isDesktop) {
-    return null;
+    return <></>;
   }
 
   return (

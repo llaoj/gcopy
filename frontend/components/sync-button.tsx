@@ -1,7 +1,7 @@
 import { CursorArrowRippleIcon } from "@heroicons/react/24/solid";
 import { useTranslations } from "next-intl";
 import { useRef, useState, useEffect } from "react";
-import { isDesktop, isMacOs } from "react-device-detect";
+import { useDevice } from "@/hooks/useDevice";
 
 export default function SyncButton({
   syncFunc,
@@ -11,6 +11,7 @@ export default function SyncButton({
   const [clicked, setClicked] = useState<boolean>(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const t = useTranslations("SyncClipboard");
+  const { isDesktop, isMacOs } = useDevice();
 
   const onClick = async () => {
     setClicked(true);
@@ -20,10 +21,11 @@ export default function SyncButton({
 
   // shortcut
   useEffect(() => {
+    if (!isDesktop) {
+      return;
+    }
+
     function keyDownHandler(e: globalThis.KeyboardEvent) {
-      if (!isDesktop) {
-        return;
-      }
       // refer: https://support.google.com/chrome/answer/157179
       if (
         (!e.ctrlKey &&
@@ -40,7 +42,7 @@ export default function SyncButton({
     }
     document.addEventListener("keydown", keyDownHandler);
     return () => document.removeEventListener("keydown", keyDownHandler);
-  });
+  }, [isDesktop, isMacOs]);
 
   return (
     <>
