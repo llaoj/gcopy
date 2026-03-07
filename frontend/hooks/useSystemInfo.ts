@@ -15,5 +15,5 @@ export default function useSystemInfo() {
     fetchSystemInfo();
   }, []);
 
-  return { systemInfo, isLoading, authMode: systemInfo?.authMode ?? null };
+  return { systemInfo, isLoading };
 }

@@ -11,7 +11,7 @@ export default function Navbar() {
   const locale = useLocale();
   const t = useTranslations("Navbar");
   const { isLoading, loggedIn } = useAuth();
-  const { authMode } = useSystemInfo();
+  const { systemInfo } = useSystemInfo();
 
   if (isLoading) {
     return null;
@@ -84,11 +84,11 @@ export default function Navbar() {
         </a>
         {loggedIn ? (
           <Avator />
-        ) : authMode ? (
+        ) : systemInfo?.authMode ? (
           <Link
             className="btn"
             href={
-              authMode === "token"
+              systemInfo.authMode === "token"
                 ? `/${locale}/user/token`
                 : `/${locale}/user/email`
             }

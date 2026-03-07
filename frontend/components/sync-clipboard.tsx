@@ -22,7 +22,7 @@ import {
   clipboardRead,
 } from "@/lib/clipboard";
 // Chrome | Safari | Mobile Safari
-import { browserName, isAndroid, isMobileSafari } from "react-device-detect";
+import { browserName, isAndroid, isMobile, isMobileSafari } from "react-device-detect";
 import SyncButton from "@/components/sync-button";
 import SyncShortcut from "@/components/sync-shortcut";
 import QuickInput from "@/components/quick-input";
@@ -49,7 +49,7 @@ export default function SyncClipboard() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const locale = useLocale();
   const { loggedIn } = useAuth();
-  const { authMode } = useSystemInfo();
+  const { systemInfo } = useSystemInfo();
   const router = useRouter();
   const pathname = usePathname();
   const { logs, addLog, resetLog, updateProgressLog } = useLog();
@@ -86,7 +86,7 @@ export default function SyncClipboard() {
 
   const ensureLoggedIn = useCallback(async () => {
     if (!loggedIn) {
-      if (authMode === "token") {
+      if (systemInfo?.authMode === "token") {
         router.push(`/${locale}/user/token`);
       } else {
         router.push(`/${locale}/user/email`);
@@ -94,7 +94,7 @@ export default function SyncClipboard() {
       return false;
     }
     return true;
-  }, [loggedIn, authMode, locale, router]);
+  }, [loggedIn, systemInfo?.authMode, locale, router]);
 
   const sleep = function (ms: number) {
     return new Promise((resolve) => setTimeout(resolve, ms));
@@ -197,7 +197,7 @@ export default function SyncClipboard() {
       );
 
       if (response.status == 401) {
-        if (authMode === "token") {
+        if (systemInfo?.authMode === "token") {
           router.push(`/${locale}/user/token`);
         } else {
           router.push(`/${locale}/user/email`);
@@ -246,7 +246,7 @@ export default function SyncClipboard() {
       pathname,
       addHistoryItem,
       updateProgressLog,
-      authMode,
+      systemInfo?.authMode,
       locale,
       router,
     ],
@@ -352,7 +352,7 @@ export default function SyncClipboard() {
   }, [
     waitingForPaste,
     loggedIn,
-    authMode,
+    systemInfo?.authMode,
     locale,
     router,
     addLog,
@@ -431,7 +431,7 @@ export default function SyncClipboard() {
     );
 
     if (response.status == 401) {
-      if (authMode === "token") {
+      if (systemInfo?.authMode === "token") {
         router.push(`/${locale}/user/token`);
       } else {
         router.push(`/${locale}/user/email`);
@@ -603,9 +603,8 @@ export default function SyncClipboard() {
         return;
       }
       blob = await clipboardRead();
-      if (blob) {
-        addLog({ message: t("logs.readClipboardSuccess") });
-      } else {
+
+      if (!blob && !isMobile) {
         /**
          * ============================================================
          * 特殊剪贴板内容处理（如微信图片）
@@ -638,6 +637,13 @@ export default function SyncClipboard() {
         setWaitingForPaste(true);
         return;
       }
+    }
+
+    if (blob) {
+      addLog({ message: t("logs.readClipboardSuccess") });
+    } else {
+      addLog({ message: t("logs.emptyClipboard") });
+      return;
     }
 
     let xtype;
@@ -691,7 +697,7 @@ export default function SyncClipboard() {
     );
 
     if (response.status == 401) {
-      if (authMode === "token") {
+      if (systemInfo?.authMode === "token") {
         router.push(`/${locale}/user/token`);
       } else {
         router.push(`/${locale}/user/email`);
@@ -740,15 +746,14 @@ export default function SyncClipboard() {
   const uploadFileHandler = async (file: File) => {
     resetLog();
 
-    // Get system info and validate file size
-    const sysInfo = await getSystemInfo();
-    if (sysInfo) {
-      const validation = validateFileSize(file, sysInfo.maxContentLength);
+    // Validate file size
+    if (systemInfo) {
+      const validation = validateFileSize(file, systemInfo.maxContentLength);
       if (!validation.valid) {
         addLog({
           message: t("logs.fileTooLarge", {
             size: (file.size / (1024 * 1024)).toFixed(2),
-            limit: sysInfo.maxContentLength,
+            limit: systemInfo.maxContentLength,
           }),
           level: LogLevel.Error,
         });
@@ -773,7 +778,7 @@ export default function SyncClipboard() {
     );
 
     if (response.status == 401) {
-      if (authMode === "token") {
+      if (systemInfo?.authMode === "token") {
         router.push(`/${locale}/user/token`);
       } else {
         router.push(`/${locale}/user/email`);

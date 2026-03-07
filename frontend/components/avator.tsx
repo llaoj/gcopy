@@ -10,7 +10,7 @@ export default function Avator() {
   const [clicked, setClicked] = useState(false);
   const router = useRouter();
   const { isLoading, userId, logout } = useAuth();
-  const { authMode } = useSystemInfo();
+  const { systemInfo } = useSystemInfo();
 
   if (isLoading) {
     return null;
@@ -47,7 +47,7 @@ export default function Avator() {
               setClicked(true);
               await logout();
               // Redirect based on auth mode
-              if (authMode === "token") {
+              if (systemInfo?.authMode === "token") {
                 router.push(`/${locale}/user/token`);
               } else {
                 router.push(`/${locale}/user/email`);
