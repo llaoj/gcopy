@@ -12,7 +12,7 @@ import "moment/locale/zh-cn";
 import { db } from "@/models/db";
 import { Log, LogLevel } from "@/lib/log";
 import { clipboardWriteBlob, clipboardWriteBlobPromise } from "@/lib/clipboard";
-import { browserName } from "react-device-detect";
+import { browserName, isMobileSafari } from "react-device-detect";
 import { FileInfo } from "@/lib/clipboard";
 import { useLocale } from "next-intl";
 
@@ -33,8 +33,14 @@ export default function HistoryItem({
 
   const blobFileURL = useMemo(() => {
     if (item.type !== "file") return "";
-    return (window.URL || window.webkitURL).createObjectURL(item.data);
-  }, [item.type, item.data]);
+    // iOS Safari: 使用 ArrayBuffer 创建 Blob，其他浏览器直接使用 data
+    const blob = item.dataArrayBuffer
+      ? new Blob([item.dataArrayBuffer], { type: item.dataType })
+      : item.data;
+    // 确保 blob 存在才创建 URL
+    if (!blob) return "";
+    return (window.URL || window.webkitURL).createObjectURL(blob);
+  }, [item.type, item.data, item.dataArrayBuffer, item.dataType]);
 
   return (
     <tr>
@@ -100,8 +106,15 @@ export default function HistoryItem({
                     }
 
                     if (item.type == "text" || item.type == "screenshot") {
+                      // iOS Safari: 使用 ArrayBuffer 创建 Blob，其他浏览器直接使用 data
+                      const blob = item.dataArrayBuffer
+                        ? new Blob([item.dataArrayBuffer], {
+                            type: item.dataType,
+                          })
+                        : item.data;
+
                       if (browserName.includes("Safari")) {
-                        await clipboardWriteBlobPromise(item.data);
+                        await clipboardWriteBlobPromise(blob);
                         addLog({
                           message: t("logs.writeSuccess"),
                           level: LogLevel.Success,
@@ -109,7 +122,7 @@ export default function HistoryItem({
                         return;
                       }
 
-                      await clipboardWriteBlob(item.data);
+                      await clipboardWriteBlob(blob);
                       addLog({
                         message: t("logs.writeSuccess"),
                         level: LogLevel.Success,
