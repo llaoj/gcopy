@@ -5,18 +5,37 @@ import {
 } from "@heroicons/react/24/solid";
 import HistoryItemScreenshot from "@/components/history-item-screenshot";
 import HistoryItemText from "@/components/history-item-text";
-import { useRef, useMemo } from "react";
+import { useRef, useMemo, useCallback, memo } from "react";
 import { HistoryItemEntity } from "@/models/history";
 import moment from "moment";
 import "moment/locale/zh-cn";
 import { db } from "@/models/db";
 import { Log, LogLevel } from "@/lib/log";
-import { clipboardWriteBlob, clipboardWriteBlobPromise } from "@/lib/clipboard";
-import { browserName, isMobileSafari } from "react-device-detect";
-import { FileInfo } from "@/lib/clipboard";
+import {
+  clipboardWriteBlob,
+  clipboardWriteBlobPromise,
+  FileInfo,
+} from "@/lib/clipboard";
+import { browserName } from "react-device-detect";
 import { useLocale } from "next-intl";
 
-export default function HistoryItem({
+// 自定义比较函数：只有核心字段变化时才重新渲染
+function arePropsEqual(
+  prevProps: { item: HistoryItemEntity },
+  nextProps: { item: HistoryItemEntity },
+) {
+  return (
+    prevProps.item.createdAt === nextProps.item.createdAt &&
+    prevProps.item.pin === nextProps.item.pin &&
+    prevProps.item.index === nextProps.item.index &&
+    prevProps.item.blobId === nextProps.item.blobId &&
+    prevProps.item.type === nextProps.item.type &&
+    prevProps.item.fileName === nextProps.item.fileName
+  );
+}
+
+// 使用 React.memo 包裹组件，配合自定义比较函数实现局部刷新
+const HistoryItem = memo(function HistoryItem({
   item,
   addLog,
   updateFileLink,
@@ -31,6 +50,7 @@ export default function HistoryItem({
   const t = useTranslations("SyncClipboard");
   const ulRef = useRef<HTMLUListElement>(null);
 
+  // 使用 useMemo 缓存 blob URL
   const blobFileURL = useMemo(() => {
     if (item.type !== "file") return "";
     // iOS Safari: 使用 ArrayBuffer 创建 Blob，其他浏览器直接使用 data
@@ -41,6 +61,80 @@ export default function HistoryItem({
     if (!blob) return "";
     return (window.URL || window.webkitURL).createObjectURL(blob);
   }, [item.type, item.data, item.dataArrayBuffer, item.dataType]);
+
+  // 使用 useCallback 缓存事件处理函数
+  const handleUse = useCallback(async () => {
+    try {
+      ulRef.current?.blur();
+
+      if (item.type == "file") {
+        updateFileLink({
+          fileName: item.fileName ?? "",
+          fileURL: blobFileURL,
+        });
+        addLog({
+          message: t("logs.autoDownload"),
+          level: LogLevel.Success,
+        });
+        return;
+      }
+
+      if (item.type == "text" || item.type == "screenshot") {
+        const blob = item.dataArrayBuffer
+          ? new Blob([item.dataArrayBuffer], { type: item.dataType })
+          : item.data;
+
+        if (browserName.includes("Safari")) {
+          await clipboardWriteBlobPromise(blob);
+          addLog({
+            message: t("logs.writeSuccess"),
+            level: LogLevel.Success,
+          });
+          return;
+        }
+
+        await clipboardWriteBlob(blob);
+        addLog({
+          message: t("logs.writeSuccess"),
+          level: LogLevel.Success,
+        });
+      }
+    } catch (err) {
+      addLog({ message: String(err), level: LogLevel.Error });
+    }
+  }, [
+    item.type,
+    item.dataArrayBuffer,
+    item.dataType,
+    item.data,
+    item.fileName,
+    blobFileURL,
+    addLog,
+    updateFileLink,
+    t,
+  ]);
+
+  const handlePin = useCallback(async () => {
+    const count = await db.history.where("pin").equals("true").count();
+    if (count >= 10) {
+      ulRef.current?.blur();
+      addLog({
+        message: t("logs.pinLimit"),
+        level: LogLevel.Warn,
+      });
+      return;
+    }
+    await db.history.update(item.createdAt!, { pin: "true" });
+  }, [item.createdAt, addLog, t]);
+
+  const handleUnpin = useCallback(async () => {
+    await db.history.update(item.createdAt!, { pin: "false" });
+  }, [item.createdAt]);
+
+  const handleDelete = useCallback(async () => {
+    await db.history.delete(item.createdAt!);
+    ulRef.current?.blur();
+  }, [item.createdAt]);
 
   return (
     <tr>
@@ -56,16 +150,7 @@ export default function HistoryItem({
         {item.type == "screenshot" && <HistoryItemScreenshot item={item} />}
         {item.type == "file" && (
           <a
-            onClick={() => {
-              updateFileLink({
-                fileName: item.fileName ?? "",
-                fileURL: blobFileURL,
-              });
-              addLog({
-                message: t("logs.autoDownload"),
-                level: LogLevel.Success,
-              });
-            }}
+            onClick={handleUse}
             target="_blank"
             rel="noopener noreferrer"
             className="line-clamp-1 opacity-70 break-all cursor-pointer hover:underline"
@@ -88,52 +173,7 @@ export default function HistoryItem({
             ref={ulRef}
           >
             <li>
-              <a
-                className="hover:bg-base-300 opacity-70"
-                onClick={async () => {
-                  try {
-                    ulRef.current && ulRef.current.blur();
-                    if (item.type == "file") {
-                      updateFileLink({
-                        fileName: item.fileName ?? "",
-                        fileURL: blobFileURL,
-                      });
-                      addLog({
-                        message: t("logs.autoDownload"),
-                        level: LogLevel.Success,
-                      });
-                      return;
-                    }
-
-                    if (item.type == "text" || item.type == "screenshot") {
-                      // iOS Safari: 使用 ArrayBuffer 创建 Blob，其他浏览器直接使用 data
-                      const blob = item.dataArrayBuffer
-                        ? new Blob([item.dataArrayBuffer], {
-                            type: item.dataType,
-                          })
-                        : item.data;
-
-                      if (browserName.includes("Safari")) {
-                        await clipboardWriteBlobPromise(blob);
-                        addLog({
-                          message: t("logs.writeSuccess"),
-                          level: LogLevel.Success,
-                        });
-                        return;
-                      }
-
-                      await clipboardWriteBlob(blob);
-                      addLog({
-                        message: t("logs.writeSuccess"),
-                        level: LogLevel.Success,
-                      });
-                      return;
-                    }
-                  } catch (err) {
-                    addLog({ message: String(err), level: LogLevel.Error });
-                  }
-                }}
-              >
+              <a className="hover:bg-base-300 opacity-70" onClick={handleUse}>
                 {t("history.use")}
               </a>
             </li>
@@ -141,9 +181,7 @@ export default function HistoryItem({
               <li>
                 <a
                   className="hover:bg-base-300 opacity-70"
-                  onClick={() => {
-                    db.history.update(item, { pin: "false" });
-                  }}
+                  onClick={handleUnpin}
                 >
                   Unpin
                 </a>
@@ -151,24 +189,7 @@ export default function HistoryItem({
             )}
             {item.pin == "false" && (
               <li>
-                <a
-                  className="hover:bg-base-300 opacity-70"
-                  onClick={async () => {
-                    const count = await db.history
-                      .where("pin")
-                      .equals("true")
-                      .count();
-                    if (count >= 10) {
-                      ulRef.current && ulRef.current.blur();
-                      addLog({
-                        message: t("logs.pinLimit"),
-                        level: LogLevel.Warn,
-                      });
-                      return;
-                    }
-                    db.history.update(item, { pin: "true" });
-                  }}
-                >
+                <a className="hover:bg-base-300 opacity-70" onClick={handlePin}>
                   Pin
                 </a>
               </li>
@@ -176,10 +197,7 @@ export default function HistoryItem({
             <li>
               <a
                 className="hover:bg-base-300 opacity-70"
-                onClick={() => {
-                  item.createdAt && db.history.delete(item.createdAt);
-                  ulRef.current && ulRef.current.blur();
-                }}
+                onClick={handleDelete}
               >
                 {t("history.delete")}
               </a>
@@ -189,4 +207,6 @@ export default function HistoryItem({
       </td>
     </tr>
   );
-}
+}, arePropsEqual);
+
+export default HistoryItem;

@@ -4,6 +4,7 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/models/db";
 import { Log } from "@/lib/log";
 import { FileInfo } from "@/lib/clipboard";
+import { useCallback } from "react";
 
 export default function History({
   addLog,
@@ -13,8 +14,26 @@ export default function History({
   updateFileLink: (fileInfo: FileInfo) => void;
 }) {
   const t = useTranslations("SyncClipboard.history");
-  const items = useLiveQuery(() => db.history.reverse().toArray());
-  if (!items) return null;
+
+  // 分离查询：pinned 和 unpinned items，减少不必要的重新渲染
+  const pinnedItems = useLiveQuery(
+    () => db.history.where("pin").equals("true").reverse().toArray(),
+    [],
+  );
+
+  const recentItems = useLiveQuery(
+    () => db.history.where("pin").equals("false").reverse().limit(20).toArray(),
+    [],
+  );
+
+  // 使用 useCallback 稳定回调函数引用，避免每次渲染创建新函数
+  const stableAddLog = useCallback((log: Log) => addLog(log), [addLog]);
+  const stableUpdateFileLink = useCallback(
+    (fileInfo: FileInfo) => updateFileLink(fileInfo),
+    [updateFileLink],
+  );
+
+  if (!pinnedItems || !recentItems) return null;
 
   return (
     <div className="pb-4">
@@ -23,33 +42,27 @@ export default function History({
       <div className="bg-base-100 rounded-box mb-2 px-2 border border-base-300">
         <table className="table">
           <tbody>
-            {items.length == 0 && (
+            {pinnedItems.length === 0 && recentItems.length === 0 && (
               <tr>
                 <td className="w-4 p-2 opacity-50 text-center">{t("empty")}</td>
               </tr>
             )}
-            {items.map(
-              (item) =>
-                item.pin == "true" && (
-                  <HistoryItem
-                    key={item.createdAt}
-                    item={item}
-                    addLog={addLog}
-                    updateFileLink={updateFileLink}
-                  />
-                ),
-            )}
-            {items.map(
-              (item) =>
-                item.pin == "false" && (
-                  <HistoryItem
-                    key={item.createdAt}
-                    item={item}
-                    addLog={addLog}
-                    updateFileLink={updateFileLink}
-                  />
-                ),
-            )}
+            {pinnedItems.map((item) => (
+              <HistoryItem
+                key={item.createdAt}
+                item={item}
+                addLog={stableAddLog}
+                updateFileLink={stableUpdateFileLink}
+              />
+            ))}
+            {recentItems.map((item) => (
+              <HistoryItem
+                key={item.createdAt}
+                item={item}
+                addLog={stableAddLog}
+                updateFileLink={stableUpdateFileLink}
+              />
+            ))}
           </tbody>
         </table>
       </div>

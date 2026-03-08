@@ -573,7 +573,9 @@ export default function SyncClipboard() {
 
       // 先将 blob 转换为 ArrayBuffer，避免在异步操作中被垃圾回收
       const arrayBuffer = await blob.arrayBuffer();
-      let downloadedFile = new File([arrayBuffer], xfilename, { type: blob.type });
+      let downloadedFile = new File([arrayBuffer], xfilename, {
+        type: blob.type,
+      });
 
       // The file did not enter the clipboard,
       // so only update the index.

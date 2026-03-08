@@ -23,7 +23,7 @@ export function getLoginPath(authMode: string, locale: string): string {
 export function redirectToLogin(
   router: { push: (url: string) => void },
   authMode: string,
-  locale: string
+  locale: string,
 ): void {
   const path = getLoginPath(authMode, locale);
   if (path !== "#") {
