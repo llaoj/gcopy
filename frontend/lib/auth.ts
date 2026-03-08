@@ -14,17 +14,28 @@ const defaultUser: User = {
 const userApiRoute = "/api/v1/user";
 
 async function fetcher<JSON>(url: string): Promise<JSON> {
-  return fetch(url, {
-    headers: {
-      accept: "application/json",
-      "content-type": "application/json",
-    },
-  }).then((res) => res.json());
+  try {
+    const response = await fetch(url, {
+      headers: {
+        accept: "application/json",
+        "content-type": "application/json",
+      },
+    });
+    return response.json();
+  } catch (error) {
+    // iOS Safari may block requests during downloads or heavy network activity
+    // Return default user instead of throwing to prevent UI errors
+    console.warn("Auth fetch blocked, likely due to iOS Safari network policy:", error);
+    return defaultUser as JSON;
+  }
 }
 
 export default function useAuth() {
   const { data, isLoading } = useSWR(userApiRoute, fetcher<User>, {
     fallbackData: defaultUser,
+    revalidateOnFocus: false, // Reduce unnecessary revalidation on iOS Safari
+    revalidateOnReconnect: false, // Reduce network requests
+    shouldRetryOnError: false, // Don't retry on iOS Safari network blocks
   });
   const userId = data.userId;
   const loggedIn = data.loggedIn;
