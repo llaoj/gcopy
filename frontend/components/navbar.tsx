@@ -6,12 +6,13 @@ import { useLocale, useTranslations } from "next-intl";
 import useAuth from "@/lib/auth";
 import useSystemInfo from "@/hooks/useSystemInfo";
 import pack from "@/package.json";
+import { getLoginPath } from "@/lib/navigation";
 
 export default function Navbar() {
   const locale = useLocale();
   const t = useTranslations("Navbar");
   const { isLoading, loggedIn } = useAuth();
-  const { authMode } = useSystemInfo();
+  const { systemInfo } = useSystemInfo();
 
   if (isLoading) {
     return null;
@@ -84,14 +85,10 @@ export default function Navbar() {
         </a>
         {loggedIn ? (
           <Avator />
-        ) : authMode ? (
+        ) : systemInfo?.authMode ? (
           <Link
             className="btn"
-            href={
-              authMode === "token"
-                ? `/${locale}/user/token`
-                : `/${locale}/user/email`
-            }
+            href={getLoginPath(systemInfo.authMode, locale)}
           >
             {t("signIn")}
           </Link>

@@ -3,6 +3,7 @@ import useAuth from "@/lib/auth";
 import useSystemInfo from "@/hooks/useSystemInfo";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
+import { redirectToLogin } from "@/lib/navigation";
 
 export default function Avator() {
   const locale = useLocale();
@@ -10,7 +11,7 @@ export default function Avator() {
   const [clicked, setClicked] = useState(false);
   const router = useRouter();
   const { isLoading, userId, logout } = useAuth();
-  const { authMode } = useSystemInfo();
+  const { systemInfo } = useSystemInfo();
 
   if (isLoading) {
     return null;
@@ -47,10 +48,8 @@ export default function Avator() {
               setClicked(true);
               await logout();
               // Redirect based on auth mode
-              if (authMode === "token") {
-                router.push(`/${locale}/user/token`);
-              } else {
-                router.push(`/${locale}/user/email`);
+              if (systemInfo?.authMode) {
+                redirectToLogin(router, systemInfo.authMode, locale);
               }
             }}
           >

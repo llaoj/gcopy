@@ -21,8 +21,14 @@ import {
   initFileInfo,
   clipboardRead,
 } from "@/lib/clipboard";
+import { redirectToLogin } from "@/lib/navigation";
 // Chrome | Safari | Mobile Safari
-import { browserName, isAndroid, isMobileSafari } from "react-device-detect";
+import {
+  browserName,
+  isAndroid,
+  isMobile,
+  isMobileSafari,
+} from "react-device-detect";
 import SyncButton from "@/components/sync-button";
 import SyncShortcut from "@/components/sync-shortcut";
 import QuickInput from "@/components/quick-input";
@@ -49,7 +55,7 @@ export default function SyncClipboard() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const locale = useLocale();
   const { loggedIn } = useAuth();
-  const { authMode } = useSystemInfo();
+  const { systemInfo } = useSystemInfo();
   const router = useRouter();
   const pathname = usePathname();
   const { logs, addLog, resetLog, updateProgressLog } = useLog();
@@ -86,15 +92,13 @@ export default function SyncClipboard() {
 
   const ensureLoggedIn = useCallback(async () => {
     if (!loggedIn) {
-      if (authMode === "token") {
-        router.push(`/${locale}/user/token`);
-      } else {
-        router.push(`/${locale}/user/email`);
+      if (systemInfo?.authMode) {
+        redirectToLogin(router, systemInfo.authMode, locale);
       }
       return false;
     }
     return true;
-  }, [loggedIn, authMode, locale, router]);
+  }, [loggedIn, systemInfo?.authMode, locale, router]);
 
   const sleep = function (ms: number) {
     return new Promise((resolve) => setTimeout(resolve, ms));
@@ -148,37 +152,40 @@ export default function SyncClipboard() {
   };
 
   /**
-   * 处理从 paste 事件获取的剪贴板内容（图片或文字）
+   * 上传剪贴板内容到服务器
+   * 统一处理文本和图片的上传逻辑
    */
-  const handlePastedContent = useCallback(
-    async (file: File) => {
-      if (!(await ensureLoggedIn())) {
-        return;
-      }
-
-      let blob = file as Blob;
+  const uploadClipboardBlob = useCallback(
+    async (blob: Blob): Promise<boolean> => {
       let xtype: string;
+      let processedBlob = blob;
 
       // 确定类型并转换格式
       if (blob.type.startsWith("image/")) {
         xtype = "screenshot";
-
         // 如果不是 PNG，转换为 PNG（浏览器剪贴板标准格式）
         if (blob.type !== "image/png") {
-          blob = await toPngBlob(blob);
+          processedBlob = await toPngBlob(blob);
         }
       } else if (blob.type.startsWith("text/")) {
         xtype = "text";
-        blob = await toTextBlob(blob);
+        processedBlob = await toTextBlob(blob);
       } else {
         addLog({
           message: t("logs.unsupportedFormat", { format: blob.type }),
           level: LogLevel.Error,
         });
-        return;
+        return false;
       }
 
-      const nextBlobId = await hashBlob(blob);
+      const nextBlobId = await hashBlob(processedBlob);
+      const searchParams = new URLSearchParams(window.location.search);
+
+      // 检查是否与当前剪贴板内容相同
+      if (nextBlobId == searchParams.get("cbi")) {
+        addLog({ message: t("logs.unchanged") });
+        return false;
+      }
 
       addLog({ message: t("logs.uploading"), isProgress: true });
 
@@ -186,23 +193,21 @@ export default function SyncClipboard() {
         "/api/v1/clipboard",
         "POST",
         {
-          "Content-Type": blob.type,
+          "Content-Type": processedBlob.type,
           "X-Type": xtype,
           "X-FileName": "",
         },
-        blob,
+        processedBlob,
         (progress) => {
           updateProgressLog(`${t("logs.uploading")} ${progress}%`);
         },
       );
 
       if (response.status == 401) {
-        if (authMode === "token") {
-          router.push(`/${locale}/user/token`);
-        } else {
-          router.push(`/${locale}/user/email`);
+        if (systemInfo?.authMode) {
+          redirectToLogin(router, systemInfo.authMode, locale);
         }
-        return;
+        return false;
       }
 
       if (response.status != 200) {
@@ -212,12 +217,12 @@ export default function SyncClipboard() {
         } catch {
           addLog({ message: response.body, level: LogLevel.Error });
         }
-        return;
+        return false;
       }
 
       const xindex = response.headers.get("x-index");
       if (xindex == null || xindex == "0") {
-        return;
+        return false;
       }
 
       window.history.replaceState(
@@ -229,7 +234,7 @@ export default function SyncClipboard() {
       await addHistoryItem({
         index: xindex,
         blobId: nextBlobId,
-        data: blob,
+        data: processedBlob,
         type: xtype,
       });
 
@@ -237,19 +242,36 @@ export default function SyncClipboard() {
         message: t("logs.uploaded", { type: t(xtype), index: xindex }),
         level: LogLevel.Success,
       });
-      setStatus("finished");
+
+      return true;
     },
     [
       addLog,
       t,
-      ensureLoggedIn,
       pathname,
       addHistoryItem,
       updateProgressLog,
-      authMode,
+      systemInfo?.authMode,
       locale,
       router,
     ],
+  );
+
+  /**
+   * 处理从 paste 事件获取的剪贴板内容（图片或文字）
+   */
+  const handlePastedContent = useCallback(
+    async (file: File) => {
+      if (!(await ensureLoggedIn())) {
+        return;
+      }
+
+      const success = await uploadClipboardBlob(file);
+      if (success) {
+        setStatus("finished");
+      }
+    },
+    [ensureLoggedIn, uploadClipboardBlob],
   );
 
   /**
@@ -352,7 +374,7 @@ export default function SyncClipboard() {
   }, [
     waitingForPaste,
     loggedIn,
-    authMode,
+    systemInfo?.authMode,
     locale,
     router,
     addLog,
@@ -431,10 +453,8 @@ export default function SyncClipboard() {
     );
 
     if (response.status == 401) {
-      if (authMode === "token") {
-        router.push(`/${locale}/user/token`);
-      } else {
-        router.push(`/${locale}/user/email`);
+      if (systemInfo?.authMode) {
+        redirectToLogin(router, systemInfo.authMode, locale);
       }
       return;
     }
@@ -551,23 +571,12 @@ export default function SyncClipboard() {
       }
       xfilename = decodeURI(xfilename);
 
-      //let downloadedFile = new File([blob], xfilename, { type: blob.type });
-      let downloadedFile: File;
-      // iOS Safari: 使用 ArrayBuffer 创建 Blob/File 避免类型错误
-      if (isMobileSafari) {
-        const arrayBuffer = await blob.arrayBuffer();
-        downloadedFile = new File([arrayBuffer], xfilename, {
-          type: blob.type,
-        });
-      } else {
-        downloadedFile = new File([blob], xfilename, { type: blob.type });
-      }
-
-      updateFileLink({
-        fileName: xfilename,
-        fileURL: URL.createObjectURL(downloadedFile),
+      // 先将 blob 转换为 ArrayBuffer，避免在异步操作中被垃圾回收
+      const arrayBuffer = await blob.arrayBuffer();
+      let downloadedFile = new File([arrayBuffer], xfilename, {
+        type: blob.type,
       });
-      addLog({ message: t("logs.autoDownload"), level: LogLevel.Success });
+
       // The file did not enter the clipboard,
       // so only update the index.
       searchParams.set("ci", xindex);
@@ -577,7 +586,8 @@ export default function SyncClipboard() {
         "?" + searchParams.toString(),
       );
 
-      const fileBlobId = await hashBlob(blob);
+      // 先插入历史记录，确保数据安全保存
+      const fileBlobId = await hashBlob(downloadedFile);
       await addHistoryItem({
         index: xindex,
         blobId: fileBlobId,
@@ -585,6 +595,13 @@ export default function SyncClipboard() {
         type: xtype,
         fileName: xfilename,
       });
+
+      // 最后创建 blob URL 用于下载
+      updateFileLink({
+        fileName: xfilename,
+        fileURL: URL.createObjectURL(downloadedFile),
+      });
+      addLog({ message: t("logs.autoDownload"), level: LogLevel.Success });
 
       return;
     }
@@ -603,9 +620,8 @@ export default function SyncClipboard() {
         return;
       }
       blob = await clipboardRead();
-      if (blob) {
-        addLog({ message: t("logs.readClipboardSuccess") });
-      } else {
+
+      if (!blob && !isMobile) {
         /**
          * ============================================================
          * 特殊剪贴板内容处理（如微信图片）
@@ -640,115 +656,32 @@ export default function SyncClipboard() {
       }
     }
 
-    let xtype;
-    switch (blob.type) {
-      case "text/plain":
-      case "text/html":
-      case "text/uri-list":
-        xtype = "text";
-        blob = await toTextBlob(blob);
-        break;
-      case "image/png":
-      case "image/jpeg":
-      case "image/webp":
-        xtype = "screenshot";
-        // 转换为 PNG 以保证兼容性
-        if (blob.type !== "image/png") {
-          blob = await toPngBlob(blob);
-        }
-        break;
-      default:
-        addLog({
-          message: t("logs.unsupportedFormat", { format: blob.type }),
-          level: LogLevel.Error,
-        });
-        xtype = "";
-    }
-    if (xtype == "") {
+    if (blob) {
+      addLog({ message: t("logs.readClipboardSuccess") });
+    } else {
+      addLog({ message: t("logs.emptyClipboard") });
       return;
     }
 
-    const nextBlobId = await hashBlob(blob);
-    const searchParams = new URLSearchParams(window.location.search);
-    if (nextBlobId == searchParams.get("cbi")) {
-      addLog({ message: t("logs.unchanged") });
-      return;
-    }
-    addLog({ message: t("logs.uploading"), isProgress: true });
+    const success = await uploadClipboardBlob(blob);
 
-    const response = await uploadWithProgress(
-      "/api/v1/clipboard",
-      "POST",
-      {
-        "Content-Type": blob.type,
-        "X-Type": xtype,
-        "X-FileName": "",
-      },
-      blob,
-      (progress) => {
-        updateProgressLog(`${t("logs.uploading")} ${progress}%`);
-      },
-    );
-
-    if (response.status == 401) {
-      if (authMode === "token") {
-        router.push(`/${locale}/user/token`);
-      } else {
-        router.push(`/${locale}/user/email`);
-      }
-      return;
-    }
-
-    if (response.status != 200) {
-      try {
-        const body = JSON.parse(response.body);
-        addLog({ message: body.message, level: LogLevel.Error });
-      } catch {
-        addLog({ message: response.body, level: LogLevel.Error });
-      }
-      return;
-    }
-
-    if (textareaRef.current && textareaRef.current.value != "") {
+    // 清空快速输入框
+    if (success && textareaRef.current && textareaRef.current.value != "") {
       textareaRef.current.value = "";
     }
-
-    const xindex = response.headers.get("x-index");
-    if (xindex == null || xindex == "0") {
-      return;
-    }
-
-    window.history.replaceState(
-      null,
-      document.title,
-      `${pathname}?ci=${xindex}&cbi=${nextBlobId}`,
-    );
-
-    await addHistoryItem({
-      index: xindex,
-      blobId: nextBlobId,
-      data: blob,
-      type: xtype,
-    });
-
-    addLog({
-      message: t("logs.uploaded", { type: t(xtype), index: xindex }),
-      level: LogLevel.Success,
-    });
   };
 
   const uploadFileHandler = async (file: File) => {
     resetLog();
 
-    // Get system info and validate file size
-    const sysInfo = await getSystemInfo();
-    if (sysInfo) {
-      const validation = validateFileSize(file, sysInfo.maxContentLength);
+    // Validate file size
+    if (systemInfo) {
+      const validation = validateFileSize(file, systemInfo.maxContentLength);
       if (!validation.valid) {
         addLog({
           message: t("logs.fileTooLarge", {
             size: (file.size / (1024 * 1024)).toFixed(2),
-            limit: sysInfo.maxContentLength,
+            limit: systemInfo.maxContentLength,
           }),
           level: LogLevel.Error,
         });
@@ -773,10 +706,8 @@ export default function SyncClipboard() {
     );
 
     if (response.status == 401) {
-      if (authMode === "token") {
-        router.push(`/${locale}/user/token`);
-      } else {
-        router.push(`/${locale}/user/email`);
+      if (systemInfo?.authMode) {
+        redirectToLogin(router, systemInfo.authMode, locale);
       }
       return;
     }
