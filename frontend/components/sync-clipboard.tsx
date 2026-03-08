@@ -21,8 +21,14 @@ import {
   initFileInfo,
   clipboardRead,
 } from "@/lib/clipboard";
+import { redirectToLogin } from "@/lib/navigation";
 // Chrome | Safari | Mobile Safari
-import { browserName, isAndroid, isMobile, isMobileSafari } from "react-device-detect";
+import {
+  browserName,
+  isAndroid,
+  isMobile,
+  isMobileSafari,
+} from "react-device-detect";
 import SyncButton from "@/components/sync-button";
 import SyncShortcut from "@/components/sync-shortcut";
 import QuickInput from "@/components/quick-input";
@@ -86,10 +92,8 @@ export default function SyncClipboard() {
 
   const ensureLoggedIn = useCallback(async () => {
     if (!loggedIn) {
-      if (systemInfo?.authMode === "token") {
-        router.push(`/${locale}/user/token`);
-      } else {
-        router.push(`/${locale}/user/email`);
+      if (systemInfo?.authMode) {
+        redirectToLogin(router, systemInfo.authMode, locale);
       }
       return false;
     }
@@ -200,10 +204,8 @@ export default function SyncClipboard() {
       );
 
       if (response.status == 401) {
-        if (systemInfo?.authMode === "token") {
-          router.push(`/${locale}/user/token`);
-        } else {
-          router.push(`/${locale}/user/email`);
+        if (systemInfo?.authMode) {
+          redirectToLogin(router, systemInfo.authMode, locale);
         }
         return false;
       }
@@ -451,10 +453,8 @@ export default function SyncClipboard() {
     );
 
     if (response.status == 401) {
-      if (systemInfo?.authMode === "token") {
-        router.push(`/${locale}/user/token`);
-      } else {
-        router.push(`/${locale}/user/email`);
+      if (systemInfo?.authMode) {
+        redirectToLogin(router, systemInfo.authMode, locale);
       }
       return;
     }
@@ -709,10 +709,8 @@ export default function SyncClipboard() {
     );
 
     if (response.status == 401) {
-      if (systemInfo?.authMode === "token") {
-        router.push(`/${locale}/user/token`);
-      } else {
-        router.push(`/${locale}/user/email`);
+      if (systemInfo?.authMode) {
+        redirectToLogin(router, systemInfo.authMode, locale);
       }
       return;
     }

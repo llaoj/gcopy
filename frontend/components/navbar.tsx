@@ -6,6 +6,7 @@ import { useLocale, useTranslations } from "next-intl";
 import useAuth from "@/lib/auth";
 import useSystemInfo from "@/hooks/useSystemInfo";
 import pack from "@/package.json";
+import { getLoginPath } from "@/lib/navigation";
 
 export default function Navbar() {
   const locale = useLocale();
@@ -87,11 +88,7 @@ export default function Navbar() {
         ) : systemInfo?.authMode ? (
           <Link
             className="btn"
-            href={
-              systemInfo.authMode === "token"
-                ? `/${locale}/user/token`
-                : `/${locale}/user/email`
-            }
+            href={getLoginPath(systemInfo.authMode, locale)}
           >
             {t("signIn")}
           </Link>
