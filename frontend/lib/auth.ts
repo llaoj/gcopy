@@ -25,7 +25,10 @@ async function fetcher<JSON>(url: string): Promise<JSON> {
   } catch (error) {
     // iOS Safari may block requests during downloads or heavy network activity
     // Return default user instead of throwing to prevent UI errors
-    console.warn("Auth fetch blocked, likely due to iOS Safari network policy:", error);
+    console.warn(
+      "Auth fetch blocked, likely due to iOS Safari network policy:",
+      error,
+    );
     return defaultUser as JSON;
   }
 }
