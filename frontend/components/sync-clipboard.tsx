@@ -571,23 +571,10 @@ export default function SyncClipboard() {
       }
       xfilename = decodeURI(xfilename);
 
-      //let downloadedFile = new File([blob], xfilename, { type: blob.type });
-      let downloadedFile: File;
-      // iOS Safari: 使用 ArrayBuffer 创建 Blob/File 避免类型错误
-      if (isMobileSafari) {
-        const arrayBuffer = await blob.arrayBuffer();
-        downloadedFile = new File([arrayBuffer], xfilename, {
-          type: blob.type,
-        });
-      } else {
-        downloadedFile = new File([blob], xfilename, { type: blob.type });
-      }
+      // 先将 blob 转换为 ArrayBuffer，避免在异步操作中被垃圾回收
+      const arrayBuffer = await blob.arrayBuffer();
+      let downloadedFile = new File([arrayBuffer], xfilename, { type: blob.type });
 
-      updateFileLink({
-        fileName: xfilename,
-        fileURL: URL.createObjectURL(downloadedFile),
-      });
-      addLog({ message: t("logs.autoDownload"), level: LogLevel.Success });
       // The file did not enter the clipboard,
       // so only update the index.
       searchParams.set("ci", xindex);
@@ -597,7 +584,8 @@ export default function SyncClipboard() {
         "?" + searchParams.toString(),
       );
 
-      const fileBlobId = await hashBlob(blob);
+      // 先插入历史记录，确保数据安全保存
+      const fileBlobId = await hashBlob(downloadedFile);
       await addHistoryItem({
         index: xindex,
         blobId: fileBlobId,
@@ -605,6 +593,13 @@ export default function SyncClipboard() {
         type: xtype,
         fileName: xfilename,
       });
+
+      // 最后创建 blob URL 用于下载
+      updateFileLink({
+        fileName: xfilename,
+        fileURL: URL.createObjectURL(downloadedFile),
+      });
+      addLog({ message: t("logs.autoDownload"), level: LogLevel.Success });
 
       return;
     }
