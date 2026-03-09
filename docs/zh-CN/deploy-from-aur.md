@@ -40,13 +40,13 @@ paru -Sy gcopy-web
 #### 邮箱认证模式
 
 ```shell
-APPEND_ARGS="-auth-mode=email -app-key='rqMrHprILwYintES4UeQc0wM/252SLy59y7LMYKXJE0=' -smtp-host='smtp.example.com' -smtp-port='587' -smtp-username='username@example.com' -smtp-password='your_password'"
+APPEND_ARGS="-auth-mode=email -app-key='rqMrHprILwYintES4UeQc0wM/252SLy59y7LMYKXJE0=' -max-content-length=10 -smtp-host='smtp.example.com' -smtp-port='587' -smtp-username='username@example.com' -smtp-password='your_password'"
 ```
 
 #### 令牌认证模式
 
 ```shell
-APPEND_ARGS="-auth-mode=token -app-key='rqMrHprILwYintES4UeQc0wM/252SLy59y7LMYKXJE0='"
+APPEND_ARGS="-auth-mode=token -app-key='rqMrHprILwYintES4UeQc0wM/252SLy59y7LMYKXJE0=' -max-content-length=10"
 ```
 
 **注意：** 令牌模式无需 SMTP 配置，适合以下场景：

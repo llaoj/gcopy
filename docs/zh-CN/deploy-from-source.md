@@ -48,6 +48,7 @@ GCopy 支持两种认证模式：
 go run cmd/gcopy.go \
     -auth-mode=email \
     -app-key=<app-key> \
+    -max-content-length=10 \
     -smtp-host=<smtp-host> \
     -smtp-port=<smtp-port> \
     -smtp-username=<smtp-username> \
@@ -62,6 +63,7 @@ go run cmd/gcopy.go \
 go run cmd/gcopy.go \
     -auth-mode=token \
     -app-key=<app-key> \
+    -max-content-length=10 \
     -debug
 ```
 
@@ -78,6 +80,7 @@ chmod +x ./bin/gcopy
 /opt/gcopy/bin/gcopy \
     -auth-mode=email \
     -app-key=<app-key> \
+    -max-content-length=10 \
     -smtp-host=<smtp-host> \
     -smtp-port=<smtp-port> \
     -smtp-username=<smtp-username> \
@@ -92,7 +95,8 @@ make ./bin/gcopy
 chmod +x ./bin/gcopy
 /opt/gcopy/bin/gcopy \
     -auth-mode=token \
-    -app-key=<app-key>
+    -app-key=<app-key> \
+    -max-content-length=10
 ```
 
 ## 前端
