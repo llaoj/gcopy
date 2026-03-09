@@ -28,19 +28,22 @@ wget -O /opt/gcopy/docker-compose.yml https://raw.githubusercontent.com/llaoj/gc
 
 ### Configuration Examples
 
+**Note:** GCopy uses command-line flags for configuration, not environment variables. Modify the `command` section in `docker-compose.yml`.
+
 #### Email Authentication Mode (Default)
 
 Edit `docker-compose.yml`:
 
 ```yaml
-environment:
-  - APP_KEY=your-secret-key-min-8-chars
-  - AUTH_MODE=email
-  - SMTP_HOST=smtp.example.com
-  - SMTP_PORT=587
-  - SMTP_USERNAME=your-email@example.com
-  - SMTP_PASSWORD=your-smtp-password
-  - SMTP_SSL=false
+services:
+  gcopy:
+    command:
+      - --app-key=your-secret-key-min-8-chars
+      - --auth-mode=email
+      - --smtp-host=smtp.example.com
+      - --smtp-port=587
+      - --smtp-username=your-email@example.com
+      - --smtp-password=your-smtp-password
 ```
 
 #### Token Authentication Mode
@@ -48,9 +51,11 @@ environment:
 Edit `docker-compose.yml`:
 
 ```yaml
-environment:
-  - APP_KEY=your-secret-key-min-8-chars
-  - AUTH_MODE=token
+services:
+  gcopy:
+    command:
+      - --app-key=your-secret-key-min-8-chars
+      - --auth-mode=token
 ```
 
 **Note:** Token mode does not require SMTP configuration, making it ideal for:

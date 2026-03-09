@@ -32,19 +32,22 @@ wget -O /opt/gcopy/docker-compose.yml https://raw.githubusercontent.com/llaoj/gc
 
 ### 配置示例
 
+**注意：** GCopy 使用命令行参数进行配置，不支持环境变量。请修改 `docker-compose.yml` 中的 `command` 部分。
+
 #### 邮箱认证模式（默认）
 
 编辑 `docker-compose.yml`：
 
 ```yaml
-environment:
-  - APP_KEY=your-secret-key-min-8-chars
-  - AUTH_MODE=email
-  - SMTP_HOST=smtp.example.com
-  - SMTP_PORT=587
-  - SMTP_USERNAME=your-email@example.com
-  - SMTP_PASSWORD=your-smtp-password
-  - SMTP_SSL=false
+services:
+  gcopy:
+    command:
+      - --app-key=your-secret-key-min-8-chars
+      - --auth-mode=email
+      - --smtp-host=smtp.example.com
+      - --smtp-port=587
+      - --smtp-username=your-email@example.com
+      - --smtp-password=your-smtp-password
 ```
 
 #### 令牌认证模式
@@ -52,9 +55,11 @@ environment:
 编辑 `docker-compose.yml`：
 
 ```yaml
-environment:
-  - APP_KEY=your-secret-key-min-8-chars
-  - AUTH_MODE=token
+services:
+  gcopy:
+    command:
+      - --app-key=your-secret-key-min-8-chars
+      - --auth-mode=token
 ```
 
 **注意：** 令牌模式无需 SMTP 配置，适合以下场景：
