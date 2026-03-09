@@ -49,6 +49,7 @@ services:
       - --smtp-port=587
       - --smtp-username=your-email@example.com
       - --smtp-password=your-smtp-password
+      - --smtp-ssl
 ```
 
 #### 令牌认证模式

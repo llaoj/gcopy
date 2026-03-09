@@ -40,7 +40,7 @@ paru -Sy gcopy-web
 #### 邮箱认证模式
 
 ```shell
-APPEND_ARGS="-auth-mode=email -app-key='rqMrHprILwYintES4UeQc0wM/252SLy59y7LMYKXJE0=' -max-content-length=10 -smtp-host='smtp.example.com' -smtp-port='587' -smtp-username='username@example.com' -smtp-password='your_password'"
+APPEND_ARGS="-auth-mode=email -app-key='rqMrHprILwYintES4UeQc0wM/252SLy59y7LMYKXJE0=' -max-content-length=10 -smtp-host='smtp.example.com' -smtp-port='587' -smtp-username='username@example.com' -smtp-password='your_password' -smtp-ssl"
 ```
 
 #### 令牌认证模式
