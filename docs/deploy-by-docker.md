@@ -40,6 +40,7 @@ services:
     command:
       - --app-key=your-secret-key-min-8-chars
       - --auth-mode=email
+      - --max-content-length=10
       - --smtp-host=smtp.example.com
       - --smtp-port=587
       - --smtp-username=your-email@example.com
@@ -56,6 +57,7 @@ services:
     command:
       - --app-key=your-secret-key-min-8-chars
       - --auth-mode=token
+      - --max-content-length=10
 ```
 
 **Note:** Token mode does not require SMTP configuration, making it ideal for:
