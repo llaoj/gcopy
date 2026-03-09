@@ -1,9 +1,10 @@
 import { useState } from "react";
+import { QRCodeSVG } from "qrcode.react";
 import useAuth from "@/lib/auth";
 import useSystemInfo from "@/hooks/useSystemInfo";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
-import { redirectToLogin } from "@/lib/navigation";
+import { getLoginPath, redirectToLogin } from "@/lib/navigation";
 
 export default function Avator() {
   const locale = useLocale();
@@ -21,6 +22,35 @@ export default function Avator() {
   const displayText = userId || "";
   const initials = displayText.substring(0, 2).toUpperCase();
 
+  // 生成二维码 URL
+  const getQRCodeUrl = () => {
+    if (!systemInfo?.authMode || !userId) {
+      return "";
+    }
+
+    const baseUrl = window.location.origin;
+    const loginPath = getLoginPath(systemInfo.authMode, locale);
+    const encodedUserId = encodeURIComponent(userId);
+
+    if (systemInfo.authMode === "email") {
+      return `${baseUrl}${loginPath}?email=${encodedUserId}`;
+    } else if (systemInfo.authMode === "token") {
+      return `${baseUrl}${loginPath}?token=${encodedUserId}`;
+    }
+
+    return "";
+  };
+
+  const qrCodeUrl = getQRCodeUrl();
+
+  const handleLogout = async () => {
+    setClicked(true);
+    await logout();
+    if (systemInfo?.authMode) {
+      redirectToLogin(router, systemInfo.authMode, locale);
+    }
+  };
+
   return (
     <div className="dropdown dropdown-end">
       <div
@@ -34,25 +64,24 @@ export default function Avator() {
       </div>
       <ul
         tabIndex={0}
-        className="mt-3 z-[1] p-2 shadow menu menu-sm dropdown-content bg-base-100 rounded-box w-52"
+        className="mt-3 z-[1] p-2 shadow menu menu-sm dropdown-content bg-base-100 rounded-box min-w-36 max-w-52"
       >
+        {qrCodeUrl && (
+          <>
+            <li className="flex flex-col btn-disabled">
+              <QRCodeSVG value={qrCodeUrl} size={160} level="M" />
+              <div className="text-xs">{t("scanQRLogin")}</div>
+            </li>
+            <li></li>
+          </>
+        )}
         <li>
-          <a className="text-neutral-content btn-disabled">
+          <a className="btn-disabled">
             <span className="truncate">{displayText}</span>
           </a>
         </li>
         <li>
-          <button
-            disabled={clicked}
-            onClick={async () => {
-              setClicked(true);
-              await logout();
-              // Redirect based on auth mode
-              if (systemInfo?.authMode) {
-                redirectToLogin(router, systemInfo.authMode, locale);
-              }
-            }}
-          >
+          <button disabled={clicked} onClick={handleLogout}>
             {t("logout")}
           </button>
         </li>

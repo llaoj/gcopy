@@ -15,7 +15,8 @@
     "protectPrivacy": "GCopy保护您的隐私, 它仅在内存中临时存储最新剪切板数据. GCopy并不持久化存储您的数据."
   },
   "Avator": {
-    "logout": "登出"
+    "logout": "登出",
+    "scanQRLogin": "扫码在其他设备登录"
   },
   "EmailLogin": {
     "back": "返回",
