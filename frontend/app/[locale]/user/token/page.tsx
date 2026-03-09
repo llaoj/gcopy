@@ -1,19 +1,36 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import Logo from "@/components/logo";
 
-export default function TokenLogin() {
-  const [showVerifyForm, setShowVerifyForm] = useState<boolean>(false);
+export default function TokenLogin({
+  searchParams,
+}: {
+  searchParams: { token?: string };
+}) {
+  const [showVerifyForm, setShowVerifyForm] = useState<boolean>(
+    !!searchParams.token,
+  );
   const [clicked, setClicked] = useState<boolean>(false);
   const [generatedToken, setGeneratedToken] = useState<string>("");
+  const [inputToken, setInputToken] = useState<string>(
+    searchParams.token || "",
+  );
   const [copied, setCopied] = useState<boolean>(false);
   const locale = useLocale();
   const t = useTranslations("TokenLogin");
   const [errorMessage, setErrorMessage] = useState("");
   const router = useRouter();
+
+  // 当有 URL 参数时，自动切换到验证表单
+  useEffect(() => {
+    if (searchParams.token) {
+      setShowVerifyForm(true);
+      setInputToken(searchParams.token);
+    }
+  }, [searchParams.token]);
 
   const generateToken = async () => {
     setClicked(true);
@@ -43,11 +60,8 @@ export default function TokenLogin() {
     setClicked(true);
     setErrorMessage("");
 
-    const formData = new FormData(event.currentTarget as HTMLFormElement);
-    const token = formData.get("token") as string;
-
     // 前端校验：长度必须为6
-    if (!token || token.length !== 6) {
+    if (!inputToken || inputToken.length !== 6) {
       setErrorMessage(t("invalidToken"));
       setClicked(false);
       return;
@@ -55,7 +69,7 @@ export default function TokenLogin() {
 
     // 前端校验：只允许字母和数字（A-Z, a-z, 0-9）
     const tokenPattern = /^[A-Za-z0-9]{6}$/;
-    if (!tokenPattern.test(token)) {
+    if (!tokenPattern.test(inputToken)) {
       setErrorMessage(t("invalidToken"));
       setClicked(false);
       return;
@@ -67,7 +81,7 @@ export default function TokenLogin() {
         "content-type": "application/json",
       },
       method: "POST",
-      body: JSON.stringify({ token }),
+      body: JSON.stringify({ token: inputToken }),
     });
 
     if (res.status == 200) {
@@ -141,6 +155,8 @@ export default function TokenLogin() {
                 placeholder={t("placeholder")}
                 className="input input-bordered w-full text-center text-xl font-mono"
                 maxLength={6}
+                value={inputToken}
+                onChange={(e) => setInputToken(e.target.value)}
                 autoFocus
               />
             </div>

@@ -11,9 +11,7 @@ export default function Email({
   searchParams: { email?: string };
 }) {
   const [clicked, setClicked] = useState<boolean>(false);
-  const [step, setStep] = useState<"email" | "code">(
-    searchParams.email ? "code" : "email",
-  );
+  const [step, setStep] = useState<"email" | "code">("email");
   const [email, setEmail] = useState<string>(searchParams.email || "");
   const [errorMessage, setErrorMessage] = useState("");
   const locale = useLocale();

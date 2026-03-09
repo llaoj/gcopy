@@ -64,6 +64,18 @@ export default function SyncClipboard() {
     setFileInfo(fileInfo);
   };
 
+  /**
+   * Reset all file-related states
+   * - Clear FileLink display (fileName and fileURL)
+   * - Reset file input value to allow re-uploading the same file
+   */
+  const resetFile = () => {
+    setFileInfo(initFileInfo);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
   const addHistoryItem = useCallback(async (history: HistoryItemEntity) => {
     if (history.pin != "true") history.pin = "false";
     history.createdAt = moment().format();
@@ -186,6 +198,9 @@ export default function SyncClipboard() {
         addLog({ message: t("logs.unchanged") });
         return false;
       }
+
+      // Reset file states when uploading text or screenshot
+      resetFile();
 
       addLog({ message: t("logs.uploading"), isProgress: true });
 
@@ -510,6 +525,9 @@ export default function SyncClipboard() {
         return;
       }
 
+      // Reset file states when receiving text or screenshot
+      resetFile();
+
       if (browserName.includes("Safari")) {
         setTmpClipboard({
           blobId: nextBlobId,
@@ -571,12 +589,6 @@ export default function SyncClipboard() {
       }
       xfilename = decodeURI(xfilename);
 
-      // 先将 blob 转换为 ArrayBuffer，避免在异步操作中被垃圾回收
-      const arrayBuffer = await blob.arrayBuffer();
-      let downloadedFile = new File([arrayBuffer], xfilename, {
-        type: blob.type,
-      });
-
       // The file did not enter the clipboard,
       // so only update the index.
       searchParams.set("ci", xindex);
@@ -585,6 +597,13 @@ export default function SyncClipboard() {
         document.title,
         "?" + searchParams.toString(),
       );
+
+      // 先将 blob 转换为 ArrayBuffer，避免在异步操作中被垃圾回收
+      const arrayBuffer = await blob.arrayBuffer();
+      // iOS Safari: 强制使用 application/octet-stream 避免 Safari 渲染 PDF 等文件
+      let downloadedFile = new File([arrayBuffer], xfilename, {
+        type: "application/octet-stream",
+      });
 
       // 先插入历史记录，确保数据安全保存
       const fileBlobId = await hashBlob(downloadedFile);
@@ -726,20 +745,22 @@ export default function SyncClipboard() {
       return;
     }
 
+    const uploadBlobId = await hashBlob(file);
+
+    // 只显示文件名 不自动下载文件
     updateFileLink({
       fileName: file.name,
       fileURL: "",
     });
+
     // The file did not enter the clipboard,
-    // so only update the index.
-    const searchParams = new URLSearchParams(window.location.search);
+    // so we update the index and set cbi to the file's blob ID
     window.history.replaceState(
       null,
       document.title,
-      `${pathname}?ci=${xindex}&cbi=${searchParams.get("cbi") ?? ""}`,
+      `${pathname}?ci=${xindex}&cbi=${uploadBlobId}`,
     );
 
-    const uploadBlobId = await hashBlob(file);
     await addHistoryItem({
       index: xindex,
       blobId: uploadBlobId,

@@ -53,10 +53,10 @@ const HistoryItem = memo(function HistoryItem({
   // 使用 useMemo 缓存 blob URL
   const blobFileURL = useMemo(() => {
     if (item.type !== "file") return "";
-    // iOS Safari: 使用 ArrayBuffer 创建 Blob，其他浏览器直接使用 data
+    // iOS Safari: 强制使用 application/octet-stream 避免 Safari 渲染 PDF 等文件
     const blob = item.dataArrayBuffer
-      ? new Blob([item.dataArrayBuffer], { type: item.dataType })
-      : item.data;
+      ? new Blob([item.dataArrayBuffer], { type: "application/octet-stream" })
+      : new Blob([item.data], { type: "application/octet-stream" });
     // 确保 blob 存在才创建 URL
     if (!blob) return "";
     return (window.URL || window.webkitURL).createObjectURL(blob);
