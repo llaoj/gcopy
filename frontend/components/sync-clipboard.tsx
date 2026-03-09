@@ -589,12 +589,6 @@ export default function SyncClipboard() {
       }
       xfilename = decodeURI(xfilename);
 
-      // 先将 blob 转换为 ArrayBuffer，避免在异步操作中被垃圾回收
-      const arrayBuffer = await blob.arrayBuffer();
-      let downloadedFile = new File([arrayBuffer], xfilename, {
-        type: blob.type,
-      });
-
       // The file did not enter the clipboard,
       // so only update the index.
       searchParams.set("ci", xindex);
@@ -603,6 +597,13 @@ export default function SyncClipboard() {
         document.title,
         "?" + searchParams.toString(),
       );
+
+      // 先将 blob 转换为 ArrayBuffer，避免在异步操作中被垃圾回收
+      const arrayBuffer = await blob.arrayBuffer();
+      // iOS Safari: 强制使用 application/octet-stream 避免 Safari 渲染 PDF 等文件
+      let downloadedFile = new File([arrayBuffer], xfilename, {
+        type: "application/octet-stream",
+      });
 
       // 先插入历史记录，确保数据安全保存
       const fileBlobId = await hashBlob(downloadedFile);

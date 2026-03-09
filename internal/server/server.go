@@ -115,6 +115,10 @@ func (s *Server) getClipboardHandler(c *gin.Context) {
 	c.Header("X-Type", cb.Type)
 	c.Header("X-FileName", cb.FileName)
 	c.Header("X-ClientName", cb.ClientName)
+	// 强制浏览器下载文件而不是渲染，对 iOS Safari 特别重要
+	if cb.Type == gcopy.TypeFile {
+		c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", cb.FileName))
+	}
 	if _, err := c.Writer.Write(cb.Data); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "Write data failed"})
 		s.log.Error(err)
