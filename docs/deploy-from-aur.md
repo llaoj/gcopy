@@ -36,13 +36,13 @@ For the backend, the configuration file is located at `/etc/gcopy/gcopy.env`. Ed
 #### Email Authentication Mode
 
 ```shell
-APPEND_ARGS="-auth-mode=email -app-key='rqMrHprILwYintES4UeQc0wM/252SLy59y7LMYKXJE0=' -smtp-host='smtp.example.com' -smtp-port='587' -smtp-username='username@example.com' -smtp-password='your_password'"
+APPEND_ARGS="-auth-mode=email -app-key='rqMrHprILwYintES4UeQc0wM/252SLy59y7LMYKXJE0=' -max-content-length=10 -smtp-host='smtp.example.com' -smtp-port='587' -smtp-username='username@example.com' -smtp-password='your_password' -smtp-ssl"
 ```
 
 #### Token Authentication Mode
 
 ```shell
-APPEND_ARGS="-auth-mode=token -app-key='rqMrHprILwYintES4UeQc0wM/252SLy59y7LMYKXJE0='"
+APPEND_ARGS="-auth-mode=token -app-key='rqMrHprILwYintES4UeQc0wM/252SLy59y7LMYKXJE0=' -max-content-length=10"
 ```
 
 **Note:** Token mode does not require SMTP configuration, making it ideal for:

@@ -45,6 +45,7 @@ services:
       - --smtp-port=587
       - --smtp-username=your-email@example.com
       - --smtp-password=your-smtp-password
+      - --smtp-ssl
 ```
 
 #### Token Authentication Mode
