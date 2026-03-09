@@ -9,7 +9,7 @@ export default function UserLayout({
 }) {
   const messages = useMessages();
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center mx-auto">
+    <div className="min-h-screen flex flex-col items-center justify-center mx-auto px-4">
       <NextIntlClientProvider locale={locale} messages={messages}>
         {children}
       </NextIntlClientProvider>
