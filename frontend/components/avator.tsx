@@ -10,6 +10,7 @@ export default function Avator() {
   const locale = useLocale();
   const t = useTranslations("Avator");
   const [clicked, setClicked] = useState(false);
+  const [copied, setCopied] = useState(false);
   const router = useRouter();
   const { isLoading, userId, logout } = useAuth();
   const { systemInfo } = useSystemInfo();
@@ -51,6 +52,17 @@ export default function Avator() {
     }
   };
 
+  const handleCopyLink = async () => {
+    if (!qrCodeUrl) return;
+    try {
+      await navigator.clipboard.writeText(qrCodeUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy:", err);
+    }
+  };
+
   return (
     <div className="dropdown dropdown-end">
       <div
@@ -69,8 +81,27 @@ export default function Avator() {
         {qrCodeUrl && (
           <>
             <li className="flex flex-col btn-disabled">
-              <QRCodeSVG value={qrCodeUrl} size={160} level="M" />
-              <div className="text-xs">{t("scanQRLogin")}</div>
+              <div className="text-xs pb-0">{t("scanQRLogin")}</div>
+              <QRCodeSVG
+                value={qrCodeUrl}
+                size={160}
+                level="M"
+                className="pt-0"
+              />
+            </li>
+            <li>
+              <button
+                className="w-full text-left"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleCopyLink();
+                }}
+              >
+                {t("copyLink")}
+                {copied && (
+                  <span className="text-success ml-2">{t("copied")}</span>
+                )}
+              </button>
             </li>
             <li></li>
           </>

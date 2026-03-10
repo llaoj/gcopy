@@ -16,7 +16,9 @@
   },
   "Avator": {
     "logout": "登出",
-    "scanQRLogin": "扫码在其他设备登录"
+    "scanQRLogin": "扫码在其他设备登录",
+    "copyLink": "复制链接",
+    "copied": "已复制"
   },
   "EmailLogin": {
     "back": "返回",
