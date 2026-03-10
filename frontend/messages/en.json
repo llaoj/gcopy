@@ -16,7 +16,9 @@
   },
   "Avator": {
     "logout": "Logout",
-    "scanQRLogin": "Scan to login on another device"
+    "scanQRLogin": "Scan to login on another device",
+    "copyLink": "Copy link",
+    "copied": "Copied"
   },
   "EmailLogin": {
     "back": "Back",
