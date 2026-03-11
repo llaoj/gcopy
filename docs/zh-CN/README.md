@@ -89,6 +89,13 @@ GCopy依赖浏览器的Clipboard API. 它的浏览器兼容性请参考: [browse
 
 ## 感谢支持
 
+GCopy 需要购买公有云服务来维持在线服务的运行。如果您觉得 GCopy 对您有帮助，希望各位义父支持一下：
+
+- 给个 [GitHub Star](https://github.com/llaoj/gcopy) ⭐
+- 或者捐赠一笔（1块钱不嫌少，1万块不嫌多 😄）
+
+感谢您的支持！
+
 [打赏杯咖啡吧](../sponsor.md)
 
 ## 社区

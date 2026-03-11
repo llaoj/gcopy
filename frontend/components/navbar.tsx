@@ -58,6 +58,26 @@ export default function Navbar() {
                 {t("title")}
               </Link>
             </li>
+            <li>
+              <Link
+                href="https://github.com/llaoj/gcopy"
+                target="_blank"
+              >
+                {t("star")} ⭐
+              </Link>
+            </li>
+            <li>
+              <Link
+                href={
+                  "https://github.com/llaoj/gcopy/blob/v" +
+                  pack.version +
+                  "/docs/sponsor.md"
+                }
+                target="_blank"
+              >
+                {t("sponsor")} 💰
+              </Link>
+            </li>
           </ul>
         </div>
       </div>

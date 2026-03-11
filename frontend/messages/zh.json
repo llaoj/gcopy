@@ -5,7 +5,9 @@
   },
   "Navbar": {
     "title": "文档",
-    "signIn": "登录"
+    "signIn": "登录",
+    "star": "点个 Star",
+    "sponsor": "支持一下"
   },
   "Notice": {
     "title": "注意",
