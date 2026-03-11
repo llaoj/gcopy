@@ -83,6 +83,13 @@ The tested browsers and its versions are listed below:
 
 ## Sponsor
 
+GCopy requires cloud server resources to keep the online service running. If you find GCopy helpful, please consider supporting:
+
+- Give a [GitHub Star](https://github.com/llaoj/gcopy) ⭐
+- Or make a donation (any amount is greatly appreciated 😄)
+
+Thank you for your support!
+
 [Buy me a coffee](docs/sponsor.md)
 
 ## Community

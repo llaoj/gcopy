@@ -5,7 +5,9 @@
   },
   "Navbar": {
     "title": "Document",
-    "signIn": "Sign in"
+    "signIn": "Sign in",
+    "star": "Give a Star",
+    "sponsor": "Sponsor"
   },
   "Notice": {
     "title": "Notice",
