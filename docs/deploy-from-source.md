@@ -41,6 +41,8 @@ The backend primarily responsible for temporary storage of clipboard data and au
 ### Direct run
 You can quickly start the local server using the `go run` command. The backend service is configured via command-line arguments. You need to manually replace `<var-name>`. The `-app-key` parameter in the configuration is a custom encryption key used for data encryption, recommended to be at least 8 characters long.
 
+**Note:** TLS configuration is handled by the reverse proxy (e.g., Nginx), not by the GCopy backend. Do not use the `-tls`, `-tls-cert-file`, or `-tls-key-file` flags.
+
 #### Email Authentication Mode
 
 ```bash
@@ -70,6 +72,8 @@ go run cmd/gcopy.go \
 
 ### Build and run
 You can also build before running. This way, you don't need to build before each run.
+
+**Note:** TLS configuration is handled by the reverse proxy (e.g., Nginx), not by the GCopy backend. Do not use the `-tls`, `-tls-cert-file`, or `-tls-key-file` flags.
 
 #### Email Authentication Mode
 

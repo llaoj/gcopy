@@ -212,28 +212,32 @@ Not implemented in this phase but could be added:
 
 To deploy:
 
-1. **Build backend**:
+1. **Build Docker image**:
    ```bash
-   make ./bin/gcopy
+   make push-container
    ```
 
-2. **Build frontend**:
-   ```bash
-   cd frontend
-   npm run build
-   cp -r .next/static .next/standalone/.next/
-   ```
-
-3. **Deploy with desired auth mode**:
+2. **Deploy with desired auth mode** (using environment variables):
    ```bash
    # For token mode
-   ./bin/gcopy -auth-mode=token -app-key=<secure-key>
+   docker run -d \
+     -p 3375:3375 \
+     -e GCOPY_AUTH_MODE=token \
+     -e GCOPY_APP_KEY=<secure-key> \
+     gcopy:latest
 
    # For email mode
-   ./bin/gcopy -auth-mode=email -app-key=<secure-key> -smtp-...
+   docker run -d \
+     -p 3375:3375 \
+     -e GCOPY_AUTH_MODE=email \
+     -e GCOPY_APP_KEY=<secure-key> \
+     -e GCOPY_SMTP_HOST=<smtp-host> \
+     -e GCOPY_SMTP_USERNAME=<smtp-username> \
+     -e GCOPY_SMTP_PASSWORD=<smtp-password> \
+     gcopy:latest
    ```
 
-4. **Update documentation** pointing to `docs/TOKEN_AUTH.md`
+3. **Update documentation** pointing to `docs/TOKEN_AUTH.md`
 
 ## Status
 

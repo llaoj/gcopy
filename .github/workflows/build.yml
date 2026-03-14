@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build gcopy & gcopy-frontend image
+      - name: Build gcopy image
         run: |
           echo "${{ secrets.REGISTRY_PASSWORD }}" | docker login -u "${{ secrets.REGISTRY_USERNAME }}" --password-stdin
           make push-container
@@ -34,7 +34,7 @@ jobs:
       - name: Sync images to Aliyun ACR
         run: |
           VERSION=$(cat version.txt)
-          IMAGE_LIST="docker.io/llaoj/gcopy:$VERSION docker.io/llaoj/gcopy:latest docker.io/llaoj/gcopy-frontend:$VERSION docker.io/llaoj/gcopy-frontend:latest"
+          IMAGE_LIST="docker.io/llaoj/gcopy:$VERSION docker.io/llaoj/gcopy:latest"
 
           echo "$IMAGE_LIST" | tr ' ' '\n' | awk '{
             dst = $1;

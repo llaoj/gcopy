@@ -14,11 +14,12 @@ No SMTP required, simpler setup for trusted environments.
 See [TOKEN_AUTH.md](TOKEN_AUTH.md) for detailed configuration and security considerations.
 
 ## Standalone
-By leveraging the container orchestration capabilities of Docker Compose, we can deploy the frontend and backend services of gcopy.
+
+GCopy provides a single Docker image that contains both frontend and backend services. The image uses supervisord for process management and exposes only one port (3375).
 
 ### Create `docker-compose.yml`
 
-Create directory and download `deploy/docker-compose.yml` to the directory, then modify the parameter `<var-name>` of `docker-compose.yml`.
+Create directory and download `deploy/docker-compose.yml` to the directory:
 
 ```bash
 # The directory location can be customized.
@@ -26,9 +27,9 @@ mkdir -p /opt/gcopy
 wget -O /opt/gcopy/docker-compose.yml https://raw.githubusercontent.com/llaoj/gcopy/main/deploy/docker-compose.yml
 ```
 
-### Configuration Examples
+### Configuration
 
-**Note:** GCopy uses command-line flags for configuration, not environment variables. Modify the `command` section in `docker-compose.yml`.
+GCopy uses environment variables for configuration. All environment variables use the `GCOPY_` prefix to avoid conflicts with other variables.
 
 #### Email Authentication Mode (Default)
 
@@ -37,15 +38,15 @@ Edit `docker-compose.yml`:
 ```yaml
 services:
   gcopy:
-    command:
-      - --app-key=your-secret-key-min-8-chars
-      - --auth-mode=email
-      - --max-content-length=10
-      - --smtp-host=smtp.example.com
-      - --smtp-port=587
-      - --smtp-username=your-email@example.com
-      - --smtp-password=your-smtp-password
-      - --smtp-ssl
+    environment:
+      - GCOPY_APP_KEY=your-secret-key-min-8-chars
+      - GCOPY_AUTH_MODE=email
+      - GCOPY_MAX_CONTENT_LENGTH=10
+      - GCOPY_SMTP_HOST=smtp.example.com
+      - GCOPY_SMTP_PORT=587
+      - GCOPY_SMTP_USERNAME=your-email@example.com
+      - GCOPY_SMTP_PASSWORD=your-smtp-password
+      - GCOPY_SMTP_SSL=false
 ```
 
 #### Token Authentication Mode
@@ -55,10 +56,10 @@ Edit `docker-compose.yml`:
 ```yaml
 services:
   gcopy:
-    command:
-      - --app-key=your-secret-key-min-8-chars
-      - --auth-mode=token
-      - --max-content-length=10
+    environment:
+      - GCOPY_APP_KEY=your-secret-key-min-8-chars
+      - GCOPY_AUTH_MODE=token
+      - GCOPY_MAX_CONTENT_LENGTH=10
 ```
 
 **Note:** Token mode does not require SMTP configuration, making it ideal for:
@@ -66,58 +67,56 @@ services:
 - Personal use
 - Trusted team environments
 
-Refer the usage of the gcopy:
+### Environment Variables Reference
 
-```bash
-$ gcopy --help
-Usage of gcopy:
-    -app-key string
-        Secret used to encrypt and decrypt data, recommend using random strings over 8 characters.
-    -auth-mode string
-        Authentication mode: email or token (default "email")
-    -debug
-        Enable debug mode
-    -listen string
-        The server will listen this ip and port, format: [ip]:port (default ":3376")
-    -max-content-length int
-        The max synchronized content length, unit: MiB. (default 10)
-    -smtp-host string
-        Represents the host of the SMTP server.
-    -smtp-password string
-        The password to use to authenticate to the SMTP server.
-    -smtp-port int
-        Represents the port of the SMTP server. (default 587)
-    -smtp-sender string
-        The Sender of the email, if the field is not given, the username will be used.
-    -smtp-ssl bool
-        Whether an SSL connection is used. It should be false in most cases since the authentication mechanism should use the STARTTLS extension instead.
-    -smtp-username string
-        The username to use to authenticate to the SMTP server.
-    -tls
-        Enable TLS
-    -tls-cert-file string
-        The certificate for the server, required if tls enable.
-    -tls-key-file string
-        The private key for the server, required if tls enable.
-    -version
-        Print version
-```
-
-### Create frontend configuration file
-Download frontend configuration file to the frontend directory without any modifications needed.
-
-```bash
-mkdir -p /opt/gcopy/frontend
-wget -O /opt/gcopy/frontend/.env.production https://raw.githubusercontent.com/llaoj/gcopy/main/frontend/.env.sample
-```
+| Environment Variable | Description | Default | Required |
+|---------------------|-------------|---------|----------|
+| `GCOPY_APP_KEY` | Secret key for encryption (min 8 characters) | - | ✅ Yes |
+| `GCOPY_AUTH_MODE` | Authentication mode: `email` or `token` | `email` | No |
+| `GCOPY_LISTEN` | Backend listen address | `0.0.0.0:3376` | No |
+| `GCOPY_MAX_CONTENT_LENGTH` | Max clipboard size in MiB | `10` | No |
+| `GCOPY_DEBUG` | Enable debug mode: `true` or `false` | `false` | No |
+| `GCOPY_SMTP_HOST` | SMTP server host | - | Yes (email mode) |
+| `GCOPY_SMTP_PORT` | SMTP server port | `587` | No |
+| `GCOPY_SMTP_USERNAME` | SMTP username | - | Yes (email mode) |
+| `GCOPY_SMTP_PASSWORD` | SMTP password | - | Yes (email mode) |
+| `GCOPY_SMTP_SENDER` | Email sender address | (username) | No |
+| `GCOPY_SMTP_SSL` | Use SSL connection | `false` | No |
 
 ### Start the containers
 
 ```sh
+cd /opt/gcopy
 docker-compose up -d
 ```
 
-## Behind a proxy
+### View Logs
 
-HTTPS is required. I recommend deploying it behind a proxy, eg. Nginx, Kong.
-You can refer to the Nginx configuration file: `deploy/nginx-example.conf`.
+The container outputs both frontend and backend logs to stdout/stderr with prefixes:
+
+```sh
+# View all logs
+docker logs gcopy
+
+# Follow logs in real-time
+docker logs -f gcopy
+```
+
+Example output:
+```
+[backend] The server has started!
+[frontend] ▲ Next.js 15.1.6
+[frontend]   - Local:        http://localhost:3375
+```
+
+## Behind a Proxy
+
+HTTPS is required. We recommend deploying it behind a reverse proxy such as Nginx, Kong, or Apisix.
+
+You can refer to the Nginx configuration file: `deploy/nginx-example.conf`. The configuration only needs to proxy to port 3375 (frontend port), as the frontend handles API routing internally.
+
+### Important Notes
+
+1. **Single Port**: The container only exposes port 3375. Frontend and backend communicate internally.
+2. **No TLS Configuration**: TLS is handled by the reverse proxy, not by GCopy backend.
+3. **No Frontend Config File**: The frontend configuration is built into the image, no separate `.env.production` file needed.

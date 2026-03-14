@@ -118,4 +118,3 @@ Safari on iOS
 
 - [Deploy by Docker](/docs/deploy-by-docker.md)
 - [Deploy from source code](/docs/deploy-from-source.md)
-- [Install from AUR on Arch Linux](/docs/deploy-from-aur.md)

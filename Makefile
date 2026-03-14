@@ -19,8 +19,6 @@ PKG:=github.com/llaoj/gcopy
 
 # The image repo of the gcopy container image.
 GCOPY_IMAGE_REPO:=$(REGISTRY)/gcopy
-# The image repo of the gcopy web client container image.
-GCOPY_FRONTEND_IMAGE_REPO:=$(REGISTRY)/gcopy-frontend
 
 # Disable cgo by default to make the binary statically linked.
 CGO_ENABLED:=0
@@ -50,8 +48,7 @@ test: vet fmt
 
 push-container: clean
 	docker buildx create --platform $(DOCKER_PLATFORMS) --use
-	docker buildx build --push --platform $(DOCKER_PLATFORMS) -t $(GCOPY_IMAGE_REPO):$(TAG) -t $(GCOPY_IMAGE_REPO):latest -f build/gcopy/Dockerfile .
-	docker buildx build --push --platform $(DOCKER_PLATFORMS) -t $(GCOPY_FRONTEND_IMAGE_REPO):$(TAG) -t $(GCOPY_FRONTEND_IMAGE_REPO):latest -f build/frontend/Dockerfile .
+	docker buildx build --push --platform $(DOCKER_PLATFORMS) -t $(GCOPY_IMAGE_REPO):$(TAG) -t $(GCOPY_IMAGE_REPO):latest -f build/Dockerfile .
 
 clean:
 	rm -rf bin/
