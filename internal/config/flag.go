@@ -17,9 +17,6 @@ func Get() *Config {
 	appKey := flag.String("app-key", "", "Encryption Key")
 
 	listen := flag.String("listen", ":3376", "The server will listen this ip and port, format: [ip]:port")
-	tls := flag.Bool("tls", false, "Enable TLS")
-	tlsCertFile := flag.String("tls-cert-file", "", "The certificate for the server, required if tls enable.")
-	tlsKeyFile := flag.String("tls-key-file", "", "The private key for the server, required if tls enable.")
 
 	smtpHost := flag.String("smtp-host", "", "Represents the host of the SMTP server.")
 	smtpPort := flag.Int("smtp-port", 587, "Represents the port of the SMTP server.")
@@ -39,9 +36,6 @@ func Get() *Config {
 	}
 	if *appKey == "" {
 		log.Fatal("app-key cannot be empty")
-	}
-	if *tls && (*tlsCertFile == "" || *tlsKeyFile == "") {
-		log.Fatal("tls-cert-file & tls-key-file cannot be empty")
 	}
 
 	// Validate auth-mode
@@ -63,9 +57,6 @@ func Get() *Config {
 		Debug:            *debug,
 		AppKey:           *appKey,
 		Listen:           *listen,
-		TLS:              *tls,
-		TLSCertFile:      *tlsCertFile,
-		TLSKeyFile:       *tlsKeyFile,
 		SMTPHost:         *smtpHost,
 		SMTPPort:         *smtpPort,
 		SMTPSSL:          *smtpSSL,

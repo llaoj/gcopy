@@ -59,10 +59,7 @@ export default function Navbar() {
               </Link>
             </li>
             <li>
-              <Link
-                href="https://github.com/llaoj/gcopy"
-                target="_blank"
-              >
+              <Link href="https://github.com/llaoj/gcopy" target="_blank">
                 {t("star")} ⭐
               </Link>
             </li>

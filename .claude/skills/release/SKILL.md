@@ -98,30 +98,16 @@ Thanks to all contributors who made this release possible:
 
 ### Docker Hub
 
-**GCopy Backend:**
 ```bash
 docker pull llaoj/gcopy:<version>
 docker pull llaoj/gcopy:latest
 ```
 
-**GCopy Frontend:**
-```bash
-docker pull llaoj/gcopy-frontend:<version>
-docker pull llaoj/gcopy-frontend:latest
-```
-
 ### Aliyun ACR (China)
 
-**GCopy Backend:**
 ```bash
 docker pull registry.cn-beijing.aliyuncs.com/llaoj/gcopy:<version>
 docker pull registry.cn-beijing.aliyuncs.com/llaoj/gcopy:latest
-```
-
-**GCopy Frontend:**
-```bash
-docker pull registry.cn-beijing.aliyuncs.com/llaoj/gcopy-frontend:<version>
-docker pull registry.cn-beijing.aliyuncs.com/llaoj/gcopy-frontend:latest
 ```
 ```
 

@@ -110,6 +110,8 @@ For email mode, additional flags are required:
 - `-smtp-ssl`: Use SSL (default: false, uses STARTTLS)
 - `-smtp-sender`: Email sender address (optional, defaults to username)
 
+**Note:** TLS is handled by reverse proxy (e.g., Nginx), not by GCopy backend. Do not use `-tls`, `-tls-cert-file`, or `-tls-key-file` flags.
+
 ## Migration
 
 ### From Email to Token Mode

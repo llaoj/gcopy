@@ -1,20 +1,30 @@
 version: '3.8'
+
 services:
   gcopy:
+    image: gcopy:latest
     container_name: gcopy
-    image: llaoj/gcopy
-    restart: always
+    restart: unless-stopped
     ports:
-    - "3376:3376"
-    command: ["--app-key=<app-key>", "--max-content-length=10", "--smtp-host=<smtp-host>", "--smtp-port=<smtp-port>", "--smtp-username=<smtp-username>", "--smtp-password=<smtp-password>", "--smtp-ssl"]
+      - "3375:3375"
+    environment:
+      # Required: App key for encryption (minimum 8 characters)
+      - GCOPY_APP_KEY=your-secret-key-min-8-chars
 
-  gcopy-frontend:
-    container_name: gcopy-frontend
-    image: llaoj/gcopy-frontend
-    restart: always
-    ports:
-    - "3375:3375"
-    volumes:
-    - ./frontend/.env.production:/app/.env.production
-    depends_on:
-    - gcopy
+      # Authentication mode: email (default) or token
+      - GCOPY_AUTH_MODE=email
+
+      # Server configuration
+      - GCOPY_LISTEN=0.0.0.0:3376
+      - GCOPY_MAX_CONTENT_LENGTH=10
+
+      # SMTP configuration (required for email auth mode)
+      - GCOPY_SMTP_HOST=smtp.example.com
+      - GCOPY_SMTP_PORT=587
+      - GCOPY_SMTP_USERNAME=your-email@example.com
+      - GCOPY_SMTP_PASSWORD=your-smtp-password
+      - GCOPY_SMTP_SENDER=your-email@example.com
+      - GCOPY_SMTP_SSL=false
+
+      # Debug mode (optional)
+      # - GCOPY_DEBUG=true

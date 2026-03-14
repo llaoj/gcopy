@@ -115,11 +115,34 @@ make version
 
 ### Backend Flags
 - `-app-key`: Encryption key for sessions (required, min 8 chars)
-- `-smtp-*`: Email service configuration (host, port, username, password, ssl, sender)
+- `-auth-mode`: Authentication mode: `email` or `token` (default `email`)
+- `-smtp-*`: Email service configuration (host, port, username, password, ssl, sender) - required for email mode only
 - `-listen`: Server address (default `:3376`)
-- `-tls`: Enable TLS with cert/key files
 - `-max-content-length`: Max clipboard size in MiB (default 10)
 - `-debug`: Enable debug logging
+
+**Note**: TLS is handled by reverse proxy (e.g., Nginx), not by GCopy backend. Do not use `-tls`, `-tls-cert-file`, or `-tls-key-file` flags.
+
+### Docker Deployment
+GCopy uses a **single Docker image** that contains both frontend and backend:
+- Built from `build/Dockerfile` using multi-stage build
+- Frontend built with Next.js standalone mode
+- Backend compiled as Go binary
+- Uses supervisord for process management
+- Only exposes port 3375 (frontend port)
+- Frontend proxies API requests to backend internally on port 3376
+
+**Environment Variables** (use `GCOPY_` prefix to avoid conflicts):
+- `GCOPY_APP_KEY`: Encryption key (required)
+- `GCOPY_AUTH_MODE`: Authentication mode
+- `GCOPY_SMTP_*`: SMTP configuration
+- `GCOPY_LISTEN`: Backend listen address
+- `GCOPY_MAX_CONTENT_LENGTH`: Max clipboard size
+- `GCOPY_DEBUG`: Enable debug mode
+
+**Log Differentiation**:
+- Frontend logs prefixed with `[frontend]`
+- Backend logs prefixed with `[backend]`
 
 ### Frontend Environment
 - `SERVER_URL`: Backend API URL (default in `.env.sample`: `http://gcopy:3376`)

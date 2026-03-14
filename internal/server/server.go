@@ -73,14 +73,8 @@ func (s *Server) Run() {
 	v1.GET("/clipboard", s.getClipboardHandler)
 	v1.POST("/clipboard", s.updateClipboardHandler)
 	s.log.Info("The server has started!")
-	if s.config.TLS {
-		if err := r.RunTLS(s.config.Listen, s.config.TLSCertFile, s.config.TLSKeyFile); err != nil {
-			s.log.Fatal(err)
-		}
-	} else {
-		if err := r.Run(s.config.Listen); err != nil {
-			s.log.Fatal(err)
-		}
+	if err := r.Run(s.config.Listen); err != nil {
+		s.log.Fatal(err)
 	}
 }
 
