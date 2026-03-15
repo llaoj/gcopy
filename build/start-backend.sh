@@ -57,5 +57,5 @@ if [ "$GCOPY_DEBUG" = "true" ]; then
 fi
 
 # Start backend with converted arguments
-# Add prefix to all log output for easy identification
-exec /app/bin/gcopy $ARGS 2>&1 | sed 's/^/[backend] /'
+# Supervisor will automatically add process name prefix to logs
+exec /app/bin/gcopy $ARGS
