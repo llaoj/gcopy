@@ -50,8 +50,6 @@ COPY --from=backend-builder /app/bin/gcopy /app/bin/gcopy
 # Copy startup script and supervisord configuration
 COPY build/start-backend.sh /app/backend/start.sh
 RUN chmod +x /app/backend/start.sh
-COPY build/start-frontend.sh /app/frontend/start.sh
-RUN chmod +x /app/frontend/start.sh
 COPY build/supervisord.conf /etc/supervisord.conf
 
 # Expose ports (frontend: 3375)
