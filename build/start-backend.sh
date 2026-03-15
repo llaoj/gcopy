@@ -58,4 +58,4 @@ fi
 
 # Start backend with converted arguments
 # Add prefix to all log output for easy identification
-exec /app/bin/gcopy $ARGS 2>&1 | sed -u 's/^/[backend] /'
+exec /app/bin/gcopy $ARGS 2>&1 | sed 's/^/[backend] /'
