@@ -33,7 +33,7 @@ WORKDIR /app
 
 # Install node and supervisor for process management
 # Clean up APK metadata to reduce image size
-RUN apk add --no-cache nodejs supervisor && \
+RUN apk add --no-cache nodejs supervisor curl && \
     rm -rf /var/lib/apk/* /var/cache/apk/*
 
 # Create directories
