@@ -32,6 +32,29 @@ GCopy 支持两种认证模式：
 
 详细配置和安全说明请参考 [TOKEN_AUTH.md](../TOKEN_AUTH.md)。
 
+## 快速开始
+
+**立即体验：** 访问 [https://gcopy.llaoj.cn](https://gcopy.llaoj.cn) 直接使用 GCopy。
+
+**自建部署：** 使用 Docker 一分钟内部署你自己的实例：
+
+```bash
+docker run -d \
+  --name gcopy \
+  --restart unless-stopped \
+  -p 3375:3375 \
+  -e GCOPY_APP_KEY=your-secret-key-min-8-chars \
+  -e GCOPY_AUTH_MODE=token \
+  llaoj/gcopy:latest
+```
+
+**部署要求：**
+- 需要配置 TLS 反向代理（Nginx、Caddy 等）将请求转发到 3375 端口
+- 必须使用 HTTPS 才能访问剪贴板 API
+- 推荐使用令牌模式用于个人/团队使用（详见 [TOKEN_AUTH.md](../TOKEN_AUTH.md)）
+
+如需邮箱认证等详细部署选项，请参考 [使用 Docker 部署](deploy-by-docker.md)。
+
 ## 使用方法
 
 ![页面截图](../screenshot-chrome.png)

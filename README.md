@@ -32,6 +32,29 @@ GCopy supports two authentication modes:
 
 See [TOKEN_AUTH.md](docs/TOKEN_AUTH.md) for detailed configuration and security considerations.
 
+## Quick Start
+
+**Try it now:** Visit [https://gcopy.llaoj.cn](https://gcopy.llaoj.cn) to experience GCopy directly.
+
+**Self-host deployment:** Deploy your own instance in under a minute with Docker:
+
+```bash
+docker run -d \
+  --name gcopy \
+  --restart unless-stopped \
+  -p 3375:3375 \
+  -e GCOPY_APP_KEY=your-secret-key-min-8-chars \
+  -e GCOPY_AUTH_MODE=token \
+  llaoj/gcopy:latest
+```
+
+**Requirements:**
+- Configure a TLS reverse proxy (Nginx, Caddy, etc.) to forward requests to port 3375
+- HTTPS is required for clipboard API access
+- Token mode is recommended for personal/team use (see [TOKEN_AUTH.md](docs/TOKEN_AUTH.md))
+
+For detailed deployment options including email authentication, see [Deploy by Docker](docs/deploy-by-docker.md).
+
 ## Usage
 
 ![screanshot on chrome](docs/screenshot-chrome.png)
