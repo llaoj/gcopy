@@ -221,26 +221,26 @@ func (s *Server) cacheMiddleware() gin.HandlerFunc {
 	}
 }
 
-	func (s *Server) frontendHandler(assetFS fs.FS) gin.HandlerFunc {
-		staticServer := http.FileServer(http.FS(assetFS))
-		return func(c *gin.Context) {
-			path := c.Request.URL.Path
-			if path == "/" {
-				data, err := fs.ReadFile(assetFS, "index.html")
-				if err != nil {
-					s.log.Errorf("Failed to read index.html: %v", err)
-					c.Status(http.StatusNotFound)
-					return
-				}
-				c.Data(http.StatusOK, "text/html; charset=utf-8", data)
-				return
-			}
-			f, err := assetFS.Open(strings.TrimPrefix(path, "/"))
+func (s *Server) frontendHandler(assetFS fs.FS) gin.HandlerFunc {
+	staticServer := http.FileServer(http.FS(assetFS))
+	return func(c *gin.Context) {
+		path := c.Request.URL.Path
+		if path == "/" {
+			data, err := fs.ReadFile(assetFS, "index.html")
 			if err != nil {
+				s.log.Errorf("Failed to read index.html: %v", err)
 				c.Status(http.StatusNotFound)
 				return
 			}
-			f.Close()
-			staticServer.ServeHTTP(c.Writer, c.Request)
+			c.Data(http.StatusOK, "text/html; charset=utf-8", data)
+			return
+		}
+		f, err := assetFS.Open(strings.TrimPrefix(path, "/"))
+		if err != nil {
+			c.Status(http.StatusNotFound)
+			return
+		}
+		f.Close()
+		staticServer.ServeHTTP(c.Writer, c.Request)
 	}
 }
