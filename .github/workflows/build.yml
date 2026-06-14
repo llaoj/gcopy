@@ -44,6 +44,7 @@ jobs:
           platforms: ${{ matrix.platform }}
           build-args: VERSION=${{ steps.version.outputs.version }}
           outputs: type=image,name=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }},push-by-digest=true,name-canonical=true,push=true
+          provenance: false
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
