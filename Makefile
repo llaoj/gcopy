@@ -1,6 +1,6 @@
 .PHONY: all \
-        vet fmt version test \
-        push-container release clean gomod \
+        vet fmt version release test \
+        push-container clean gomod \
         frontend-build
 
 DOCKER_PLATFORMS=linux/amd64,linux/arm64
@@ -59,3 +59,12 @@ gomod:
 	go mod tidy
 	go mod vendor
 	go mod verify
+
+release:
+	@if [ -z "$(NEW_VERSION)" ]; then echo "Usage: make release NEW_VERSION=vX.Y.Z"; exit 1; fi
+	@echo $(NEW_VERSION) > version.txt
+	$(MAKE) version
+	git add version.txt frontend/package.json frontend/package-lock.json
+	git commit -m "release $(NEW_VERSION)"
+	git tag -a $(NEW_VERSION) -m "$(NEW_VERSION)"
+	@echo "Created tag $(NEW_VERSION). Push with: git push origin main --tags"
