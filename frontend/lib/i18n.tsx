@@ -4,8 +4,8 @@ import { NextIntlClientProvider } from "next-intl";
 import {
   createContext,
   useContext,
-  useState,
   useEffect,
+  useState,
   ReactNode,
 } from "react";
 import en from "@/messages/en.json";
@@ -20,7 +20,7 @@ export function useLocale() {
   return useContext(LocaleContext);
 }
 
-export function detectLocale(): string {
+function detectBrowserLocale(): string {
   if (typeof navigator === "undefined") return "en";
   const lang = navigator.language.toLowerCase();
   if (lang.startsWith("zh")) return "zh-CN";
@@ -28,21 +28,23 @@ export function detectLocale(): string {
 }
 
 export function I18nProvider({ children }: { children: ReactNode }) {
-  const [locale, setLocale] = useState<string>("en");
+  const [locale, setLocale] = useState("en");
 
   useEffect(() => {
-    const detected = detectLocale();
-    setLocale(detected);
-    document.documentElement.lang = detected === "zh-CN" ? "zh-CN" : "en";
-    moment.locale(detected === "zh-CN" ? "zh-cn" : "en");
+    setLocale(detectBrowserLocale());
+  }, []);
 
-    const msgs = messagesMap[detected];
+  useEffect(() => {
+    document.documentElement.lang = locale === "zh-CN" ? "zh-CN" : "en";
+    moment.locale(locale === "zh-CN" ? "zh-cn" : "en");
+
+    const msgs = messagesMap[locale];
     if (msgs?.Metadata) {
       document.title = msgs.Metadata.title;
       const meta = document.querySelector('meta[name="description"]');
       if (meta) meta.setAttribute("content", msgs.Metadata.description);
     }
-  }, []);
+  }, [locale]);
 
   const messages = messagesMap[locale];
 

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { osName, browserName } from "react-device-detect";
 import { useTranslations, useFormatter } from "next-intl";
 
@@ -26,29 +26,30 @@ export function useLog() {
   const t = useTranslations("SyncClipboard");
   const format = useFormatter();
 
-  let initLogs = [
-    {
-      level: LogLevel.Warn,
-      message: t("logs.pressToSync"),
-    },
-  ];
+  const [logs, setLogs] = useState<Log[]>([]);
 
-  recommendedBrowsers.map((item) => {
-    if (osName == item.osName && !item.browsers.includes(browserName)) {
-      initLogs = [
-        {
+  useEffect(() => {
+    const initLogs: Log[] = [
+      {
+        level: LogLevel.Warn,
+        message: t("logs.pressToSync"),
+      },
+    ];
+
+    recommendedBrowsers.forEach((item) => {
+      if (osName == item.osName && !item.browsers.includes(browserName)) {
+        initLogs.unshift({
           level: LogLevel.Info,
           message: t("logs.recommendedBrowsers", {
             os: item.osName,
             browsers: format.list(item.browsers),
           }),
-        },
-        ...initLogs,
-      ];
-    }
-  });
+        });
+      }
+    });
 
-  const [logs, setLogs] = useState<Log[]>(initLogs);
+    setLogs(initLogs);
+  }, [t, format]);
 
   const addLog = (log: Log) => {
     setLogs((current) => [
