@@ -1,36 +1,28 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { useLocale, useTranslations } from "next-intl";
+import { Suspense, FormEvent, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import Logo from "@/components/logo";
 
-export default function TokenLogin({
-  searchParams,
-}: {
-  searchParams: { token?: string };
-}) {
-  const [showVerifyForm, setShowVerifyForm] = useState<boolean>(
-    !!searchParams.token,
-  );
+function TokenLoginForm() {
+  const searchParams = useSearchParams();
+  const tokenParam = searchParams.get("token");
+  const [showVerifyForm, setShowVerifyForm] = useState<boolean>(!!tokenParam);
   const [clicked, setClicked] = useState<boolean>(false);
   const [generatedToken, setGeneratedToken] = useState<string>("");
-  const [inputToken, setInputToken] = useState<string>(
-    searchParams.token || "",
-  );
+  const [inputToken, setInputToken] = useState<string>(tokenParam || "");
   const [copied, setCopied] = useState<boolean>(false);
-  const locale = useLocale();
   const t = useTranslations("TokenLogin");
   const [errorMessage, setErrorMessage] = useState("");
   const router = useRouter();
 
-  // 当有 URL 参数时，自动切换到验证表单
   useEffect(() => {
-    if (searchParams.token) {
+    if (tokenParam) {
       setShowVerifyForm(true);
-      setInputToken(searchParams.token);
+      setInputToken(tokenParam);
     }
-  }, [searchParams.token]);
+  }, [tokenParam]);
 
   const generateToken = async () => {
     setClicked(true);
@@ -85,7 +77,7 @@ export default function TokenLogin({
     });
 
     if (res.status == 200) {
-      router.push(`/${locale}`);
+      router.push(`/`);
       return;
     }
 
@@ -117,7 +109,7 @@ export default function TokenLogin({
                 setCopied(false);
               } else {
                 // 否则返回首页
-                router.push(`/${locale}`);
+                router.push(`/`);
               }
             }}
           >
@@ -293,7 +285,7 @@ export default function TokenLogin({
                 <div className="card-actions justify-end">
                   <button
                     className="btn btn-primary"
-                    onClick={() => router.push(`/${locale}`)}
+                    onClick={() => router.push(`/`)}
                   >
                     {t("startUsing")}
                   </button>
@@ -304,5 +296,13 @@ export default function TokenLogin({
         )}
       </div>
     </div>
+  );
+}
+
+export default function TokenLogin() {
+  return (
+    <Suspense>
+      <TokenLoginForm />
+    </Suspense>
   );
 }

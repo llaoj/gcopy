@@ -1,122 +1,97 @@
 # Deploy by Docker
-We have prepared the container image for you. Deploying directly using Docker is the most convenient option.
 
-## Authentication Modes
+GCopy provides a single container image with frontend embedded in the Go binary. 
 
-GCopy supports two authentication modes:
+## Quick Start
 
-### Email Authentication (Default)
-Requires SMTP configuration for sending verification codes.
-
-### Token Authentication
-No SMTP required, simpler setup for trusted environments.
-
-See [TOKEN_AUTH.md](TOKEN_AUTH.md) for detailed configuration and security considerations.
-
-## Standalone
-
-GCopy provides a single Docker image that contains both frontend and backend services. The image uses supervisord for process management and exposes only one port (3375).
-
-### Create `docker-compose.yml`
-
-Create directory and download `deploy/docker-compose.yml` to the directory:
+The browser Clipboard API requires HTTPS. The following example uses a self-signed certificate:
 
 ```bash
-# The directory location can be customized.
-mkdir -p /opt/gcopy
-wget -O /opt/gcopy/docker-compose.yml https://raw.githubusercontent.com/llaoj/gcopy/main/deploy/docker-compose.yml
+# 1. Generate a self-signed certificate
+curl -sSL https://raw.githubusercontent.com/llaoj/gcopy/main/scripts/gen-cert.sh | bash
+
+# 2. Start the container
+docker run -d \
+  --name gcopy \
+  --restart unless-stopped \
+  -p 3375:3375 \
+  -v $(pwd)/cert.pem:/cert.pem:ro \
+  -v $(pwd)/key.pem:/key.pem:ro \
+  -e GCOPY_APP_KEY=your-secret-key-min-8-chars \
+  -e GCOPY_AUTH_MODE=token \
+  -e GCOPY_TLS_CERT_FILE=/cert.pem \
+  -e GCOPY_TLS_KEY_FILE=/key.pem \
+  llaoj/gcopy:latest
 ```
 
-### Configuration
+Visit `https://<host>:3375`. The browser will warn about the self-signed certificate — proceed to continue.
 
-GCopy uses environment variables for configuration. All environment variables use the `GCOPY_` prefix to avoid conflicts with other variables.
+> You can also use a valid certificate or a reverse proxy for HTTPS. See [TLS Configuration](#tls-built-in-https) below.
 
-#### Email Authentication Mode (Default)
+## Configuration
 
-Edit `docker-compose.yml`:
+All configuration is done via environment variables with the `GCOPY_` prefix.
+
+### Token Authentication (Recommended for personal use)
 
 ```yaml
-services:
-  gcopy:
-    environment:
-      - GCOPY_APP_KEY=your-secret-key-min-8-chars
-      - GCOPY_AUTH_MODE=email
-      - GCOPY_MAX_CONTENT_LENGTH=10
-      - GCOPY_SMTP_HOST=smtp.example.com
-      - GCOPY_SMTP_PORT=587
-      - GCOPY_SMTP_USERNAME=your-email@example.com
-      - GCOPY_SMTP_PASSWORD=your-smtp-password
-      - GCOPY_SMTP_SSL=false
+# docker run equivalent
+-e GCOPY_APP_KEY=your-secret-key-min-8-chars
+-e GCOPY_AUTH_MODE=token
 ```
 
-#### Token Authentication Mode
+No SMTP needed. Users authenticate with a 6-character token.
 
-Edit `docker-compose.yml`:
+### Email Authentication
 
 ```yaml
-services:
-  gcopy:
-    environment:
-      - GCOPY_APP_KEY=your-secret-key-min-8-chars
-      - GCOPY_AUTH_MODE=token
-      - GCOPY_MAX_CONTENT_LENGTH=10
+-e GCOPY_APP_KEY=your-secret-key-min-8-chars
+-e GCOPY_AUTH_MODE=email
+-e GCOPY_SMTP_HOST=smtp.example.com
+-e GCOPY_SMTP_PORT=587
+-e GCOPY_SMTP_USERNAME=your-email@example.com
+-e GCOPY_SMTP_PASSWORD=your-smtp-password
 ```
 
-**Note:** Token mode does not require SMTP configuration, making it ideal for:
-- Intranet/LAN environments
-- Personal use
-- Trusted team environments
+### TLS (Built-in HTTPS)
+
+GCopy can load certificates to serve HTTPS directly, no reverse proxy needed:
+
+```yaml
+-e GCOPY_TLS_CERT_FILE=/path/to/cert.pem
+-e GCOPY_TLS_KEY_FILE=/path/to/key.pem
+# Mount the certificate files into the container
+-v /path/to/cert.pem:/path/to/cert.pem:ro
+-v /path/to/key.pem:/path/to/key.pem:ro
+```
+
+Both `GCOPY_TLS_CERT_FILE` and `GCOPY_TLS_KEY_FILE` must be set to enable TLS.
+
+### Reverse Proxy
+
+Run GCopy with HTTP and let a reverse proxy (Nginx, Caddy, etc.) handle TLS:
+
+```yaml
+-e GCOPY_LISTEN=127.0.0.1:3375
+# No TLS environment variables needed
+```
+
+Configure the reverse proxy to forward HTTPS traffic to port 3375.
 
 ### Environment Variables Reference
 
-| Environment Variable | Description | Default | Required |
-|---------------------|-------------|---------|----------|
-| `GCOPY_APP_KEY` | Secret key for encryption (min 8 characters) | - | ✅ Yes |
-| `GCOPY_AUTH_MODE` | Authentication mode: `email` or `token` | `email` | No |
-| `GCOPY_LISTEN` | Backend listen address | `0.0.0.0:3376` | No |
-| `GCOPY_MAX_CONTENT_LENGTH` | Max clipboard size in MiB | `10` | No |
-| `GCOPY_DEBUG` | Enable debug mode: `true` or `false` | `false` | No |
-| `GCOPY_SMTP_HOST` | SMTP server host | - | Yes (email mode) |
+| Variable | Description | Default | Required |
+|----------|-------------|---------|----------|
+| `GCOPY_APP_KEY` | Encryption key (min 8 characters) | - | Yes |
+| `GCOPY_AUTH_MODE` | `email` or `token` | `email` | No |
+| `GCOPY_LISTEN` | Listen address | `:3375` | No |
+| `GCOPY_TLS_CERT_FILE` | TLS certificate file path | - | No |
+| `GCOPY_TLS_KEY_FILE` | TLS key file path | - | No |
+| `GCOPY_MAX_CONTENT_LENGTH` | Max clipboard size (MiB) | `10` | No |
+| `GCOPY_DEBUG` | Debug mode | `false` | No |
+| `GCOPY_SMTP_HOST` | SMTP server host | - | Email mode |
 | `GCOPY_SMTP_PORT` | SMTP server port | `587` | No |
-| `GCOPY_SMTP_USERNAME` | SMTP username | - | Yes (email mode) |
-| `GCOPY_SMTP_PASSWORD` | SMTP password | - | Yes (email mode) |
-| `GCOPY_SMTP_SENDER` | Email sender address | (username) | No |
-| `GCOPY_SMTP_SSL` | Use SSL connection | `false` | No |
-
-### Start the containers
-
-```sh
-cd /opt/gcopy
-docker-compose up -d
-```
-
-### View Logs
-
-The container outputs both frontend and backend logs to stdout/stderr with prefixes:
-
-```sh
-# View all logs
-docker logs gcopy
-
-# Follow logs in real-time
-docker logs -f gcopy
-```
-
-Example output:
-```
-[backend] The server has started!
-[frontend] ▲ Next.js 15.1.6
-[frontend]   - Local:        http://localhost:3375
-```
-
-## Behind a Proxy
-
-HTTPS is required. We recommend deploying it behind a reverse proxy such as Nginx, Kong, or Apisix.
-
-You can refer to the Nginx configuration file: `deploy/nginx-example.conf`. The configuration only needs to proxy to port 3375 (frontend port), as the frontend handles API routing internally.
-
-### Important Notes
-
-1. **Single Port**: The container only exposes port 3375. Frontend and backend communicate internally.
-2. **No TLS Configuration**: TLS is handled by the reverse proxy, not by GCopy backend.
-3. **No Frontend Config File**: The frontend configuration is built into the image, no separate `.env.production` file needed.
+| `GCOPY_SMTP_USERNAME` | SMTP username | - | Email mode |
+| `GCOPY_SMTP_PASSWORD` | SMTP password | - | Email mode |
+| `GCOPY_SMTP_SENDER` | Email sender (defaults to username) | - | No |
+| `GCOPY_SMTP_SSL` | Use SSL for SMTP | `false` | No |

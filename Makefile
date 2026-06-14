@@ -1,50 +1,50 @@
 .PHONY: all \
         vet fmt version test \
-        push-container release clean gomod
+        push-container release clean gomod \
+        frontend-build
 
-# The set of OS_ARCH that GCopy can build against.
 DOCKER_PLATFORMS=linux/amd64,linux/arm64
-
-# VERSION is the version of the binary.
 VERSION=$(shell cat version.txt)
-
-# TAG is the tag of the container image, default to binary version.
 TAG?=$(VERSION)
-
-# REGISTRY is the container registry to push into.
 REGISTRY?=docker.io/llaoj
-
-# PKG is the package name of gcopy repo.
 PKG:=github.com/llaoj/gcopy
-
-# The image repo of the gcopy container image.
 GCOPY_IMAGE_REPO:=$(REGISTRY)/gcopy
-
-# Disable cgo by default to make the binary statically linked.
 CGO_ENABLED:=0
+OS_ARCHS ?= linux/amd64 linux/arm64 darwin/amd64 darwin/arm64
+STATIC_DIR=internal/static/dist
 
-# Set default Go architecture to AMD64.
-GOARCH ?= amd64
+# Frontend build output directory for Go embed
+STATIC_DIR=internal/static/dist
 
 version:
 	@echo $(VERSION)
 	cd frontend && npm version $(VERSION) --allow-same-version && npm run prettier && cd ..
 
+frontend-build:
+	rm -rf $(STATIC_DIR)
+	cd frontend && npm ci && npm run build
+	cp -r frontend/out $(STATIC_DIR)
+
 vet:
-	go list -tags "" ./... | grep -v "./vendor/*" | xargs go vet -tags ""
+	go vet ./...
 
 fmt:
-	find . -type f -name "*.go" | grep -v "./vendor/*" | xargs gofmt -s -w -l
+	gofmt -s -w -l $(shell find . -type f -name '*.go' -not -path './vendor/*')
 	cd frontend && npm run prettier && cd ..
 
 test: vet fmt
 	go test -timeout=1m -v -race -short ./...
 
-./bin/gcopy:
-	CGO_ENABLED=$(CGO_ENABLED) GOOS=linux GOARCH=$(GOARCH) go build \
-		-o bin/gcopy \
-		-ldflags '-X $(PKG)/pkg/version.version=$(VERSION)' \
-		./cmd
+bin/gcopy: frontend-build
+	@for os_arch in $(OS_ARCHS); do \
+		os=$${os_arch%%/*}; \
+		arch=$${os_arch##*/}; \
+		echo "Building bin/gcopy-$(VERSION)-$$os-$$arch ..."; \
+		CGO_ENABLED=$(CGO_ENABLED) GOOS=$$os GOARCH=$$arch go build \
+			-o bin/gcopy-$(VERSION)-$$os-$$arch \
+			-ldflags '-X $(PKG)/pkg/version.version=$(VERSION)' \
+			./cmd; \
+	done
 
 push-container: clean
 	docker buildx create --platform $(DOCKER_PLATFORMS) --use
@@ -52,6 +52,7 @@ push-container: clean
 
 clean:
 	rm -rf bin/
+	rm -rf $(STATIC_DIR)
 	rm -f coverage.out
 
 gomod:

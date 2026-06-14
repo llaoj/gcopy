@@ -15,30 +15,54 @@ GCopy values your data privacy, it does not persistently store your data; it is 
 
 ## Authentication Modes
 
-GCopy supports two authentication modes:
-
 ### Email Authentication (Default)
-- Higher security with email verification
 - 6-digit verification code sent to email
-- Session valid for 5 minutes
+- Requires SMTP configuration
 - Best for public internet usage
 
 ### Token Authentication
-- Simpler setup without SMTP configuration
 - 6-character token for quick access
-- Session valid for 7 days (sliding expiration)
-- Best for intranet/LAN environments
-- Multiple devices can share the same token
+- No SMTP required
+- Best for intranet/LAN or personal use
 
-See [TOKEN_AUTH.md](docs/TOKEN_AUTH.md) for detailed configuration and security considerations.
+## Quick Start
+
+**Try it now:** Visit [https://gcopy.llaoj.cn](https://gcopy.llaoj.cn) to experience GCopy directly.
+
+**Self-host:** See deployment guides below:
+- [Deploy by Docker](docs/deploy-by-docker.md) — using the official container image
+- [Deploy from Source](docs/deploy-from-source.md) — build and run from source, or download the release binary
+
+## Quick Start
+
+**Try it now:** Visit [https://gcopy.llaoj.cn](https://gcopy.llaoj.cn) to experience GCopy directly.
+
+**Self-host deployment:** Deploy your own instance in under a minute with Docker:
+
+```bash
+docker run -d \
+  --name gcopy \
+  --restart unless-stopped \
+  -p 3375:3375 \
+  -e GCOPY_APP_KEY=your-secret-key-min-8-chars \
+  -e GCOPY_AUTH_MODE=token \
+  llaoj/gcopy:latest
+```
+
+**Requirements:**
+- Configure a TLS reverse proxy (Nginx, Caddy, etc.) to forward requests to port 3375
+- HTTPS is required for clipboard API access
+- Token mode is recommended for personal/team use (see [TOKEN_AUTH.md](docs/TOKEN_AUTH.md))
+
+For detailed deployment options including email authentication, see [Deploy by Docker](docs/deploy-by-docker.md).
 
 ## Usage
 
-![screanshot on chrome](docs/screenshot-chrome.png)
+![screenshot on chrome](docs/screenshot-chrome.png)
 
 Steps:
 
-1. Open the website [https://gcopy.llaoj.cn](https://gcopy.llaoj.cn) on two devices, A and B, using a browser and log in with the same email (or use the same token).
+1. Open the website on two devices, A and B, using a browser and log in with the same email (or use the same token).
 2. On device A, copy (e.g., `Ctrl+C`) and then press the button on the right side of the page.
 3. Switch to device B, press the button again, and the data will be synchronized. Now, go ahead and paste (`Ctrl+V`)!
 
@@ -64,22 +88,23 @@ The tested browsers and its versions are listed below:
 
 |Browser|Version||
 |-|-|-|
-|Chrome for Windows|Version 123.0.6312.86 (Official Build) (x86_64)|✅ Tested|
-|Edge for Windows 10|Version 124.0.2478.80 (Official build) (64-bit)|✅ Tested|
-|Opera for Windows 10|Opera One(version: 109.0.5097.68)|✅ Tested|
+|Chrome for Android|107.0.5304.105|✅ Tested|
 |Chrome for macOS|Version 121.0.6167.85 (Official Build) (x86_64)|✅ Tested|
+|Chrome for Windows|Version 123.0.6312.86 (Official Build) (x86_64)|✅ Tested|
+|Edge for Android|Edge 108.0.1462.48|✅ Tested|
+|Edge for HarmonyOS 3.0/4.0|Edge 122.0.2365.99|✅ Tested|
+|Edge for Linux|Edge 130.0.2849.52|✅ Tested|
+|Edge for Windows 10|Version 124.0.2478.80 (Official build) (64-bit)|✅ Tested|
 |Opera for macOS|Opera One(version: 109.0.5097.68) (x86_64)|✅ Tested|
+|Opera for Windows 10|Opera One(version: 109.0.5097.68)|✅ Tested|
 |Safari|Version 15.6.1 (17613.3.9.1.16)|✅ Tested|
 |Safari for iOS|Version 16.1|✅ Tested|
-|Edge for HarmonyOS 3.0/4.0|Edge 122.0.2365.99|✅ Tested|
-|Chrome for Android|107.0.5304.105|✅ Tested|
-|Edge for Android|Edge 108.0.1462.48|✅ Tested|
 
 ## Limitations
 
 - Due to browser limitations, reading and setting files directly in the clipboard are not supported. Therefore, file synchronization is achieved through uploading and downloading, ensuring a smooth user experience.
 - At any given time, only one file can be synchronized.
-- Due to limited server memory, the size of the files you synchronize must not exceed `--max-content-length` MB.
+- Due to limited server memory, the size of the files you synchronize must not exceed `-max-content-length` MB.
 
 ## Sponsor
 

@@ -1,154 +1,125 @@
-# Deploy from source code
-If you want to start from the source code, deploy a development environment, or contribute code to gcopy, this document is suitable for you.
+# Deploy from Source
 
-## Prerequisites
-The following software needs to be installed on the server in advance:
+GCopy is a single Go binary with the frontend embedded — no separate frontend deployment needed.
 
-- git
-- golang 1.20+
-- Node.js 18.17+
+## Get the Binary
 
-## Clone the source code
-We clone the code to `/opt/gcopy/`. This directory location is not mandatory, you can customize it according to your needs.
+### Build from Source
+
+Prerequisites: Go 1.20+, Node.js 18.17+, git
 
 ```bash
-cd /opt
 git clone https://github.com/llaoj/gcopy.git
 cd gcopy
+make bin/gcopy
 ```
 
-## Authentication Modes
+Build process: compile Next.js frontend to static files → embed via `go:embed` → produce `bin/gcopy`
 
-GCopy supports two authentication modes:
+### Download from Release
 
-### Email Authentication (Default)
-- Requires SMTP configuration
-- Sends 6-digit verification code to email
-- Session valid for 5 minutes
-- Best for public internet usage
+Download the binary for your platform from [GitHub Releases](https://github.com/llaoj/gcopy/releases).
 
-### Token Authentication
-- No SMTP required
-- 6-character token for quick access
-- Session valid for 7 days (sliding expiration)
-- Best for intranet/LAN environments
+## Quick Start
 
-See [TOKEN_AUTH.md](TOKEN_AUTH.md) for detailed configuration and security considerations.
-
-## Backend
-The backend primarily responsible for temporary storage of clipboard data and authentication. It does not store user data long-term, instead, it temporarily stores the latest clipboard data in memory, which expires after a period of time.
-
-### Direct run
-You can quickly start the local server using the `go run` command. The backend service is configured via command-line arguments. You need to manually replace `<var-name>`. The `-app-key` parameter in the configuration is a custom encryption key used for data encryption, recommended to be at least 8 characters long.
-
-**Note:** TLS configuration is handled by the reverse proxy (e.g., Nginx), not by the GCopy backend. Do not use the `-tls`, `-tls-cert-file`, or `-tls-key-file` flags.
-
-#### Email Authentication Mode
+The browser Clipboard API requires HTTPS. The following example uses a self-signed certificate:
 
 ```bash
-go run cmd/gcopy.go \
+# 1. Generate a self-signed certificate
+curl -sSL https://raw.githubusercontent.com/llaoj/gcopy/main/scripts/gen-cert.sh | bash
+
+# 2. Start
+./gcopy -app-key=<your-key> -auth-mode=token -tls-cert-file=cert.pem -tls-key-file=key.pem
+```
+
+Visit `https://<host>:3375`. The browser will warn about the self-signed certificate — proceed to continue.
+
+> You can also use a valid certificate or a reverse proxy for HTTPS. See [HTTPS Configuration](#https-configuration) below.
+
+## Authentication
+
+All configuration can be done via command-line flags or environment variables (with `GCOPY_` prefix).
+
+### Token Authentication (Recommended for personal use)
+
+```bash
+./gcopy -app-key=<your-key> -auth-mode=token
+```
+
+No SMTP required. Users authenticate with a 6-character token.
+
+### Email Authentication
+
+```bash
+./gcopy \
+    -app-key=<your-key> \
     -auth-mode=email \
-    -app-key=<app-key> \
-    -max-content-length=10 \
     -smtp-host=<smtp-host> \
-    -smtp-port=<smtp-port> \
     -smtp-username=<smtp-username> \
-    -smtp-password=<smtp-password> \
-    -smtp-ssl \
-    -debug
+    -smtp-password=<smtp-password>
 ```
 
-#### Token Authentication Mode
+## HTTPS Configuration
+
+The browser Clipboard API requires HTTPS. You must configure HTTPS for GCopy to work.
+
+### Self-Signed Certificate (Quick Test)
 
 ```bash
-go run cmd/gcopy.go \
-    -auth-mode=token \
-    -app-key=<app-key> \
-    -max-content-length=10 \
-    -debug
+curl -sSL https://raw.githubusercontent.com/llaoj/gcopy/main/scripts/gen-cert.sh | bash
 ```
 
-**Note:** Token mode does not require SMTP configuration, making it ideal for quick deployment in trusted environments.
+Use this script to generate a local self-signed certificate. The browser will warn about the certificate — proceed to continue.
 
-### Build and run
-You can also build before running. This way, you don't need to build before each run.
+Alternatively, for production, it is recommended to obtain a valid certificate for your domain, then:
 
-**Note:** TLS configuration is handled by the reverse proxy (e.g., Nginx), not by the GCopy backend. Do not use the `-tls`, `-tls-cert-file`, or `-tls-key-file` flags.
-
-#### Email Authentication Mode
-
-```shell
-make ./bin/gcopy
-chmod +x ./bin/gcopy
-/opt/gcopy/bin/gcopy \
-    -auth-mode=email \
-    -app-key=<app-key> \
-    -max-content-length=10 \
-    -smtp-host=<smtp-host> \
-    -smtp-port=<smtp-port> \
-    -smtp-username=<smtp-username> \
-    -smtp-password=<smtp-password> \
-    -smtp-ssl
-```
-
-#### Token Authentication Mode
-
-```shell
-make ./bin/gcopy
-chmod +x ./bin/gcopy
-/opt/gcopy/bin/gcopy \
-    -auth-mode=token \
-    -app-key=<app-key> \
-    -max-content-length=10
-```
-
-## Frontend
-The frontend primarily handles user interaction and is implemented based on the browser. It relies on the backend service to temporarily store user clipboard data, thereby achieving the goal of cross-device sharing.
-
-### Configuration file
-The frontend service is configured using a configuration file, mainly declaring information such as the backend service's address. Different environment configurations are stored in files with different `.env` file extensions.
+### Domain Certificate
 
 ```bash
-cd /opt/gcopy/frontend
-# development environment
-cp .env.sample .env.local
-# production environment
-cp .env.sample .env.production
+...
+-tls-cert-file=/path/to/cert.pem \
+-tls-key-file=/path/to/key.pem
 ```
 
-Modify the configuration file to change the backend service's address `SERVER_URL`. Since we are deploying locally, change the host to `localhost`.
+With a certificate configured, GCopy serves HTTPS directly — no reverse proxy needed.
 
-```ini
-- SERVER_URL=http://gcopy:3376
-+ SERVER_URL=http://localhost:3376
-```
+### Reverse Proxy
 
-### Run
-The configuration files for the development environment and the production environment are different, as are the startup commands.
-
-#### Development environment
-Use the following command to start the development mode. It supports hot code reloading, error reporting, etc., and it listens on port 3375 by default.
+Run GCopy with HTTP and let a reverse proxy (Nginx, Caddy, etc.) handle TLS:
 
 ```bash
-cd /opt/gcopy/frontend
-npm ci
-npm run dev
+...
+-listen=127.0.0.1:3375
 ```
 
-Due to browser restrictions on using HTTPS, we'll use `--experimental-https` to enable HTTPS for the web server, using a self-signed certificate.
-Now, you can access gcopy using `https://<hostip-or-localhost>:3375`, and you don't need to add a proxy in front of it.
+Configure the reverse proxy to forward HTTPS traffic to port 3375.
 
-#### Production environment
-Unlike development mode, the production mode is a mini web server that only includes essential files. Before starting it, you need to compile it with `npm run build`.
+## Configuration Reference
+
+| Flag | Environment Variable | Default | Description |
+|------|---------------------|---------|-------------|
+| `-app-key` | `GCOPY_APP_KEY` | - | Encryption key (min 8 characters, required) |
+| `-auth-mode` | `GCOPY_AUTH_MODE` | `email` | `email` or `token` |
+| `-listen` | `GCOPY_LISTEN` | `:3375` | Listen address |
+| `-tls-cert-file` | `GCOPY_TLS_CERT_FILE` | - | TLS certificate file |
+| `-tls-key-file` | `GCOPY_TLS_KEY_FILE` | - | TLS key file |
+| `-max-content-length` | `GCOPY_MAX_CONTENT_LENGTH` | `10` | Max clipboard size (MiB) |
+| `-debug` | `GCOPY_DEBUG` | `false` | Debug mode |
+| `-smtp-host` | `GCOPY_SMTP_HOST` | - | SMTP host (email mode) |
+| `-smtp-port` | `GCOPY_SMTP_PORT` | `587` | SMTP port |
+| `-smtp-username` | `GCOPY_SMTP_USERNAME` | - | SMTP username (email mode) |
+| `-smtp-password` | `GCOPY_SMTP_PASSWORD` | - | SMTP password (email mode) |
+| `-smtp-sender` | `GCOPY_SMTP_SENDER` | - | Email sender (defaults to username) |
+| `-smtp-ssl` | `GCOPY_SMTP_SSL` | `false` | Use SSL for SMTP |
+| `-version` | - | `false` | Print version |
+
+## Development
+
+For development with hot-reload, use `scripts/dev.sh` which starts the frontend and backend as separate processes:
 
 ```bash
-cd /opt/gcopy/frontend
-npm ci
-npm run build
-# Copy the .next/static folders or be handled by a CDN instead
-cp -r .next/static .next/standalone/.next/
-NODE_ENV=production PORT=3375 node .next/standalone/server.js
+./scripts/dev.sh
 ```
 
-In production mode, we recommend deploying behind a reverse proxy such as Nginx or Kong. This way, you can easily manage certificates and configure proxies. You'll need to prepare a domain name and its corresponding certificate for this setup.
-We'll use Nginx as an example, referring to `deploy/nginx-example.conf`.
+- Frontend: `https://localhost:3375` (Next.js dev server with HTTPS)
+- Backend: `https://localhost:3376` (Go server with TLS)

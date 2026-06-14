@@ -3,8 +3,10 @@ package server
 import (
 	"fmt"
 	"io"
+	"io/fs"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -12,6 +14,7 @@ import (
 	"github.com/llaoj/gcopy/internal/config"
 	"github.com/llaoj/gcopy/internal/gcopy"
 	"github.com/llaoj/gcopy/internal/server/auth"
+	"github.com/llaoj/gcopy/internal/static"
 	"github.com/llaoj/gcopy/pkg/utils"
 	"github.com/mileusna/useragent"
 	"github.com/sirupsen/logrus"
@@ -72,8 +75,20 @@ func (s *Server) Run() {
 	v1.Use(s.verifyAuthMiddleware)
 	v1.GET("/clipboard", s.getClipboardHandler)
 	v1.POST("/clipboard", s.updateClipboardHandler)
+
+	// Static files from embedded frontend
+	assetFS := static.AssetFS()
+	r.Use(s.cacheMiddleware())
+	r.NoRoute(s.frontendHandler(assetFS))
+
 	s.log.Info("The server has started!")
-	if err := r.Run(s.config.Listen); err != nil {
+	var err error
+	if s.config.TLSCertFile != "" && s.config.TLSKeyFile != "" {
+		err = r.RunTLS(s.config.Listen, s.config.TLSCertFile, s.config.TLSKeyFile)
+	} else {
+		err = r.Run(s.config.Listen)
+	}
+	if err != nil {
 		s.log.Fatal(err)
 	}
 }
@@ -192,4 +207,40 @@ func (s *Server) updateClipboardHandler(c *gin.Context) {
 
 	c.Header("X-Index", strconv.Itoa(cb.Index))
 	c.JSON(http.StatusOK, gin.H{"message": "Success"})
+}
+
+func (s *Server) cacheMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		path := c.Request.URL.Path
+		if strings.HasPrefix(path, "/_next/static/") {
+			c.Header("Cache-Control", "public, max-age=31536000, immutable")
+		} else {
+			c.Header("Cache-Control", "no-cache")
+		}
+		c.Next()
+	}
+}
+
+	func (s *Server) frontendHandler(assetFS fs.FS) gin.HandlerFunc {
+		staticServer := http.FileServer(http.FS(assetFS))
+		return func(c *gin.Context) {
+			path := c.Request.URL.Path
+			if path == "/" {
+				data, err := fs.ReadFile(assetFS, "index.html")
+				if err != nil {
+					s.log.Errorf("Failed to read index.html: %v", err)
+					c.Status(http.StatusNotFound)
+					return
+				}
+				c.Data(http.StatusOK, "text/html; charset=utf-8", data)
+				return
+			}
+			f, err := assetFS.Open(strings.TrimPrefix(path, "/"))
+			if err != nil {
+				c.Status(http.StatusNotFound)
+				return
+			}
+			f.Close()
+			staticServer.ServeHTTP(c.Writer, c.Request)
+	}
 }

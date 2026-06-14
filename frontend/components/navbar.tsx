@@ -2,7 +2,8 @@
 
 import Avator from "@/components/avator";
 import Link from "next/link";
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
+import { useLocale } from "@/lib/i18n";
 import useAuth from "@/lib/auth";
 import useSystemInfo from "@/hooks/useSystemInfo";
 import pack from "@/package.json";
@@ -45,7 +46,7 @@ export default function Navbar() {
             <li>
               <Link
                 href={
-                  locale == "zh"
+                  locale == "zh-CN"
                     ? "https://github.com/llaoj/gcopy/blob/v" +
                       pack.version +
                       "/docs/zh-CN/README.md"
@@ -103,10 +104,7 @@ export default function Navbar() {
         {loggedIn ? (
           <Avator />
         ) : systemInfo?.authMode ? (
-          <Link
-            className="btn"
-            href={getLoginPath(systemInfo.authMode, locale)}
-          >
+          <Link className="btn" href={getLoginPath(systemInfo.authMode)}>
             {t("signIn")}
           </Link>
         ) : null}

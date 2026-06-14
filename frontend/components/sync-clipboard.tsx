@@ -8,7 +8,7 @@ import { LogLevel, useLog } from "@/lib/log";
 import { DragEvent, useRef, useState, useEffect, useCallback } from "react";
 import clsx from "clsx";
 import { useRouter, usePathname } from "next/navigation";
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import {
   initTmpClipboard,
   clipboardWriteBlob,
@@ -53,7 +53,6 @@ export default function SyncClipboard() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const locale = useLocale();
   const { loggedIn } = useAuth();
   const { systemInfo } = useSystemInfo();
   const router = useRouter();
@@ -105,12 +104,12 @@ export default function SyncClipboard() {
   const ensureLoggedIn = useCallback(async () => {
     if (!loggedIn) {
       if (systemInfo?.authMode) {
-        redirectToLogin(router, systemInfo.authMode, locale);
+        redirectToLogin(router, systemInfo.authMode);
       }
       return false;
     }
     return true;
-  }, [loggedIn, systemInfo?.authMode, locale, router]);
+  }, [loggedIn, systemInfo?.authMode, router]);
 
   const sleep = function (ms: number) {
     return new Promise((resolve) => setTimeout(resolve, ms));
@@ -220,7 +219,7 @@ export default function SyncClipboard() {
 
       if (response.status == 401) {
         if (systemInfo?.authMode) {
-          redirectToLogin(router, systemInfo.authMode, locale);
+          redirectToLogin(router, systemInfo.authMode);
         }
         return false;
       }
@@ -267,7 +266,6 @@ export default function SyncClipboard() {
       addHistoryItem,
       updateProgressLog,
       systemInfo?.authMode,
-      locale,
       router,
     ],
   );
@@ -390,7 +388,6 @@ export default function SyncClipboard() {
     waitingForPaste,
     loggedIn,
     systemInfo?.authMode,
-    locale,
     router,
     addLog,
     handlePastedContent,
@@ -469,7 +466,7 @@ export default function SyncClipboard() {
 
     if (response.status == 401) {
       if (systemInfo?.authMode) {
-        redirectToLogin(router, systemInfo.authMode, locale);
+        redirectToLogin(router, systemInfo.authMode);
       }
       return;
     }
@@ -726,7 +723,7 @@ export default function SyncClipboard() {
 
     if (response.status == 401) {
       if (systemInfo?.authMode) {
-        redirectToLogin(router, systemInfo.authMode, locale);
+        redirectToLogin(router, systemInfo.authMode);
       }
       return;
     }

@@ -66,7 +66,7 @@ func (p *EmailAuthProvider) emailCodeHandler(c *gin.Context) {
 	ua := useragent.Parse(c.Request.Header.Get("User-Agent"))
 	language := c.Request.Header.Get("Accept-Language")
 	var subject, body string
-	if strings.HasPrefix(language, "zh-CN") {
+	if strings.HasPrefix(language, "zh") {
 		subject = fmt.Sprintf("%s是您的验证码", code)
 		body = fmt.Sprintf("请输入您的验证码: %s. 该验证码有效期5分钟. 为保护您的账户, 请不要分享这个验证码.", code)
 		if ua.OS != "" {

@@ -6,6 +6,8 @@ type Config struct {
 	Debug            bool
 	AppKey           string
 	Listen           string
+	TLSCertFile      string
+	TLSKeyFile       string
 	SMTPHost         string
 	SMTPPort         int
 	SMTPSSL          bool

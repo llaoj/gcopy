@@ -8,7 +8,6 @@ import HistoryItemText from "@/components/history-item-text";
 import { useRef, useMemo, useCallback, memo } from "react";
 import { HistoryItemEntity } from "@/models/history";
 import moment from "moment";
-import "moment/locale/zh-cn";
 import { db } from "@/models/db";
 import { Log, LogLevel } from "@/lib/log";
 import {
@@ -17,7 +16,6 @@ import {
   FileInfo,
 } from "@/lib/clipboard";
 import { browserName } from "react-device-detect";
-import { useLocale } from "next-intl";
 
 // 自定义比较函数：只有核心字段变化时才重新渲染
 function arePropsEqual(
@@ -44,9 +42,6 @@ const HistoryItem = memo(function HistoryItem({
   addLog: (log: Log) => void;
   updateFileLink: (fileInfo: FileInfo) => void;
 }) {
-  const locale = useLocale();
-  moment.locale(locale == "zh" ? "zh-cn" : "en");
-
   const t = useTranslations("SyncClipboard");
   const ulRef = useRef<HTMLUListElement>(null);
 
