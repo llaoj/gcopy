@@ -48,7 +48,7 @@ bin/gcopy: frontend-build
 
 push-container: clean
 	docker buildx create --platform $(DOCKER_PLATFORMS) --use
-	docker buildx build --push --platform $(DOCKER_PLATFORMS) -t $(GCOPY_IMAGE_REPO):$(TAG) -t $(GCOPY_IMAGE_REPO):latest -f build/Dockerfile .
+	docker buildx build --push --platform $(DOCKER_PLATFORMS) --build-arg VERSION=$(VERSION) -t $(GCOPY_IMAGE_REPO):$(TAG) -t $(GCOPY_IMAGE_REPO):latest -f build/Dockerfile .
 
 clean:
 	rm -rf bin/

@@ -16,6 +16,7 @@ RUN npm run build
 FROM golang AS backend-builder
 
 ARG TARGETARCH
+ARG VERSION
 
 WORKDIR /app
 COPY . .
@@ -23,8 +24,10 @@ COPY . .
 # Copy frontend build output into the Go embed directory
 COPY --from=frontend-builder /frontend/out internal/static/dist
 
-RUN GOARCH=${TARGETARCH} make bin/gcopy && \
-    mv /app/bin/gcopy-*-linux-${TARGETARCH} /app/bin/gcopy
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH} go build \
+    -o /app/bin/gcopy \
+    -ldflags '-X github.com/llaoj/gcopy/pkg/version.version=${VERSION}' \
+    ./cmd
 
 # Stage 3: Final Image (Go binary only)
 FROM alpine
