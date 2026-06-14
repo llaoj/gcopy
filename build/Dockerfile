@@ -4,16 +4,13 @@ FROM node:18-alpine AS frontend-builder
 WORKDIR /frontend
 
 COPY frontend/package.json frontend/package-lock.json* ./
-COPY frontend/. .
+RUN apk add --no-cache libc6-compat && npm ci
 
-RUN apk add --no-cache libc6-compat
-RUN npm config delete proxy
-RUN npm ci
-RUN npx update-browserslist-db@latest --force
+COPY frontend/. .
 RUN npm run build
 
 # Stage 2: Build Backend (with embedded frontend)
-FROM golang AS backend-builder
+FROM golang:1-alpine AS backend-builder
 
 ARG TARGETARCH
 ARG VERSION

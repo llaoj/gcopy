@@ -55,7 +55,7 @@ const HistoryItem = memo(function HistoryItem({
     // 确保 blob 存在才创建 URL
     if (!blob) return "";
     return (window.URL || window.webkitURL).createObjectURL(blob);
-  }, [item.type, item.data, item.dataArrayBuffer, item.dataType]);
+  }, [item.type, item.data, item.dataArrayBuffer]);
 
   // 使用 useCallback 缓存事件处理函数
   const handleUse = useCallback(async () => {
