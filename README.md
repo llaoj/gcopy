@@ -33,29 +33,6 @@ GCopy values your data privacy, it does not persistently store your data; it is 
 - [Deploy by Docker](docs/deploy-by-docker.md) — using the official container image
 - [Deploy from Source](docs/deploy-from-source.md) — build and run from source, or download the release binary
 
-## Quick Start
-
-**Try it now:** Visit [https://gcopy.llaoj.cn](https://gcopy.llaoj.cn) to experience GCopy directly.
-
-**Self-host deployment:** Deploy your own instance in under a minute with Docker:
-
-```bash
-docker run -d \
-  --name gcopy \
-  --restart unless-stopped \
-  -p 3375:3375 \
-  -e GCOPY_APP_KEY=your-secret-key-min-8-chars \
-  -e GCOPY_AUTH_MODE=token \
-  llaoj/gcopy:latest
-```
-
-**Requirements:**
-- Configure a TLS reverse proxy (Nginx, Caddy, etc.) to forward requests to port 3375
-- HTTPS is required for clipboard API access
-- Token mode is recommended for personal/team use (see [TOKEN_AUTH.md](docs/TOKEN_AUTH.md))
-
-For detailed deployment options including email authentication, see [Deploy by Docker](docs/deploy-by-docker.md).
-
 ## Usage
 
 ![screenshot on chrome](docs/screenshot-chrome.png)
