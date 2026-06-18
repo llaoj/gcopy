@@ -62,8 +62,10 @@ func (s *Server) Run() {
 	r := gin.New()
 	r.Use(gin.Recovery())
 
+	r.GET("/ping", func(c *gin.Context) { c.String(200, "pong") })
+	r.HEAD("/ping", func(c *gin.Context) { c.String(200, "pong") })
+
 	v1 := r.Group("/api/v1")
-	v1.GET("/ping", func(c *gin.Context) { c.String(200, "pong") })
 	v1.GET("/systeminfo", s.getSystemInfoHandler)
 
 	// Register auth routes
