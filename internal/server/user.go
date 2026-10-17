@@ -47,7 +47,12 @@ func (s *Server) getUserHandler(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusNotFound, gin.H{"message": "User not found"})
+	// Not logged in: return an explicit unauthenticated state instead of 404
+	// to avoid noisy "404" console errors in browsers (especially Safari).
+	c.JSON(http.StatusOK, gin.H{
+		"userId":   "",
+		"loggedIn": false,
+	})
 }
 
 func (s *Server) verifyAuthMiddleware(c *gin.Context) {
