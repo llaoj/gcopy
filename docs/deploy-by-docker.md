@@ -18,7 +18,6 @@ docker run -d \
   -v $(pwd)/cert.pem:/cert.pem:ro \
   -v $(pwd)/key.pem:/key.pem:ro \
   -e GCOPY_APP_KEY=your-secret-key-min-8-chars \
-  -e GCOPY_AUTH_MODE=token \
   -e GCOPY_TLS_CERT_FILE=/cert.pem \
   -e GCOPY_TLS_KEY_FILE=/key.pem \
   llaoj/gcopy:latest
@@ -32,25 +31,13 @@ Visit `https://<host>:3375`. The browser will warn about the self-signed certifi
 
 All configuration is done via environment variables with the `GCOPY_` prefix.
 
-### Token Authentication (Recommended for personal use)
+### Token Authentication
+
+Users authenticate with an 8-character token.
 
 ```yaml
 # docker run equivalent
 -e GCOPY_APP_KEY=your-secret-key-min-8-chars
--e GCOPY_AUTH_MODE=token
-```
-
-No SMTP needed. Users authenticate with a 6-character token.
-
-### Email Authentication
-
-```yaml
--e GCOPY_APP_KEY=your-secret-key-min-8-chars
--e GCOPY_AUTH_MODE=email
--e GCOPY_SMTP_HOST=smtp.example.com
--e GCOPY_SMTP_PORT=587
--e GCOPY_SMTP_USERNAME=your-email@example.com
--e GCOPY_SMTP_PASSWORD=your-smtp-password
 ```
 
 ### TLS (Built-in HTTPS)
@@ -83,15 +70,8 @@ Configure the reverse proxy to forward HTTPS traffic to port 3375.
 | Variable | Description | Default | Required |
 |----------|-------------|---------|----------|
 | `GCOPY_APP_KEY` | Encryption key (min 8 characters) | - | Yes |
-| `GCOPY_AUTH_MODE` | `email` or `token` | `email` | No |
 | `GCOPY_LISTEN` | Listen address | `:3375` | No |
 | `GCOPY_TLS_CERT_FILE` | TLS certificate file path | - | No |
 | `GCOPY_TLS_KEY_FILE` | TLS key file path | - | No |
 | `GCOPY_MAX_CONTENT_LENGTH` | Max clipboard size (MiB) | `10` | No |
 | `GCOPY_DEBUG` | Debug mode | `false` | No |
-| `GCOPY_SMTP_HOST` | SMTP server host | - | Email mode |
-| `GCOPY_SMTP_PORT` | SMTP server port | `587` | No |
-| `GCOPY_SMTP_USERNAME` | SMTP username | - | Email mode |
-| `GCOPY_SMTP_PASSWORD` | SMTP password | - | Email mode |
-| `GCOPY_SMTP_SENDER` | Email sender (defaults to username) | - | No |
-| `GCOPY_SMTP_SSL` | Use SSL for SMTP | `false` | No |

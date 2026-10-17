@@ -43,7 +43,6 @@ func (s *Server) getUserHandler(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"userId":   userId,
 			"loggedIn": true,
-			"authMode": s.authProvider.GetName(),
 		})
 		return
 	}

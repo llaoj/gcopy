@@ -13,17 +13,9 @@ A clipboard synchronization service between different operating systems.
 
 GCopy values your data privacy, it does not persistently store your data; it is all kept in memory. If you are inactive for 24h, the data will expire.
 
-## Authentication Modes
+## Authentication
 
-### Email Authentication (Default)
-- 6-digit verification code sent to email
-- Requires SMTP configuration
-- Best for public internet usage
-
-### Token Authentication
-- 6-character token for quick access
-- No SMTP required
-- Best for intranet/LAN or personal use
+Users authenticate with an 8-character token, which is used as the shared clipboard key across devices.
 
 ## Quick Start
 
@@ -39,7 +31,7 @@ GCopy values your data privacy, it does not persistently store your data; it is 
 
 Steps:
 
-1. Open the website on two devices, A and B, using a browser and log in with the same email (or use the same token).
+1. Open the website on two devices, A and B, using a browser and log in with the same token.
 2. On device A, copy (e.g., `Ctrl+C`) and then press the button on the right side of the page.
 3. Switch to device B, press the button again, and the data will be synchronized. Now, go ahead and paste (`Ctrl+V`)!
 

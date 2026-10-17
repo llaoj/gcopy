@@ -3,64 +3,58 @@ package auth
 import (
 	"crypto/rand"
 	"errors"
+	"fmt"
 	"math/big"
 	"net/http"
 	"regexp"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/sessions"
-	"github.com/llaoj/gcopy/internal/config"
 )
 
-// TokenAuthProvider implements token-based authentication
-type TokenAuthProvider struct {
-	AuthProviderBase
-	config *config.Config
+// TokenLength is the number of characters in a generated token.
+const TokenLength = 8
+
+// tokenPattern matches a token: alphanumeric characters only.
+var tokenPattern = regexp.MustCompile(fmt.Sprintf("^[A-Za-z0-9]{%d}$", TokenLength))
+
+// TokenAuth implements token-based authentication
+type TokenAuth struct {
+	sessionStore sessions.Store
+	registry     tokenRegistry
 }
 
-// NewTokenAuthProvider creates a new token authentication provider
-func NewTokenAuthProvider(cfg *config.Config, store sessions.Store) *TokenAuthProvider {
-	return &TokenAuthProvider{
-		AuthProviderBase: AuthProviderBase{sessionStore: store},
-		config:           cfg,
-	}
-}
-
-// GetName returns "token"
-func (p *TokenAuthProvider) GetName() string {
-	return "token"
+// NewTokenAuth creates a new token authentication handler
+func NewTokenAuth(store sessions.Store) *TokenAuth {
+	return &TokenAuth{sessionStore: store}
 }
 
 // RegisterRoutes registers token authentication routes
-func (p *TokenAuthProvider) RegisterRoutes(router *gin.RouterGroup) {
-	router.POST("/user/token/generate", p.generateTokenHandler)
-	router.POST("/user/token/verify", p.verifyTokenHandler)
+func (a *TokenAuth) RegisterRoutes(router *gin.RouterGroup) {
+	router.POST("/user/token/generate", a.generateTokenHandler)
+	router.POST("/user/token/verify", a.verifyTokenHandler)
 }
 
 // TokenRequest represents the request body for token operations
 type TokenRequest struct {
-	Token string `form:"token" json:"token" binding:"required,len=6"`
+	Token string `form:"token" json:"token" binding:"required,len=8"`
 }
 
 // validateTokenFormat validates that a token contains only alphanumeric characters
 func validateTokenFormat(token string) error {
-	if len(token) != 6 {
-		return errors.New("token must be exactly 6 characters")
+	if len(token) != TokenLength {
+		return fmt.Errorf("token must be exactly %d characters", TokenLength)
 	}
-	matched, err := regexp.MatchString("^[A-Za-z0-9]{6}$", token)
-	if err != nil {
-		return err
-	}
-	if !matched {
+	if !tokenPattern.MatchString(token) {
 		return errors.New("token must contain only letters and numbers (A-Z, a-z, 0-9)")
 	}
 	return nil
 }
 
-// generateToken generates a 6-character token using crypto/rand
+// generateToken generates a token using crypto/rand
 func generateToken() (string, error) {
 	const charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
-	token := make([]byte, 6)
+	token := make([]byte, TokenLength)
 	for i := range token {
 		num, err := rand.Int(rand.Reader, big.NewInt(int64(len(charset))))
 		if err != nil {
@@ -71,15 +65,15 @@ func generateToken() (string, error) {
 	return string(token), nil
 }
 
-// generateTokenHandler generates a new token and stores it in the session
-func (p *TokenAuthProvider) generateTokenHandler(c *gin.Context) {
-	token, err := generateToken()
+// generateTokenHandler generates a new unique token and stores it in the session
+func (a *TokenAuth) generateTokenHandler(c *gin.Context) {
+	token, err := a.registry.reserve()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
 		return
 	}
 
-	session, err := p.sessionStore.Get(c.Request, UserSessionName)
+	session, err := a.sessionStore.Get(c.Request, UserSessionName)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
 		return
@@ -88,7 +82,7 @@ func (p *TokenAuthProvider) generateTokenHandler(c *gin.Context) {
 	session.Values["userId"] = token
 	session.Values["loggedIn"] = true
 	// Set session to expire in 7 days
-	session.Options.MaxAge = 7 * 24 * 3600
+	session.Options.MaxAge = sessionMaxAge
 
 	if err = session.Save(c.Request, c.Writer); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
@@ -96,16 +90,15 @@ func (p *TokenAuthProvider) generateTokenHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"userId":  token,
-		"warning": "Please keep the token secure. Token leakage may lead to data breaches. Recommended for intranet environments.",
+		"userId": token,
 	})
 }
 
 // verifyTokenHandler verifies an existing token and stores it in the session
-func (p *TokenAuthProvider) verifyTokenHandler(c *gin.Context) {
+func (a *TokenAuth) verifyTokenHandler(c *gin.Context) {
 	var req TokenRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{"message": "Invalid token format: must be exactly 6 characters"})
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"message": fmt.Sprintf("Invalid token format: must be exactly %d characters", TokenLength)})
 		return
 	}
 
@@ -115,9 +108,9 @@ func (p *TokenAuthProvider) verifyTokenHandler(c *gin.Context) {
 		return
 	}
 
-	// For now, any valid 6-character token is considered valid
+	// For now, any valid token is considered valid
 	// In a production system, you might want to validate against a database
-	session, err := p.sessionStore.Get(c.Request, UserSessionName)
+	session, err := a.sessionStore.Get(c.Request, UserSessionName)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
 		return
@@ -126,7 +119,7 @@ func (p *TokenAuthProvider) verifyTokenHandler(c *gin.Context) {
 	session.Values["userId"] = req.Token
 	session.Values["loggedIn"] = true
 	// Set session to expire in 7 days
-	session.Options.MaxAge = 7 * 24 * 3600
+	session.Options.MaxAge = sessionMaxAge
 
 	if err = session.Save(c.Request, c.Writer); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})

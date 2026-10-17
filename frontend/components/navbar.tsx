@@ -103,8 +103,8 @@ export default function Navbar() {
         </a>
         {loggedIn ? (
           <Avator />
-        ) : systemInfo?.authMode ? (
-          <Link className="btn" href={getLoginPath(systemInfo.authMode)}>
+        ) : systemInfo ? (
+          <Link className="btn" href={getLoginPath()}>
             {t("signIn")}
           </Link>
         ) : null}

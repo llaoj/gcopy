@@ -1,26 +1,14 @@
 package auth
 
 import (
-	"github.com/gin-gonic/gin"
 	"github.com/gorilla/sessions"
 )
 
-// UserSessionName is the shared session cookie name used by all auth providers
+// UserSessionName is the session cookie name.
 const UserSessionName = "user_session"
 
-// AuthProvider defines the interface for authentication providers
-type AuthProvider interface {
-	// GetName returns the authentication mode name (e.g., "email", "token")
-	GetName() string
-
-	// RegisterRoutes registers authentication-related routes
-	RegisterRoutes(router *gin.RouterGroup)
-}
-
-// AuthProviderBase provides common functionality for auth providers
-type AuthProviderBase struct {
-	sessionStore sessions.Store
-}
+// sessionMaxAge is the session lifetime in seconds.
+const sessionMaxAge = 7 * 24 * 3600
 
 // GetUserIdFromSession extracts the unified userId from session
 func GetUserIdFromSession(session *sessions.Session) (string, bool) {

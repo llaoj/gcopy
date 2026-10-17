@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import useAuth from "@/lib/auth";
-import useSystemInfo from "@/hooks/useSystemInfo";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { getLoginPath, redirectToLogin } from "@/lib/navigation";
@@ -12,7 +11,6 @@ export default function Avator() {
   const [copied, setCopied] = useState(false);
   const router = useRouter();
   const { isLoading, userId, logout } = useAuth();
-  const { systemInfo } = useSystemInfo();
 
   if (isLoading) {
     return null;
@@ -24,21 +22,13 @@ export default function Avator() {
 
   // 生成二维码 URL
   const getQRCodeUrl = () => {
-    if (!systemInfo?.authMode || !userId) {
+    if (!userId) {
       return "";
     }
 
     const baseUrl = window.location.origin;
-    const loginPath = getLoginPath(systemInfo.authMode);
     const encodedUserId = encodeURIComponent(userId);
-
-    if (systemInfo.authMode === "email") {
-      return `${baseUrl}${loginPath}?email=${encodedUserId}`;
-    } else if (systemInfo.authMode === "token") {
-      return `${baseUrl}${loginPath}?token=${encodedUserId}`;
-    }
-
-    return "";
+    return `${baseUrl}${getLoginPath()}?token=${encodedUserId}`;
   };
 
   const qrCodeUrl = getQRCodeUrl();
@@ -46,9 +36,7 @@ export default function Avator() {
   const handleLogout = async () => {
     setClicked(true);
     await logout();
-    if (systemInfo?.authMode) {
-      redirectToLogin(router, systemInfo.authMode);
-    }
+    redirectToLogin(router);
   };
 
   const handleCopyLink = async () => {

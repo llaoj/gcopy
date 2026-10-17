@@ -1,19 +1,7 @@
-export function getLoginPath(authMode: string): string {
-  if (authMode === "token") {
-    return "/user/token";
-  }
-  if (authMode === "email") {
-    return "/user/email";
-  }
-  return "#";
+export function getLoginPath(): string {
+  return "/user/token";
 }
 
-export function redirectToLogin(
-  router: { push: (url: string) => void },
-  authMode: string,
-): void {
-  const path = getLoginPath(authMode);
-  if (path !== "#") {
-    router.push(path);
-  }
+export function redirectToLogin(router: { push: (url: string) => void }): void {
+  router.push(getLoginPath());
 }

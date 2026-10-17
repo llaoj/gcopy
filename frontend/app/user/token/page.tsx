@@ -52,15 +52,15 @@ function TokenLoginForm() {
     setClicked(true);
     setErrorMessage("");
 
-    // 前端校验：长度必须为6
-    if (!inputToken || inputToken.length !== 6) {
+    // 前端校验：长度必须为8
+    if (!inputToken || inputToken.length !== 8) {
       setErrorMessage(t("invalidToken"));
       setClicked(false);
       return;
     }
 
     // 前端校验：只允许字母和数字（A-Z, a-z, 0-9）
-    const tokenPattern = /^[A-Za-z0-9]{6}$/;
+    const tokenPattern = /^[A-Za-z0-9]{8}$/;
     if (!tokenPattern.test(inputToken)) {
       setErrorMessage(t("invalidToken"));
       setClicked(false);
@@ -146,7 +146,7 @@ function TokenLoginForm() {
                 type="text"
                 placeholder={t("placeholder")}
                 className="input input-bordered w-full text-center text-xl font-mono"
-                maxLength={6}
+                maxLength={8}
                 value={inputToken}
                 onChange={(e) => setInputToken(e.target.value)}
                 autoFocus
@@ -172,31 +172,6 @@ function TokenLoginForm() {
           <div className="flex flex-col gap-4">
             {!generatedToken ? (
               <>
-                {/* Warning alert */}
-                <div className="flex flex-row items-center justify-start gap-3 bg-warning text-warning-content p-4 rounded-lg">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="stroke-current shrink-0 h-6 w-6"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                    />
-                  </svg>
-                  <div className="flex flex-col gap-2 min-w-0 text-left">
-                    <span className="font-bold">{t("warningMessage")}</span>
-                    <ul className="list-disc list-inside text-sm">
-                      <li>{t("warningItems.intranet")}</li>
-                      <li>{t("warningItems.personal")}</li>
-                      <li>{t("warningItems.trusted")}</li>
-                    </ul>
-                  </div>
-                </div>
-
                 <p>{t("generateSubTitle")}</p>
 
                 <div className="flex gap-2">

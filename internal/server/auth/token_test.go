@@ -9,8 +9,8 @@ func TestGenerateToken(t *testing.T) {
 	if err != nil {
 		t.Fatalf("generateToken() error = %v", err)
 	}
-	if len(token) != 6 {
-		t.Errorf("generateToken() token length = %v, want 6", len(token))
+	if len(token) != TokenLength {
+		t.Errorf("generateToken() token length = %v, want %d", len(token), TokenLength)
 	}
 
 	// Check that token only contains valid characters
@@ -58,9 +58,8 @@ func TestGenerateTokenUniqueness(t *testing.T) {
 		tokens[token] = true
 	}
 
-	// With 62^6 possible combinations, duplicates should be extremely rare
-	// We allow up to 1 duplicate as an acceptable threshold
-	if duplicates > 1 {
-		t.Errorf("Too many duplicate tokens generated: %d", duplicates)
+	// With 62^8 possible combinations, duplicates should be effectively impossible
+	if duplicates > 0 {
+		t.Errorf("Duplicate tokens generated: %d", duplicates)
 	}
 }

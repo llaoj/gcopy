@@ -16,7 +16,6 @@ echo "Starting backend..."
 cd "$ROOT_DIR"
 go run cmd/gcopy.go \
     -app-key=change-me \
-    -auth-mode=token \
     -listen=:3376 \
     -debug &
 BACKEND_PID=$!

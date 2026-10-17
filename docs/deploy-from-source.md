@@ -29,7 +29,7 @@ The browser Clipboard API requires HTTPS. The following example uses a self-sign
 curl -sSL https://raw.githubusercontent.com/llaoj/gcopy/main/scripts/gen-cert.sh | bash
 
 # 2. Start
-./gcopy -app-key=<your-key> -auth-mode=token -tls-cert-file=cert.pem -tls-key-file=key.pem
+./gcopy -app-key=<your-key> -tls-cert-file=cert.pem -tls-key-file=key.pem
 ```
 
 Visit `https://<host>:3375`. The browser will warn about the self-signed certificate — proceed to continue.
@@ -38,26 +38,7 @@ Visit `https://<host>:3375`. The browser will warn about the self-signed certifi
 
 ## Authentication
 
-All configuration can be done via command-line flags or environment variables (with `GCOPY_` prefix).
-
-### Token Authentication (Recommended for personal use)
-
-```bash
-./gcopy -app-key=<your-key> -auth-mode=token
-```
-
-No SMTP required. Users authenticate with a 6-character token.
-
-### Email Authentication
-
-```bash
-./gcopy \
-    -app-key=<your-key> \
-    -auth-mode=email \
-    -smtp-host=<smtp-host> \
-    -smtp-username=<smtp-username> \
-    -smtp-password=<smtp-password>
-```
+All configuration can be done via command-line flags or environment variables (with `GCOPY_` prefix). Users authenticate with an 8-character token.
 
 ## HTTPS Configuration
 
@@ -99,18 +80,11 @@ Configure the reverse proxy to forward HTTPS traffic to port 3375.
 | Flag | Environment Variable | Default | Description |
 |------|---------------------|---------|-------------|
 | `-app-key` | `GCOPY_APP_KEY` | - | Encryption key (min 8 characters, required) |
-| `-auth-mode` | `GCOPY_AUTH_MODE` | `email` | `email` or `token` |
 | `-listen` | `GCOPY_LISTEN` | `:3375` | Listen address |
 | `-tls-cert-file` | `GCOPY_TLS_CERT_FILE` | - | TLS certificate file |
 | `-tls-key-file` | `GCOPY_TLS_KEY_FILE` | - | TLS key file |
 | `-max-content-length` | `GCOPY_MAX_CONTENT_LENGTH` | `10` | Max clipboard size (MiB) |
 | `-debug` | `GCOPY_DEBUG` | `false` | Debug mode |
-| `-smtp-host` | `GCOPY_SMTP_HOST` | - | SMTP host (email mode) |
-| `-smtp-port` | `GCOPY_SMTP_PORT` | `587` | SMTP port |
-| `-smtp-username` | `GCOPY_SMTP_USERNAME` | - | SMTP username (email mode) |
-| `-smtp-password` | `GCOPY_SMTP_PASSWORD` | - | SMTP password (email mode) |
-| `-smtp-sender` | `GCOPY_SMTP_SENDER` | - | Email sender (defaults to username) |
-| `-smtp-ssl` | `GCOPY_SMTP_SSL` | `false` | Use SSL for SMTP |
 | `-version` | - | `false` | Print version |
 
 ## Development

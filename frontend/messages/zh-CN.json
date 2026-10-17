@@ -22,23 +22,6 @@
     "copyLink": "复制链接",
     "copied": "已复制"
   },
-  "EmailLogin": {
-    "back": "返回",
-    "title": "登录",
-    "smallTitle": "以使用GCopy",
-    "subTitle": "支持文字, 截图和文件的同步.",
-    "placeholder": "输入邮箱地址",
-    "tip": "你的隐私安全对GCopy很重要!",
-    "buttonText": "下一步",
-    "invalidEmail": "无效的邮箱地址.",
-    "sendEmailFailed": "发送邮件失败, 请检查并重试.",
-    "codeTitle": "输入验证码",
-    "codeSubTitle": "我们向{email}发送了一个验证码. 请输入验证码登录.",
-    "codePlaceholder": "输入验证码",
-    "codeButtonText": "登录",
-    "incorrectCode": "验证码不正确, 请退回重试.",
-    "authenticationFailed": "身份验证失败, 请退回重试."
-  },
   "TokenLogin": {
     "title": "令牌登录",
     "back": "返回",
@@ -48,16 +31,10 @@
     "verifySubTitle": "输入已有令牌访问共享剪切板",
     "generateButton": "生成令牌",
     "verifyButton": "使用令牌",
-    "placeholder": "输入6位令牌",
+    "placeholder": "输入8位令牌",
     "yourToken": "您的令牌：",
     "caseSensitive": "字母区分大小写（大写和小写是不同的）。",
     "startUsing": "开始使用",
-    "warningMessage": "令牌模式推荐使用场景：",
-    "warningItems": {
-      "intranet": "内网环境 / 局域网环境",
-      "personal": "个人使用",
-      "trusted": "受信任的团队内部"
-    },
     "invalidToken": "无效的令牌，请检查后重试。",
     "generateFailed": "生成令牌失败，请重试。",
     "verifyFailed": "验证令牌失败，请重试。"

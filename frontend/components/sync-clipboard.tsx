@@ -103,13 +103,11 @@ export default function SyncClipboard() {
 
   const ensureLoggedIn = useCallback(async () => {
     if (!loggedIn) {
-      if (systemInfo?.authMode) {
-        redirectToLogin(router, systemInfo.authMode);
-      }
+      redirectToLogin(router);
       return false;
     }
     return true;
-  }, [loggedIn, systemInfo?.authMode, router]);
+  }, [loggedIn, router]);
 
   const sleep = function (ms: number) {
     return new Promise((resolve) => setTimeout(resolve, ms));
@@ -218,9 +216,7 @@ export default function SyncClipboard() {
       );
 
       if (response.status == 401) {
-        if (systemInfo?.authMode) {
-          redirectToLogin(router, systemInfo.authMode);
-        }
+        redirectToLogin(router);
         return false;
       }
 
@@ -259,15 +255,7 @@ export default function SyncClipboard() {
 
       return true;
     },
-    [
-      addLog,
-      t,
-      pathname,
-      addHistoryItem,
-      updateProgressLog,
-      systemInfo?.authMode,
-      router,
-    ],
+    [addLog, t, pathname, addHistoryItem, updateProgressLog, router],
   );
 
   /**
@@ -384,15 +372,7 @@ export default function SyncClipboard() {
     return () => {
       document.removeEventListener("paste", handlePaste);
     };
-  }, [
-    waitingForPaste,
-    loggedIn,
-    systemInfo?.authMode,
-    router,
-    addLog,
-    handlePastedContent,
-    t,
-  ]);
+  }, [waitingForPaste, loggedIn, router, addLog, handlePastedContent, t]);
 
   // 带进度跟踪的fetch下载
   const fetchWithProgress = async (
@@ -465,9 +445,7 @@ export default function SyncClipboard() {
     );
 
     if (response.status == 401) {
-      if (systemInfo?.authMode) {
-        redirectToLogin(router, systemInfo.authMode);
-      }
+      redirectToLogin(router);
       return;
     }
 
@@ -722,9 +700,7 @@ export default function SyncClipboard() {
     );
 
     if (response.status == 401) {
-      if (systemInfo?.authMode) {
-        redirectToLogin(router, systemInfo.authMode);
-      }
+      redirectToLogin(router);
       return;
     }
 

@@ -1,7 +1,6 @@
 export interface SystemInfo {
   time: string;
   maxContentLength: number; // unit: MiB
-  authMode: string; // "email" or "token"
 }
 
 let systemInfoPromise: Promise<SystemInfo | null> | null = null;

@@ -18,7 +18,6 @@ docker run -d \
   -v $(pwd)/cert.pem:/cert.pem:ro \
   -v $(pwd)/key.pem:/key.pem:ro \
   -e GCOPY_APP_KEY=your-secret-key-min-8-chars \
-  -e GCOPY_AUTH_MODE=token \
   -e GCOPY_TLS_CERT_FILE=/cert.pem \
   -e GCOPY_TLS_KEY_FILE=/key.pem \
   llaoj/gcopy:latest
@@ -32,24 +31,12 @@ docker run -d \
 
 所有配置通过 `GCOPY_` 前缀的环境变量完成。
 
-### 令牌认证（推荐个人使用）
+### 令牌认证
+
+用户使用 8 位字符令牌认证。
 
 ```yaml
 -e GCOPY_APP_KEY=your-secret-key-min-8-chars
--e GCOPY_AUTH_MODE=token
-```
-
-无需 SMTP，用户使用 6 位字符令牌认证。
-
-### 邮箱认证
-
-```yaml
--e GCOPY_APP_KEY=your-secret-key-min-8-chars
--e GCOPY_AUTH_MODE=email
--e GCOPY_SMTP_HOST=smtp.example.com
--e GCOPY_SMTP_PORT=587
--e GCOPY_SMTP_USERNAME=your-email@example.com
--e GCOPY_SMTP_PASSWORD=your-smtp-password
 ```
 
 ### TLS（内置 HTTPS）
@@ -82,15 +69,8 @@ GCopy 以 HTTP 启动，由反向代理（Nginx、Caddy 等）处理 TLS：
 | 变量 | 说明 | 默认值 | 必需 |
 |------|------|--------|------|
 | `GCOPY_APP_KEY` | 加密密钥（至少 8 个字符） | - | 是 |
-| `GCOPY_AUTH_MODE` | `email` 或 `token` | `email` | 否 |
 | `GCOPY_LISTEN` | 监听地址 | `:3375` | 否 |
 | `GCOPY_TLS_CERT_FILE` | TLS 证书文件路径 | - | 否 |
 | `GCOPY_TLS_KEY_FILE` | TLS 密钥文件路径 | - | 否 |
 | `GCOPY_MAX_CONTENT_LENGTH` | 最大剪切板大小（MiB） | `10` | 否 |
 | `GCOPY_DEBUG` | 调试模式 | `false` | 否 |
-| `GCOPY_SMTP_HOST` | SMTP 服务器地址 | - | 邮箱模式 |
-| `GCOPY_SMTP_PORT` | SMTP 端口 | `587` | 否 |
-| `GCOPY_SMTP_USERNAME` | SMTP 用户名 | - | 邮箱模式 |
-| `GCOPY_SMTP_PASSWORD` | SMTP 密码 | - | 邮箱模式 |
-| `GCOPY_SMTP_SENDER` | 邮件发送者（默认同用户名） | - | 否 |
-| `GCOPY_SMTP_SSL` | 使用 SSL | `false` | 否 |

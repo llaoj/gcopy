@@ -25,26 +25,21 @@ type Server struct {
 	config       *config.Config
 	log          *logrus.Logger
 	sessionStore sessions.Store
-	authProvider auth.AuthProvider
+	tokenAuth    *auth.TokenAuth
 }
 
 func NewServer(log *logrus.Logger) *Server {
 	cfg := config.Get()
 	sessionStore := sessions.NewCookieStore([]byte(cfg.AppKey))
 
-	var provider auth.AuthProvider
-	if cfg.AuthMode == "email" {
-		provider = auth.NewEmailAuthProvider(cfg, sessionStore)
-	} else if cfg.AuthMode == "token" {
-		provider = auth.NewTokenAuthProvider(cfg, sessionStore)
-	}
+	tokenAuth := auth.NewTokenAuth(sessionStore)
 
 	s := &Server{
 		wall:         NewWall(log),
 		config:       cfg,
 		log:          log,
 		sessionStore: sessionStore,
-		authProvider: provider,
+		tokenAuth:    tokenAuth,
 	}
 
 	return s
@@ -69,7 +64,7 @@ func (s *Server) Run() {
 	v1.GET("/systeminfo", s.getSystemInfoHandler)
 
 	// Register auth routes
-	s.authProvider.RegisterRoutes(v1)
+	s.tokenAuth.RegisterRoutes(v1)
 
 	v1.GET("/user/logout", s.logoutHandler)
 	v1.GET("/user", s.getUserHandler)

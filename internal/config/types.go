@@ -8,12 +8,5 @@ type Config struct {
 	Listen           string
 	TLSCertFile      string
 	TLSKeyFile       string
-	SMTPHost         string
-	SMTPPort         int
-	SMTPSSL          bool
-	SMTPUsername     string
-	SMTPPassword     string
-	SMTPSender       string
 	MaxContentLength int
-	AuthMode         string // "email" or "token"
 }
