@@ -50,6 +50,8 @@ export default function SyncClipboard() {
   const [dragging, setDragging] = useState(false);
   // 等待用户粘贴特殊剪贴板内容（如微信图片）
   const [waitingForPaste, setWaitingForPaste] = useState<boolean>(false);
+  // 最近一次同步内容的来源设备名
+  const [lastSource, setLastSource] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -476,6 +478,7 @@ export default function SyncClipboard() {
       return;
     }
     const xclientname = response.headers.get("x-clientname");
+    setLastSource(xclientname ?? "UNKNOWN");
     addLog({
       message: t("logs.received", {
         type: t(xtype),
@@ -823,7 +826,7 @@ export default function SyncClipboard() {
         </div>
         <div className="grid grid-cols-9 gap-3 w-full">
           <LogBox logs={logs} />
-          <SyncButton syncFunc={syncFunc} />
+          <SyncButton syncFunc={syncFunc} lastSource={lastSource} />
         </div>
       </div>
       <QuickInput textareaRef={textareaRef} />

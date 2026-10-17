@@ -5,8 +5,10 @@ import { useDevice } from "@/hooks/useDevice";
 
 export default function SyncButton({
   syncFunc,
+  lastSource,
 }: {
   syncFunc: () => Promise<void>;
+  lastSource: string | null;
 }) {
   const [clicked, setClicked] = useState<boolean>(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -52,8 +54,21 @@ export default function SyncButton({
         className="btn btn-outline btn-primary col-span-9 md:col-span-2 h-full rounded-box bg-base-100 content-center"
         onClick={onClick}
       >
-        <CursorArrowRippleIcon className="h-6 w-6" />
-        {t("syncButtonText")}
+        <span className="flex flex-col items-center gap-1 w-full min-w-0">
+          <span className="flex items-center gap-2 whitespace-nowrap">
+            <CursorArrowRippleIcon className="h-6 w-6" />
+            {t("syncButtonText")}
+          </span>
+          {lastSource && (
+            <span
+              className="flex flex-col items-center w-full min-w-0 text-[10px] font-normal opacity-60 leading-tight"
+              title={`${t("fromSource")} ${lastSource}`}
+            >
+              <span>{t("fromSource")}</span>
+              <span className="w-full truncate">{lastSource}</span>
+            </span>
+          )}
+        </span>
       </button>
     </>
   );
