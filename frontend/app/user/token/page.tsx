@@ -210,11 +210,7 @@ function TokenLoginForm() {
                       className="input input-bordered input-lg join-item flex-1 text-center text-2xl font-mono font-bold focus:outline-none"
                     />
                     <button
-                      className={`btn btn-lg join-item ${
-                        copied
-                          ? "btn-outline btn-success"
-                          : "btn-outline btn-primary"
-                      }`}
+                      className="btn btn-outline btn-lg join-item border-base-content/20"
                       onClick={() => {
                         navigator.clipboard.writeText(generatedToken);
                         setCopied(true);
