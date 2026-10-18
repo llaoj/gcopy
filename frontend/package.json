@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start -p 3375",
     "lint": "next lint",
+    "typecheck": "tsc --noEmit",
     "prettier": "prettier --write --ignore-unknown .",
     "prettier:check": "prettier --check --ignore-unknown ."
   },
