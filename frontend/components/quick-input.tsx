@@ -1,18 +1,19 @@
-import { RefObject } from "react";
 import { useTranslations } from "next-intl";
 import { useDevice } from "@/hooks/useDevice";
 
 export default function QuickInput({
-  textareaRef,
+  value,
+  onChange,
 }: {
-  textareaRef: RefObject<HTMLTextAreaElement>;
+  value: string;
+  onChange: (value: string) => void;
 }) {
   const t = useTranslations("SyncClipboard");
   const { isDesktop } = useDevice();
 
   return (
-    <div className="pb-4 flex flex-col gap-2">
-      <div className="text-sm select-none opacity-70">
+    <div className="pb-4 flex flex-col h-full">
+      <div className="pb-2 text-sm opacity-70">
         <span className="font-bold">{t("quickInput.title")}</span>
         <span>{" " + t("quickInput.subTitle")}</span>
         {isDesktop && (
@@ -22,8 +23,9 @@ export default function QuickInput({
         )}
       </div>
       <textarea
-        ref={textareaRef}
-        className="textarea textarea-bordered block rounded-box resize-y leading-tight w-full min-h-12 p-2"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="textarea textarea-bordered block rounded-box leading-tight w-full min-h-12 p-2 flex-1"
       ></textarea>
     </div>
   );

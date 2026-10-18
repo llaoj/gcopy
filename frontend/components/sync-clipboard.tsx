@@ -1,12 +1,10 @@
 "use client";
 
 import LogBox from "@/components/log-box";
-import FileLink from "@/components/file-link";
 import useAuth from "@/lib/auth";
 import useSystemInfo from "@/hooks/useSystemInfo";
 import { LogLevel, useLog } from "@/lib/log";
-import { DragEvent, useRef, useState, useEffect, useCallback } from "react";
-import clsx from "clsx";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
@@ -17,8 +15,6 @@ import {
   toTextBlob,
   toPngBlob,
   Clipboard,
-  FileInfo,
-  initFileInfo,
   clipboardRead,
 } from "@/lib/clipboard";
 import { redirectToLogin } from "@/lib/navigation";
@@ -31,50 +27,42 @@ import {
 } from "react-device-detect";
 import SyncButton from "@/components/sync-button";
 import SyncShortcut from "@/components/sync-shortcut";
+import SyncFile from "@/components/sync-file";
 import QuickInput from "@/components/quick-input";
 import History from "@/components/history";
 import { db } from "@/models/db";
 import { HistoryItemEntity } from "@/models/history";
 import moment from "moment";
-import { validateFileSize } from "@/lib/file-utils";
+import { validateFileSize, downloadBlob } from "@/lib/file-utils";
 
 // route: /locale?ci=123&cbi=abc
 // - ci: clipboard index
 // - cbi: clipboard blob id
 export default function SyncClipboard() {
   const t = useTranslations("SyncClipboard");
-  const [fileInfo, setFileInfo] = useState<FileInfo>(initFileInfo);
+  // 最近一次 push（上传）出去的文件名
+  const [fileName, setFileName] = useState<string>("");
   const [tmpClipboard, setTmpClipboard] = useState<Clipboard>(initTmpClipboard);
   // "" | interrupted-[r|w] | finished
   const [status, setStatus] = useState<string>("");
-  const [dragging, setDragging] = useState(false);
+  // 快捷输入框内容
+  const [quickText, setQuickText] = useState<string>("");
   // 等待用户粘贴特殊剪贴板内容（如微信图片）
   const [waitingForPaste, setWaitingForPaste] = useState<boolean>(false);
   // 最近一次同步内容的来源设备名
   const [lastSource, setLastSource] = useState<string | null>(null);
+  // 是否正在同步，用于日志框红绿灯动画
+  const [syncing, setSyncing] = useState(false);
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { loggedIn } = useAuth();
   const { systemInfo } = useSystemInfo();
   const router = useRouter();
   const pathname = usePathname();
   const { logs, addLog, resetLog, updateProgressLog } = useLog();
 
-  const updateFileLink = (fileInfo: FileInfo) => {
-    setFileInfo(fileInfo);
-  };
-
-  /**
-   * Reset all file-related states
-   * - Clear FileLink display (fileName and fileURL)
-   * - Reset file input value to allow re-uploading the same file
-   */
+  // 清空"最近上传文件名"的显示
   const resetFile = () => {
-    setFileInfo(initFileInfo);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
+    setFileName("");
   };
 
   const addHistoryItem = useCallback(async (history: HistoryItemEntity) => {
@@ -593,11 +581,9 @@ export default function SyncClipboard() {
         fileName: xfilename,
       });
 
-      // 最后创建 blob URL 用于下载
-      updateFileLink({
-        fileName: xfilename,
-        fileURL: URL.createObjectURL(downloadedFile),
-      });
+      // 接收到的文件直接触发下载，不在"同步文件"框里显示，同时清空该框
+      downloadBlob(downloadedFile, xfilename);
+      resetFile();
       addLog({ message: t("logs.autoDownload"), level: LogLevel.Success });
 
       return;
@@ -605,12 +591,9 @@ export default function SyncClipboard() {
   };
 
   const pushClipboard = async () => {
-    if (!textareaRef.current) {
-      return;
-    }
     let blob = null;
-    if (textareaRef.current.value != "") {
-      blob = new Blob([textareaRef.current.value], { type: "text/plain" });
+    if (quickText != "") {
+      blob = new Blob([quickText], { type: "text/plain" });
       addLog({ message: t("logs.readQuickInputSuccess") });
     } else {
       if (!navigator.clipboard || !navigator.clipboard.read) {
@@ -663,8 +646,8 @@ export default function SyncClipboard() {
     const success = await uploadClipboardBlob(blob);
 
     // 清空快速输入框
-    if (success && textareaRef.current && textareaRef.current.value != "") {
-      textareaRef.current.value = "";
+    if (success && quickText != "") {
+      setQuickText("");
     }
   };
 
@@ -724,10 +707,7 @@ export default function SyncClipboard() {
     const uploadBlobId = await hashBlob(file);
 
     // 只显示文件名 不自动下载文件
-    updateFileLink({
-      fileName: file.name,
-      fileURL: "",
-    });
+    setFileName(file.name);
 
     // The file did not enter the clipboard,
     // so we update the index and set cbi to the file's blob ID
@@ -753,7 +733,15 @@ export default function SyncClipboard() {
     setStatus("finished");
   };
 
+  const handleFileChange = async (file: File) => {
+    if (!(await ensureLoggedIn())) {
+      return;
+    }
+    await uploadFileHandler(file);
+  };
+
   const syncFunc = async () => {
+    setSyncing(true);
     try {
       if (!(await ensureLoggedIn())) {
         return;
@@ -813,6 +801,8 @@ export default function SyncClipboard() {
     } catch (err) {
       addLog({ message: String(err), level: LogLevel.Error });
       setStatus("finished");
+    } finally {
+      setSyncing(false);
     }
   };
 
@@ -825,76 +815,15 @@ export default function SyncClipboard() {
           <SyncShortcut />
         </div>
         <div className="grid grid-cols-9 gap-3 w-full">
-          <LogBox logs={logs} />
           <SyncButton syncFunc={syncFunc} lastSource={lastSource} />
+          <LogBox logs={logs} syncing={syncing} />
         </div>
       </div>
-      <QuickInput textareaRef={textareaRef} />
-      <div className="pb-4">
-        <div className="pb-2 text-sm opacity-70">
-          <span className="font-bold">{t("syncFile.title")}</span>
-          <span>{" " + t("syncFile.subTitle")}</span>
-        </div>
-        <div
-          className={clsx(
-            "preview min-h-24 md:min-h-52 border rounded-box flex flex-col items-center justify-center gap-y-1 px-4",
-            { "border-primary text-primary": dragging },
-            { "border-base-300": !dragging },
-          )}
-          onDragOver={(ev: DragEvent<HTMLElement>) => {
-            ev.preventDefault();
-          }}
-          onDragEnter={() => {
-            setDragging(true);
-          }}
-          onDragLeave={() => {
-            setDragging(false);
-          }}
-          onDrop={async (ev: DragEvent<HTMLElement>) => {
-            ev.preventDefault();
-            if (!(await ensureLoggedIn())) {
-              return;
-            }
-            if (ev.dataTransfer && ev.dataTransfer.files) {
-              const droppedFile = ev.dataTransfer.files[0];
-              await uploadFileHandler(droppedFile);
-            }
-            setDragging(false);
-          }}
-        >
-          {!dragging && (
-            <>
-              <FileLink fileInfo={fileInfo} />
-              <div className="text-lg opacity-40 hidden md:block">
-                {t("syncFile.dragDropTip")}
-              </div>
-              <button
-                className="btn btn-sm"
-                onClick={async () => {
-                  if (!(await ensureLoggedIn())) {
-                    return;
-                  }
-                  fileInputRef.current?.click();
-                }}
-              >
-                {t("syncFile.fileInputText")}
-              </button>
-            </>
-          )}
-          <input
-            type="file"
-            hidden
-            ref={fileInputRef}
-            onChange={async () => {
-              if (fileInputRef.current?.files) {
-                const selectedFile = fileInputRef.current.files[0];
-                await uploadFileHandler(selectedFile);
-              }
-            }}
-          />
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-stretch">
+        <SyncFile fileName={fileName} onFileChange={handleFileChange} />
+        <QuickInput value={quickText} onChange={setQuickText} />
       </div>
-      <History addLog={addLog} updateFileLink={updateFileLink} />
+      <History addLog={addLog} />
     </>
   );
 }

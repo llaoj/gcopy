@@ -32,12 +32,12 @@
     "generateButton": "生成令牌",
     "verifyButton": "使用令牌",
     "placeholder": "输入8位令牌",
-    "yourToken": "您的令牌：",
-    "caseSensitive": "字母区分大小写（大写和小写是不同的）。",
+    "yourToken": "您的令牌:",
+    "caseSensitive": "字母区分大小写(大写和小写是不同的).",
     "startUsing": "开始使用",
-    "invalidToken": "无效的令牌，请检查后重试。",
-    "generateFailed": "生成令牌失败，请重试。",
-    "verifyFailed": "验证令牌失败，请重试。"
+    "invalidToken": "无效的令牌, 请检查后重试.",
+    "generateFailed": "生成令牌失败, 请重试.",
+    "verifyFailed": "验证令牌失败, 请重试."
   },
   "SyncClipboard": {
     "title": "同步剪切板",
@@ -49,13 +49,12 @@
     "file": "文件",
     "syncFile": {
       "title": "同步文件",
-      "subTitle": "选择一个文件然后在不同设备间同步它.",
-      "dragDropTip": "把文件拖拽到这里",
-      "fileInputText": "选择一个文件"
+      "subTitle": "选择文件, 跨设备同步.",
+      "dragDropTip": "点击或拖拽文件到这里"
     },
     "quickInput": {
       "title": "快捷输入",
-      "subTitle": "输入文字后按下同步按钮就能在不同设备间同步.",
+      "subTitle": "输入文字, 跨设备同步.",
       "newline": "换行"
     },
     "history": {
@@ -66,15 +65,15 @@
       "empty": "空"
     },
     "logs": {
-      "pressToSync": "按下按钮同步剪切板 👉",
+      "pressToSync": "👈 按下按钮同步剪切板",
       "fetching": "正在获取...",
       "upToDate": "已经是最新.",
       "readClipboardSuccess": "成功读取剪切板.",
       "writeSuccess": "数据成功写入剪切板.",
-      "autoDownload": "文件会很快自动下载. 如果没有, 点击下面的文件链接.",
+      "autoDownload": "文件会很快自动下载. 如果没有, 请在下方历史记录中点击文件下载.",
       "denyRead": "不允许读取剪切板!",
       "fileTooLarge": "文件大小 ({size} MiB) 超过最大限制 ({limit} MiB).",
-      "pressAgain": "因为浏览器安全策略, 请再次按下 👉",
+      "pressAgain": "👈 因为浏览器安全策略, 请再次按下",
       "pressPaste": "如果出现\"粘贴\"按钮, 按下它以允许读取剪切板.",
       "unchanged": "剪切板没有改变.",
       "uploading": "正在上传...",
@@ -85,7 +84,7 @@
       "recommendedBrowsers": "在{os}上, 推荐使用{browsers}浏览器.",
       "readQuickInputSuccess": "成功读取快捷输入区文字.",
       "pinLimit": "最多可以Pin 10条记录.",
-      "specialClipboardPleasePaste": "检测到特殊剪贴板内容（如微信图片），请按 Ctrl+V（Mac: Cmd+V）粘贴。"
+      "specialClipboardPleasePaste": "检测到特殊剪贴板内容(如微信图片), 请按 Ctrl+V(Mac: Cmd+V)粘贴."
     }
   }
 }

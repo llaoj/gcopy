@@ -15,7 +15,7 @@ export default function SyncShortcut() {
   }
 
   return (
-    <span className="float-end flex items-center">
+    <span className="inline-flex items-center align-middle ml-1">
       {isMacOs && !isSafari && (
         <>
           <svg

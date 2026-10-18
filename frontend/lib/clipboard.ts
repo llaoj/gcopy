@@ -7,16 +7,6 @@ export interface Clipboard {
   clientName?: string;
 }
 
-export interface FileInfo {
-  fileName: string;
-  fileURL: string;
-}
-
-export const initFileInfo: FileInfo = {
-  fileName: "",
-  fileURL: "",
-};
-
 export const initTmpClipboard: Clipboard = {
   blobId: "",
   index: "",

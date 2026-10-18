@@ -48,14 +48,13 @@
     "screenshot": "SCREENSHOT",
     "file": "FILE",
     "syncFile": {
-      "title": "Sync the files",
-      "subTitle": "Choose a file and sync it between different devices.",
-      "dragDropTip": "Drag and drop a file here",
-      "fileInputText": "Choose a file"
+      "title": "Sync file",
+      "subTitle": "Choose a file to sync across devices.",
+      "dragDropTip": "Click or drag a file here"
     },
     "quickInput": {
       "title": "Quick input",
-      "subTitle": "Type text, press the button and the text synced between devices.",
+      "subTitle": "Type text to sync across devices.",
       "newline": "Newline"
     },
     "history": {
@@ -66,15 +65,15 @@
       "empty": "Empty"
     },
     "logs": {
-      "pressToSync": "Press the button to sync clipboard 👉",
+      "pressToSync": "👈 Press the button to sync clipboard",
       "fetching": "Fetching...",
       "upToDate": "Already up to date.",
       "readClipboardSuccess": "Read data from the clipboard successfully.",
       "writeSuccess": "Written data to the clipboard successfully.",
-      "autoDownload": "File download should start shortly. if not, please click the file link below.",
+      "autoDownload": "File download should start shortly. If not, click the file in the history below.",
       "denyRead": "Not allowed to read clipboard!",
       "fileTooLarge": "File size ({size} MiB) exceeds the maximum limit ({limit} MiB).",
-      "pressAgain": "Press again due to browser security policies 👉",
+      "pressAgain": "👈 Press again due to browser security policies",
       "pressPaste": "If the \"Paste\" appears, press it to allow reading the clipboard.",
       "unchanged": "Clipboard unchanged.",
       "uploading": "Uploading...",

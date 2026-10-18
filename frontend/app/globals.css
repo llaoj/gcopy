@@ -37,20 +37,48 @@ body {
   background-size: 40px 40px;
 }
 
-.logbox:before {
-  content: "";
+.traffic {
+  display: flex;
+  gap: 0.4rem;
   margin-top: 0.25rem;
   margin-bottom: 0.5rem;
-  display: flex;
+  margin-left: 1em;
   flex: none;
-  height: 0.75rem;
-  width: 0.75rem;
+}
+
+.dot {
+  height: 0.625rem;
+  width: 0.625rem;
   border-radius: 9999px;
-  opacity: 0.3;
-  box-shadow:
-    1em 0,
-    2.4em 0,
-    3.8em 0;
+  background: rgba(255, 255, 255, 0.25);
+  transition:
+    background-color 0.2s,
+    opacity 0.2s;
+}
+
+.logbox[data-syncing="true"] .dot-red {
+  background: #ff5f56;
+  animation: dot-blink 1.5s infinite 0s;
+}
+
+.logbox[data-syncing="true"] .dot-yellow {
+  background: #ffbd2e;
+  animation: dot-blink 1.5s infinite 0.5s;
+}
+
+.logbox[data-syncing="true"] .dot-green {
+  background: #28c840;
+  animation: dot-blink 1.5s infinite 1s;
+}
+
+@keyframes dot-blink {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  33% {
+    opacity: 1;
+  }
 }
 
 .logbox ul {
@@ -58,7 +86,7 @@ body {
 }
 
 .logbox li:before {
-  content: ">";
+  content: "•";
   display: inline-block;
   text-align: right;
   opacity: 0.5;

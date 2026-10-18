@@ -5,16 +5,13 @@ import {
 } from "@heroicons/react/24/solid";
 import HistoryItemScreenshot from "@/components/history-item-screenshot";
 import HistoryItemText from "@/components/history-item-text";
-import { useRef, useMemo, useCallback, memo } from "react";
+import { useRef, useCallback, memo } from "react";
 import { HistoryItemEntity } from "@/models/history";
 import moment from "moment";
 import { db } from "@/models/db";
 import { Log, LogLevel } from "@/lib/log";
-import {
-  clipboardWriteBlob,
-  clipboardWriteBlobPromise,
-  FileInfo,
-} from "@/lib/clipboard";
+import { clipboardWriteBlob, clipboardWriteBlobPromise } from "@/lib/clipboard";
+import { downloadBlob } from "@/lib/file-utils";
 import { browserName } from "react-device-detect";
 
 // 自定义比较函数：只有核心字段变化时才重新渲染
@@ -36,26 +33,12 @@ function arePropsEqual(
 const HistoryItem = memo(function HistoryItem({
   item,
   addLog,
-  updateFileLink,
 }: {
   item: HistoryItemEntity;
   addLog: (log: Log) => void;
-  updateFileLink: (fileInfo: FileInfo) => void;
 }) {
   const t = useTranslations("SyncClipboard");
   const ulRef = useRef<HTMLUListElement>(null);
-
-  // 使用 useMemo 缓存 blob URL
-  const blobFileURL = useMemo(() => {
-    if (item.type !== "file") return "";
-    // iOS Safari: 强制使用 application/octet-stream 避免 Safari 渲染 PDF 等文件
-    const blob = item.dataArrayBuffer
-      ? new Blob([item.dataArrayBuffer], { type: "application/octet-stream" })
-      : new Blob([item.data], { type: "application/octet-stream" });
-    // 确保 blob 存在才创建 URL
-    if (!blob) return "";
-    return (window.URL || window.webkitURL).createObjectURL(blob);
-  }, [item.type, item.data, item.dataArrayBuffer]);
 
   // 使用 useCallback 缓存事件处理函数
   const handleUse = useCallback(async () => {
@@ -63,10 +46,13 @@ const HistoryItem = memo(function HistoryItem({
       ulRef.current?.blur();
 
       if (item.type == "file") {
-        updateFileLink({
-          fileName: item.fileName ?? "",
-          fileURL: blobFileURL,
-        });
+        // iOS Safari: 强制使用 application/octet-stream 避免 Safari 渲染 PDF 等文件
+        const blob = item.dataArrayBuffer
+          ? new Blob([item.dataArrayBuffer], {
+              type: "application/octet-stream",
+            })
+          : item.data;
+        downloadBlob(blob, item.fileName ?? "file");
         addLog({
           message: t("logs.autoDownload"),
           level: LogLevel.Success,
@@ -103,9 +89,7 @@ const HistoryItem = memo(function HistoryItem({
     item.dataType,
     item.data,
     item.fileName,
-    blobFileURL,
     addLog,
-    updateFileLink,
     t,
   ]);
 
@@ -132,32 +116,36 @@ const HistoryItem = memo(function HistoryItem({
   }, [item.createdAt]);
 
   return (
-    <tr>
-      <td className="w-4 p-2 opacity-50">
+    <div className="flex items-center gap-2 h-14 px-2 text-sm">
+      <div className="w-4 shrink-0 text-center text-sm opacity-50">
         {item.pin == "true" ? (
-          <LockClosedIcon className="w-4 h-4" />
+          <LockClosedIcon className="w-4 h-4 mx-auto" />
         ) : (
-          <span className="text-sm">{item.index}</span>
+          <span>{item.index}</span>
         )}
-      </td>
-      <td className="h-14 p-2 w-auto">
-        {item.type == "text" && <HistoryItemText item={item} />}
+      </div>
+      <div className="flex-1 min-w-0 h-full flex items-center px-2">
+        {item.type == "text" && (
+          <div className="w-full min-w-0">
+            <HistoryItemText item={item} />
+          </div>
+        )}
         {item.type == "screenshot" && <HistoryItemScreenshot item={item} />}
         {item.type == "file" && (
           <a
             onClick={handleUse}
             target="_blank"
             rel="noopener noreferrer"
-            className="line-clamp-1 opacity-70 break-all cursor-pointer hover:underline"
+            className="w-full min-w-0 line-clamp-1 opacity-70 break-all cursor-pointer hover:underline"
           >
             {"[" + t("file") + "]" + decodeURI(item.fileName ?? "")}
           </a>
         )}
-      </td>
-      <td className="w-min pr-1 whitespace-pre p-2 text-xs text-nowrap break-keep opacity-50 text-right">
+      </div>
+      <div className="shrink-0 whitespace-pre text-xs text-nowrap opacity-50 text-right">
         {moment(item.createdAt).fromNow()}
-      </td>
-      <td className="w-9 px-0">
+      </div>
+      <div className="w-9 shrink-0 flex justify-center">
         <div className="dropdown dropdown-end">
           <div tabIndex={0} role="button" className="btn btn-ghost btn-xs">
             <EllipsisHorizontalIcon className="h-4 w-4" />
@@ -199,8 +187,8 @@ const HistoryItem = memo(function HistoryItem({
             </li>
           </ul>
         </div>
-      </td>
-    </tr>
+      </div>
+    </div>
   );
 }, arePropsEqual);
 

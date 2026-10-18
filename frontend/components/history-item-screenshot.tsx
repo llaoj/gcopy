@@ -17,12 +17,12 @@ export default function HistoryItemScreenshot({
   if (!blobUrl) return null;
 
   return (
-    <div className="h-full">
+    <div className="flex h-full w-full items-center">
       <a
         href={blobUrl}
         target="_blank"
         rel="noopener noreferrer"
-        className="relative block w-full h-full"
+        className="relative block h-8 w-full"
       >
         <Image
           src={blobUrl}
