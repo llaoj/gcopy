@@ -17,8 +17,24 @@ export default function QuickInput({
         <span className="font-bold">{t("quickInput.title")}</span>
         <span>{" " + t("quickInput.subTitle")}</span>
         {isDesktop && (
-          <span className="ml-1 text-xs opacity-50">
-            {t("quickInput.newline") + ": Shift+Enter"}
+          <span className="ml-1 inline-flex items-center gap-1 align-middle text-xs opacity-50">
+            <span>{t("quickInput.newline")}</span>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 -960 960 960"
+              fill="currentColor"
+              className="inline h-3 w-3"
+            >
+              <path d="M320-120v-310H120l360-450 360 450H640v310H320Zm60-60h200v-310h133L480-786 247-490h133v310Zm100-310Z" />
+            </svg>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 -960 960 960"
+              fill="currentColor"
+              className="inline h-3 w-3"
+            >
+              <path d="M360-240 120-480l240-240 56 56-144 144h488v-160h80v240H272l144 144-56 56Z" />
+            </svg>
           </span>
         )}
       </div>
