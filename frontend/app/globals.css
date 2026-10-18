@@ -99,15 +99,15 @@ body {
 /* 新数据进入历史列表：新行像卡片一样带阴影轻落并回稳，位于顶层压住后续行；
    其余行的平滑下滑由 History 组件里的 FLIP 逻辑处理。 */
 @media (prefers-reduced-motion: no-preference) {
-  .history-enter-f {
+  .history-enter {
     position: relative;
     z-index: 10;
     /* 不透明（带背景），下滑的后续行从其下方经过时不会透出来 */
     background-color: oklch(var(--b1));
-    animation: history-enter-f 0.5s ease-out 1;
+    animation: history-enter 0.5s ease-out 1;
   }
 
-  @keyframes history-enter-f {
+  @keyframes history-enter {
     0% {
       /* 整体从右上斜入，长宽不变（不缩放） */
       transform: translate(14px, -16px);

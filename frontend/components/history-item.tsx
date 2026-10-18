@@ -119,7 +119,7 @@ const HistoryItem = memo(function HistoryItem({
     <div
       data-key={item.createdAt}
       className={`flex items-center gap-2 h-14 px-2 text-sm${
-        isNew ? " history-enter-f" : ""
+        isNew ? " history-enter" : ""
       }`}
     >
       <div className="w-4 shrink-0 text-center text-sm opacity-50">
