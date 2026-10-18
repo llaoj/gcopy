@@ -1,8 +1,5 @@
 import { useTranslations } from "next-intl";
-import {
-  EllipsisHorizontalIcon,
-  LockClosedIcon,
-} from "@heroicons/react/24/solid";
+import { EllipsisHorizontalIcon } from "@heroicons/react/24/solid";
 import HistoryItemScreenshot from "@/components/history-item-screenshot";
 import HistoryItemText from "@/components/history-item-text";
 import { useRef, useCallback, memo } from "react";
@@ -16,10 +13,11 @@ import { browserName } from "react-device-detect";
 
 // 自定义比较函数：只有核心字段变化时才重新渲染
 function arePropsEqual(
-  prevProps: { item: HistoryItemEntity },
-  nextProps: { item: HistoryItemEntity },
+  prevProps: { item: HistoryItemEntity; isNew?: boolean },
+  nextProps: { item: HistoryItemEntity; isNew?: boolean },
 ) {
   return (
+    prevProps.isNew === nextProps.isNew &&
     prevProps.item.createdAt === nextProps.item.createdAt &&
     prevProps.item.pin === nextProps.item.pin &&
     prevProps.item.index === nextProps.item.index &&
@@ -33,9 +31,11 @@ function arePropsEqual(
 const HistoryItem = memo(function HistoryItem({
   item,
   addLog,
+  isNew,
 }: {
   item: HistoryItemEntity;
   addLog: (log: Log) => void;
+  isNew?: boolean;
 }) {
   const t = useTranslations("SyncClipboard");
   const ulRef = useRef<HTMLUListElement>(null);
@@ -116,10 +116,22 @@ const HistoryItem = memo(function HistoryItem({
   }, [item.createdAt]);
 
   return (
-    <div className="flex items-center gap-2 h-14 px-2 text-sm">
+    <div
+      data-key={item.createdAt}
+      className={`flex items-center gap-2 h-14 px-2 text-sm${
+        isNew ? " history-enter-f" : ""
+      }`}
+    >
       <div className="w-4 shrink-0 text-center text-sm opacity-50">
         {item.pin == "true" ? (
-          <LockClosedIcon className="w-4 h-4 mx-auto" />
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            className="w-4 h-4 mx-auto rotate-45"
+          >
+            <path d="M16 9V4h1c.55 0 1-.45 1-1s-.45-1-1-1H7c-.55 0-1 .45-1 1s.45 1 1 1h1v5c0 1.66-1.34 3-3 3v2h5.97v7l1 1 1-1v-7H19v-2c-1.66 0-3-1.34-3-3z" />
+          </svg>
         ) : (
           <span>{item.index}</span>
         )}

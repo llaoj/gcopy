@@ -3,10 +3,23 @@ import HistoryItem from "./history-item";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/models/db";
 import { Log } from "@/lib/log";
-import { useCallback } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 
 export default function History({ addLog }: { addLog: (log: Log) => void }) {
   const t = useTranslations("SyncClipboard.history");
+  // 新加入列表的历史记录，用于播放"新数据进入"动画
+  const [newId, setNewId] = useState<string | null>(null);
+  // 之前见过的记录 key（pinned + recent），用于判断是否真有“新数据”进入
+  const seenKeysRef = useRef<Set<string> | null>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  // 每行上一次的布局位置，用于 FLIP：新数据进入时让其余行平滑下滑
+  const rectsRef = useRef<Map<string, number>>(new Map());
 
   // 分离查询：pinned 和 unpinned items，减少不必要的重新渲染
   const pinnedItems = useLiveQuery(
@@ -19,6 +32,74 @@ export default function History({ addLog }: { addLog: (log: Log) => void }) {
     [],
   );
 
+  // 新数据进入检测 + FLIP：新行播放 F 动画（由 isNew 驱动），
+  // 其余行用 FLIP 平滑下滑到新位置。用 useLayoutEffect 在绘制前处理，避免闪烁。
+  useLayoutEffect(() => {
+    if (!pinnedItems || !recentItems) return;
+
+    // 判断是否真有新记录进入：比对 key 集合（只看当前存在的 key）。
+    // 这样“取消置顶最新一条”等重排（key 早已见过）不会被误判为新数据。
+    const keys = new Set<string>();
+    pinnedItems.forEach((i) => i.createdAt && keys.add(i.createdAt));
+    recentItems.forEach((i) => i.createdAt && keys.add(i.createdAt));
+    const prevKeys = seenKeysRef.current;
+    let newTop: string | null = null;
+    if (prevKeys !== null) {
+      for (const item of recentItems) {
+        if (item.createdAt && !prevKeys.has(item.createdAt)) {
+          newTop = item.createdAt; // recentItems 已按时间倒序，第一个新 key 即最新的一条
+          break;
+        }
+      }
+    }
+    seenKeysRef.current = keys;
+    if (newTop) {
+      setNewId(newTop);
+    }
+
+    const container = listRef.current;
+    if (!container) return;
+    const rows = Array.from(
+      container.querySelectorAll<HTMLElement>("[data-key]"),
+    );
+    // 用 offsetTop 读取布局位置（容器是 offsetParent）：不受页面滚动影响，
+    // 也不受已施加的 transform 影响（用 getBoundingClientRect 会因滚动产生错误位移）。
+    const lasts = rows.map((el) => ({
+      el,
+      key: el.dataset.key as string,
+      top: el.offsetTop,
+    }));
+
+    const reduceMotion =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    if (newTop && !reduceMotion) {
+      lasts.forEach(({ el, key, top: lastTop }) => {
+        const stored = rectsRef.current.get(key);
+        if (stored == null) return;
+        const delta = stored - lastTop;
+        if (Math.abs(delta) < 0.5) return;
+        // Invert：先把行移回旧位置；Play：下一帧过渡到新位置
+        el.style.transition = "none";
+        el.style.transform = `translateY(${delta}px)`;
+        requestAnimationFrame(() => {
+          el.style.transition = "transform 350ms ease-out";
+          el.style.transform = "";
+        });
+      });
+    }
+
+    rectsRef.current = new Map(lasts.map((l) => [l.key, l.top]));
+  }, [recentItems, pinnedItems]);
+
+  // 动画结束后清除标记
+  useEffect(() => {
+    if (!newId) return;
+    const timer = setTimeout(() => setNewId(null), 600);
+    return () => clearTimeout(timer);
+  }, [newId]);
+
   // 使用 useCallback 稳定回调函数引用，避免每次渲染创建新函数
   const stableAddLog = useCallback((log: Log) => addLog(log), [addLog]);
 
@@ -28,7 +109,10 @@ export default function History({ addLog }: { addLog: (log: Log) => void }) {
     <div className="pb-4">
       <div className="pb-2 text-base font-bold">{t("title")}</div>
       <div className="pb-2 text-sm opacity-70">{t("subTitle")}</div>
-      <div className="bg-base-100 rounded-box mb-2 border border-base-300 divide-y divide-base-300">
+      <div
+        ref={listRef}
+        className="history-list relative bg-base-100 rounded-box mb-2 border border-base-300 divide-y divide-base-300"
+      >
         {pinnedItems.length === 0 && recentItems.length === 0 && (
           <div className="px-2 py-2 text-sm opacity-50 text-center">
             {t("empty")}
@@ -38,7 +122,12 @@ export default function History({ addLog }: { addLog: (log: Log) => void }) {
           <HistoryItem key={item.createdAt} item={item} addLog={stableAddLog} />
         ))}
         {recentItems.map((item) => (
-          <HistoryItem key={item.createdAt} item={item} addLog={stableAddLog} />
+          <HistoryItem
+            key={item.createdAt}
+            item={item}
+            addLog={stableAddLog}
+            isNew={item.createdAt === newId}
+          />
         ))}
       </div>
     </div>
