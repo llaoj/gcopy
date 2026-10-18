@@ -15,8 +15,8 @@ export default function History({ addLog }: { addLog: (log: Log) => void }) {
   const t = useTranslations("SyncClipboard.history");
   // 新加入列表的历史记录，用于播放"新数据进入"动画
   const [newId, setNewId] = useState<string | null>(null);
-  // 之前见过的记录 key（pinned + recent），用于判断是否真有“新数据”进入
-  const seenKeysRef = useRef<Set<string> | null>(null);
+  // 见过的最大 createdAt，用于判断是否真有“新数据”进入（pin/unpin 不会使其变大）
+  const maxSeenRef = useRef<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
   // 每行上一次的布局位置，用于 FLIP：新数据进入时让其余行平滑下滑
   const rectsRef = useRef<Map<string, number>>(new Map());
@@ -37,22 +37,23 @@ export default function History({ addLog }: { addLog: (log: Log) => void }) {
   useLayoutEffect(() => {
     if (!pinnedItems || !recentItems) return;
 
-    // 判断是否真有新记录进入：比对 key 集合（只看当前存在的 key）。
-    // 这样“取消置顶最新一条”等重排（key 早已见过）不会被误判为新数据。
-    const keys = new Set<string>();
-    pinnedItems.forEach((i) => i.createdAt && keys.add(i.createdAt));
-    recentItems.forEach((i) => i.createdAt && keys.add(i.createdAt));
-    const prevKeys = seenKeysRef.current;
-    let newTop: string | null = null;
-    if (prevKeys !== null) {
-      for (const item of recentItems) {
-        if (item.createdAt && !prevKeys.has(item.createdAt)) {
-          newTop = item.createdAt; // recentItems 已按时间倒序，第一个新 key 即最新的一条
-          break;
-        }
+    // 新数据必然是 createdAt 最大的一条。用“见过的最大 createdAt”判断：
+    // pin/unpin 等重排不会产生更大的 createdAt，因此不会误触发动画。
+    let currentMax: string | null = null;
+    for (const item of [...pinnedItems, ...recentItems]) {
+      const t = item.createdAt;
+      if (t && (currentMax === null || t > currentMax)) {
+        currentMax = t;
       }
     }
-    seenKeysRef.current = keys;
+    const prevMax = maxSeenRef.current;
+    let newTop: string | null = null;
+    if (prevMax !== null && currentMax !== null && currentMax > prevMax) {
+      newTop = currentMax;
+    }
+    if (currentMax !== null && (prevMax === null || currentMax > prevMax)) {
+      maxSeenRef.current = currentMax;
+    }
     if (newTop) {
       setNewId(newTop);
     }
