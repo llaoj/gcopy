@@ -11,7 +11,6 @@ PKG:=github.com/llaoj/gcopy
 GCOPY_IMAGE_REPO:=$(REGISTRY)/gcopy
 CGO_ENABLED:=0
 OS_ARCHS ?= linux/amd64 linux/arm64 darwin/amd64 darwin/arm64
-STATIC_DIR=internal/static/dist
 
 # Frontend build output directory for Go embed
 STATIC_DIR=internal/static/dist
@@ -24,6 +23,7 @@ frontend-build:
 	rm -rf $(STATIC_DIR)
 	cd frontend && npm ci && npm run build
 	cp -r frontend/out $(STATIC_DIR)
+	touch $(STATIC_DIR)/.gitkeep
 
 vet:
 	go vet ./...
@@ -53,6 +53,8 @@ push-container: clean
 clean:
 	rm -rf bin/
 	rm -rf $(STATIC_DIR)
+	mkdir -p $(STATIC_DIR)
+	touch $(STATIC_DIR)/.gitkeep
 	rm -f coverage.out
 
 gomod:

@@ -1,8 +1,9 @@
 .gcopy
 .dev/
-dist/
+/dist/
 frontend/.env
 output/
 bin/
 .vscode
-internal/static/dist/
+internal/static/dist/*
+!internal/static/dist/.gitkeep
