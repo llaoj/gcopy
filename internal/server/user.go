@@ -8,9 +8,9 @@ import (
 )
 
 func (s *Server) logoutHandler(c *gin.Context) {
-	session, err := s.sessionStore.Get(c.Request, auth.UserSessionName)
+	session, err := auth.GetSession(s.sessionStore, c.Request, auth.UserSessionName)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to load session"})
 		return
 	}
 
@@ -18,16 +18,16 @@ func (s *Server) logoutHandler(c *gin.Context) {
 		delete(session.Values, key)
 	}
 	if err = session.Save(c.Request, c.Writer); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to save session"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Success"})
 }
 
 func (s *Server) getUserHandler(c *gin.Context) {
-	session, err := s.sessionStore.Get(c.Request, auth.UserSessionName)
+	session, err := auth.GetSession(s.sessionStore, c.Request, auth.UserSessionName)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to load session"})
 		return
 	}
 
@@ -35,7 +35,7 @@ func (s *Server) getUserHandler(c *gin.Context) {
 	if ok && auth.IsAuthenticated(session) {
 		// Refresh session (sliding expiration)
 		if err = session.Save(c.Request, c.Writer); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+			c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to save session"})
 			return
 		}
 
@@ -56,9 +56,9 @@ func (s *Server) getUserHandler(c *gin.Context) {
 }
 
 func (s *Server) verifyAuthMiddleware(c *gin.Context) {
-	session, err := s.sessionStore.Get(c.Request, auth.UserSessionName)
+	session, err := auth.GetSession(s.sessionStore, c.Request, auth.UserSessionName)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "Unauthorized"})
 		return
 	}
 

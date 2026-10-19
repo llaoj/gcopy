@@ -73,9 +73,9 @@ func (a *TokenAuth) generateTokenHandler(c *gin.Context) {
 		return
 	}
 
-	session, err := a.sessionStore.Get(c.Request, UserSessionName)
+	session, err := GetSession(a.sessionStore, c.Request, UserSessionName)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to load session"})
 		return
 	}
 
@@ -85,7 +85,7 @@ func (a *TokenAuth) generateTokenHandler(c *gin.Context) {
 	session.Options.MaxAge = sessionMaxAge
 
 	if err = session.Save(c.Request, c.Writer); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to save session"})
 		return
 	}
 
@@ -110,9 +110,9 @@ func (a *TokenAuth) verifyTokenHandler(c *gin.Context) {
 
 	// For now, any valid token is considered valid
 	// In a production system, you might want to validate against a database
-	session, err := a.sessionStore.Get(c.Request, UserSessionName)
+	session, err := GetSession(a.sessionStore, c.Request, UserSessionName)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to load session"})
 		return
 	}
 
@@ -122,7 +122,7 @@ func (a *TokenAuth) verifyTokenHandler(c *gin.Context) {
 	session.Options.MaxAge = sessionMaxAge
 
 	if err = session.Save(c.Request, c.Writer); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Failed to save session"})
 		return
 	}
 
