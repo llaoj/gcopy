@@ -42,8 +42,16 @@ export default function SyncFile({
             await onFileChange(droppedFile);
           }
         }}
+        role="button"
+        tabIndex={0}
         onClick={() => {
           fileInputRef.current?.click();
+        }}
+        onKeyDown={(ev) => {
+          if (ev.key === "Enter" || ev.key === " ") {
+            ev.preventDefault();
+            fileInputRef.current?.click();
+          }
         }}
       >
         {!dragging && (
