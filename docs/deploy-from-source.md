@@ -40,6 +40,10 @@ Visit `https://<host>:3375`. The browser will warn about the self-signed certifi
 
 All configuration can be done via command-line flags or environment variables (with `GCOPY_` prefix). Users authenticate with an 8-character token.
 
+## Rate Limiting
+
+GCopy has **no built-in rate limiting** — it focuses on the core sync logic. If it is reachable by untrusted clients, apply traffic control at the edge (nginx `limit_req`, Istio, a sidecar, etc.), especially for `POST /api/v1/user/token/generate`, `POST /api/v1/user/token/verify` and `POST /api/v1/clipboard`.
+
 ## HTTPS Configuration
 
 The browser Clipboard API requires HTTPS. You must configure HTTPS for GCopy to work.
@@ -79,7 +83,7 @@ Configure the reverse proxy to forward HTTPS traffic to port 3375.
 
 | Flag | Environment Variable | Default | Description |
 |------|---------------------|---------|-------------|
-| `-app-key` | `GCOPY_APP_KEY` | - | Encryption key (min 8 characters, required) |
+| `-app-key` | `GCOPY_APP_KEY` | - | Encryption key (min 16 characters, required) |
 | `-listen` | `GCOPY_LISTEN` | `:3375` | Listen address |
 | `-tls-cert-file` | `GCOPY_TLS_CERT_FILE` | - | TLS certificate file |
 | `-tls-key-file` | `GCOPY_TLS_KEY_FILE` | - | TLS key file |

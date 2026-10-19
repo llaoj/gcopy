@@ -65,8 +65,8 @@ func Get() *Config {
 	if *appKey == "" {
 		log.Fatal("app-key cannot be empty")
 	}
-	if len(*appKey) < 8 {
-		log.Fatal("app-key must be at least 8 characters")
+	if len(*appKey) < 16 {
+		log.Fatal("app-key must be at least 16 characters")
 	}
 
 	cfg = &Config{

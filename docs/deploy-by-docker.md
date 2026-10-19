@@ -17,7 +17,7 @@ docker run -d \
   -p 3375:3375 \
   -v $(pwd)/cert.pem:/cert.pem:ro \
   -v $(pwd)/key.pem:/key.pem:ro \
-  -e GCOPY_APP_KEY=your-secret-key-min-8-chars \
+  -e GCOPY_APP_KEY=your-secret-key-min-16-chars \
   -e GCOPY_TLS_CERT_FILE=/cert.pem \
   -e GCOPY_TLS_KEY_FILE=/key.pem \
   llaoj/gcopy:latest
@@ -31,13 +31,15 @@ Visit `https://<host>:3375`. The browser will warn about the self-signed certifi
 
 All configuration is done via environment variables with the `GCOPY_` prefix.
 
+> **Rate limiting:** GCopy has no built-in rate limiting. If it is exposed to untrusted clients, apply traffic control at the edge (nginx, Istio, sidecar, ...), especially for `POST /api/v1/user/token/generate`, `POST /api/v1/user/token/verify` and `POST /api/v1/clipboard`.
+
 ### Token Authentication
 
 Users authenticate with an 8-character token.
 
 ```yaml
 # docker run equivalent
--e GCOPY_APP_KEY=your-secret-key-min-8-chars
+-e GCOPY_APP_KEY=your-secret-key-min-16-chars
 ```
 
 ### TLS (Built-in HTTPS)
@@ -69,7 +71,7 @@ Configure the reverse proxy to forward HTTPS traffic to port 3375.
 
 | Variable | Description | Default | Required |
 |----------|-------------|---------|----------|
-| `GCOPY_APP_KEY` | Encryption key (min 8 characters) | - | Yes |
+| `GCOPY_APP_KEY` | Encryption key (min 16 characters) | - | Yes |
 | `GCOPY_LISTEN` | Listen address | `:3375` | No |
 | `GCOPY_TLS_CERT_FILE` | TLS certificate file path | - | No |
 | `GCOPY_TLS_KEY_FILE` | TLS key file path | - | No |

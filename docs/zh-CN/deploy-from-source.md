@@ -40,6 +40,10 @@ curl -sSL https://raw.githubusercontent.com/llaoj/gcopy/main/scripts/gen-cert.sh
 
 所有配置可通过命令行参数或环境变量（`GCOPY_` 前缀）完成。用户使用 8 位字符令牌认证。
 
+## 限流
+
+GCopy **不内置限流**，专注于核心同步逻辑。如果它会暴露给不可信客户端，请在边缘（nginx `limit_req`、Istio、sidecar 等）做流量控制，尤其是 `POST /api/v1/user/token/generate`、`POST /api/v1/user/token/verify` 和 `POST /api/v1/clipboard`。
+
 ## HTTPS 配置
 
 浏览器剪贴板 API 要求 HTTPS，必须配置 HTTPS 才能正常使用。
@@ -79,7 +83,7 @@ GCopy 以 HTTP 启动，由反向代理（Nginx、Caddy 等）处理 TLS：
 
 | 参数 | 环境变量 | 默认值 | 说明 |
 |------|---------|--------|------|
-| `-app-key` | `GCOPY_APP_KEY` | - | 加密密钥（至少 8 个字符，必需） |
+| `-app-key` | `GCOPY_APP_KEY` | - | 加密密钥（至少 16 个字符，必需） |
 | `-listen` | `GCOPY_LISTEN` | `:3375` | 监听地址 |
 | `-tls-cert-file` | `GCOPY_TLS_CERT_FILE` | - | TLS 证书文件 |
 | `-tls-key-file` | `GCOPY_TLS_KEY_FILE` | - | TLS 密钥文件 |

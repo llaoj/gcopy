@@ -15,7 +15,7 @@ mkdir -p "$ROOT_DIR/.dev"
 echo "Starting backend..."
 cd "$ROOT_DIR"
 go run cmd/gcopy.go \
-    -app-key=change-me \
+    -app-key=dev-secret-key-change-me \
     -listen=:3376 \
     -debug &
 BACKEND_PID=$!

@@ -17,7 +17,7 @@ docker run -d \
   -p 3375:3375 \
   -v $(pwd)/cert.pem:/cert.pem:ro \
   -v $(pwd)/key.pem:/key.pem:ro \
-  -e GCOPY_APP_KEY=your-secret-key-min-8-chars \
+  -e GCOPY_APP_KEY=your-secret-key-min-16-chars \
   -e GCOPY_TLS_CERT_FILE=/cert.pem \
   -e GCOPY_TLS_KEY_FILE=/key.pem \
   llaoj/gcopy:latest
@@ -31,12 +31,14 @@ docker run -d \
 
 所有配置通过 `GCOPY_` 前缀的环境变量完成。
 
+> **限流：** GCopy 不内置限流。若会暴露给不可信客户端，请在边缘（nginx、Istio、sidecar 等）做流量控制，尤其是 `POST /api/v1/user/token/generate`、`POST /api/v1/user/token/verify` 和 `POST /api/v1/clipboard`。
+
 ### 令牌认证
 
 用户使用 8 位字符令牌认证。
 
 ```yaml
--e GCOPY_APP_KEY=your-secret-key-min-8-chars
+-e GCOPY_APP_KEY=your-secret-key-min-16-chars
 ```
 
 ### TLS（内置 HTTPS）
@@ -68,7 +70,7 @@ GCopy 以 HTTP 启动，由反向代理（Nginx、Caddy 等）处理 TLS：
 
 | 变量 | 说明 | 默认值 | 必需 |
 |------|------|--------|------|
-| `GCOPY_APP_KEY` | 加密密钥（至少 8 个字符） | - | 是 |
+| `GCOPY_APP_KEY` | 加密密钥（至少 16 个字符） | - | 是 |
 | `GCOPY_LISTEN` | 监听地址 | `:3375` | 否 |
 | `GCOPY_TLS_CERT_FILE` | TLS 证书文件路径 | - | 否 |
 | `GCOPY_TLS_KEY_FILE` | TLS 密钥文件路径 | - | 否 |
