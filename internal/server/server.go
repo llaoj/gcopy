@@ -1,12 +1,14 @@
 package server
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"io/fs"
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -26,11 +28,20 @@ type Server struct {
 	log          *logrus.Logger
 	sessionStore sessions.Store
 	tokenAuth    *auth.TokenAuth
+	// clipboardMu serializes the read-modify-write of the clipboard index.
+	// A single global mutex is enough here: the critical section is tiny and
+	// uploads are infrequent.
+	clipboardMu sync.Mutex
 }
 
 func NewServer(log *logrus.Logger) *Server {
 	cfg := config.Get()
 	sessionStore := sessions.NewCookieStore([]byte(cfg.AppKey))
+	sessionStore.Options.HttpOnly = true
+	sessionStore.Options.SameSite = http.SameSiteLaxMode
+	// GCopy requires HTTPS (the browser Clipboard API needs a secure context),
+	// so the session cookie is always Secure.
+	sessionStore.Options.Secure = true
 
 	tokenAuth := auth.NewTokenAuth(sessionStore)
 
@@ -56,6 +67,13 @@ func (s *Server) Run() {
 	}
 	r := gin.New()
 	r.Use(gin.Recovery())
+	// GCopy does not interpret proxy headers (client IP / forwarding is handled
+	// at the edge). Disabling trusted proxies also silences Gin's warning about
+	// trusting all proxies by default.
+	if err := r.SetTrustedProxies(nil); err != nil {
+		s.log.Warnf("Failed to configure trusted proxies: %v", err)
+	}
+	r.Use(s.securityHeadersMiddleware())
 
 	r.GET("/ping", func(c *gin.Context) { c.String(200, "pong") })
 	r.HEAD("/ping", func(c *gin.Context) { c.String(200, "pong") })
@@ -143,26 +161,20 @@ func (s *Server) updateClipboardHandler(c *gin.Context) {
 		return
 	}
 
-	// 限制请求体大小
+	// 限制请求体大小：按实际读取的字节数封顶，不依赖客户端的 Content-Length
 	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, int64(s.config.MaxContentLength)*1024*1024)
-
-	contentLength, err := strconv.Atoi(c.Request.Header.Get("Content-Length"))
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
-		return
-	}
-	if contentLength > s.config.MaxContentLength*1024*1024 {
-		c.JSON(http.StatusRequestEntityTooLarge, gin.H{"message": fmt.Sprintf("The synchronized content length cannot exceed %vMiB", s.config.MaxContentLength)})
-		return
-	}
 
 	data, err := io.ReadAll(c.Request.Body)
 	if err != nil {
+		var maxErr *http.MaxBytesError
+		if errors.As(err, &maxErr) {
+			c.JSON(http.StatusRequestEntityTooLarge, gin.H{"message": fmt.Sprintf("The synchronized content length cannot exceed %vMiB", s.config.MaxContentLength)})
+			return
+		}
 		s.log.Errorf("Failed to read request body: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"message": fmt.Sprintf("Failed to read request body: %v", err)})
 		return
 	}
-	defer c.Request.Body.Close()
 	if data == nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "Request body is nil"})
 		return
@@ -175,12 +187,6 @@ func (s *Server) updateClipboardHandler(c *gin.Context) {
 		return
 	}
 
-	cb := s.wall.Get(sub)
-	index := 0
-	if cb != nil {
-		index = cb.Index
-	}
-
 	var clientName string
 	ua := useragent.Parse(c.Request.Header.Get("User-Agent"))
 	if ua.OS != "" {
@@ -190,7 +196,14 @@ func (s *Server) updateClipboardHandler(c *gin.Context) {
 		}
 	}
 
-	cb = &gcopy.Clipboard{
+	// Serialize the read-modify-write of the clipboard index so concurrent
+	// uploads don't collide on the same index.
+	s.clipboardMu.Lock()
+	index := 0
+	if prev := s.wall.Get(sub); prev != nil {
+		index = prev.Index
+	}
+	cb := &gcopy.Clipboard{
 		Index:      index + 1,
 		Type:       xType,
 		FileName:   xFileName,
@@ -199,11 +212,24 @@ func (s *Server) updateClipboardHandler(c *gin.Context) {
 		ClientName: clientName,
 		MIMEType:   c.Request.Header.Get("Content-Type"),
 	}
-	s.log.Infof("[%s] Received %s(%v)", utils.StrMaskMiddle(sub), cb.Type, cb.Index)
 	s.wall.Set(sub, cb)
+	s.clipboardMu.Unlock()
+
+	s.log.Infof("[%s] Received %s(%v)", utils.StrMaskMiddle(sub), cb.Type, cb.Index)
 
 	c.Header("X-Index", strconv.Itoa(cb.Index))
 	c.JSON(http.StatusOK, gin.H{"message": "Success"})
+}
+
+func (s *Server) securityHeadersMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Header("X-Content-Type-Options", "nosniff")
+		// Only advertise HSTS when the request actually arrived over HTTPS.
+		if c.Request.TLS != nil || strings.EqualFold(c.GetHeader("X-Forwarded-Proto"), "https") {
+			c.Header("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+		}
+		c.Next()
+	}
 }
 
 func (s *Server) cacheMiddleware() gin.HandlerFunc {

@@ -16,9 +16,7 @@ type Wall struct {
 }
 
 func NewWall(log *logrus.Logger) *Wall {
-	return &Wall{
-		log: log,
-	}
+	return &Wall{log: log}
 }
 
 func (w *Wall) Set(key string, cb *gcopy.Clipboard) {
@@ -33,10 +31,6 @@ func (w *Wall) Get(key string) *gcopy.Clipboard {
 	return nil
 }
 
-func (w *Wall) Del(key string) {
-	w.cbs.Delete(key)
-}
-
 func (w *Wall) Housekeeping() func() {
 	ticker := time.NewTicker(time.Minute)
 
@@ -45,7 +39,9 @@ func (w *Wall) Housekeeping() func() {
 			w.cbs.Range(func(key, value any) bool {
 				cb := value.(*gcopy.Clipboard)
 				if time.Since(cb.CreatedAt) > 24*time.Hour {
-					w.cbs.Delete(key)
+					// CompareAndDelete avoids removing an entry that has been
+					// replaced with a newer one since it was read.
+					w.cbs.CompareAndDelete(key, value)
 					w.log.Infof("[%s] Clipboard expired", utils.StrMaskMiddle(key.(string)))
 				}
 				return true
