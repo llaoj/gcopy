@@ -51,24 +51,27 @@ export default function Notice() {
 
   return (
     <>
-      <div className="pb-2 text-base font-bold">{t("title")}</div>
+      <div className="pb-2 text-sm font-bold">{t("title")}</div>
       <ol className="list-decimal list-outside pl-5 space-y-1 text-sm opacity-70">
         <li>
           {t.rich("shareClipboard", {
             strong: (chunks) => <strong>{chunks}</strong>,
+            allow: (chunks) => (
+              <span className="inline-block px-1.5 border border-base-content/40 rounded text-xs leading-tight">
+                {chunks}
+              </span>
+            ),
           })}
         </li>
         <li>{t("protectPrivacy")}</li>
         <li>
-          <span>{t("supportedBrowsers")}</span>
-          <ul className="mt-1 list-disc list-outside pl-5 space-y-0.5">
-            {browsers.map((browser) => (
-              <li key={browser.name}>
-                {browser.icon}
-                {browser.name}
-              </li>
-            ))}
-          </ul>
+          <span>{t("supportedBrowsers")}</span>{" "}
+          {browsers.map((browser) => (
+            <span key={browser.name} className="whitespace-nowrap mr-2">
+              {browser.icon}
+              {browser.name}
+            </span>
+          ))}
         </li>
       </ol>
     </>

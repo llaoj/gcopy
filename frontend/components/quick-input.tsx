@@ -17,7 +17,7 @@ export default function QuickInput({
         <span className="font-bold">{t("quickInput.title")}</span>
         <span>{" " + t("quickInput.subTitle")}</span>
         {isDesktop && (
-          <span className="ml-1 inline-flex items-center gap-1 align-middle text-xs opacity-50">
+          <span className="ml-3 inline-flex items-center gap-1 align-middle text-xs opacity-50">
             <span>{t("quickInput.newline")}</span>
             <svg
               xmlns="http://www.w3.org/2000/svg"
