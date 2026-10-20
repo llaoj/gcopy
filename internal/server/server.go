@@ -258,12 +258,14 @@ func (s *Server) frontendHandler(assetFS fs.FS) gin.HandlerFunc {
 			c.Data(http.StatusOK, "text/html; charset=utf-8", data)
 			return
 		}
-		f, err := assetFS.Open(strings.TrimPrefix(path, "/"))
-		if err != nil {
+		// fs.FS 的路径是非法时（如带尾部斜杠的 "user/token/"），embed.FS 会
+		// 直接返回错误。Next 的 trailingSlash 导出形式是 "user/token/index.html"，
+		// 所以这里先去掉尾部斜杠再判断文件是否存在，目录交给 FileServer 处理。
+		name := strings.Trim(strings.TrimPrefix(path, "/"), "/")
+		if _, err := fs.Stat(assetFS, name); err != nil {
 			c.Status(http.StatusNotFound)
 			return
 		}
-		f.Close()
 		staticServer.ServeHTTP(c.Writer, c.Request)
 	}
 }
