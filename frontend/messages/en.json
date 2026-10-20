@@ -43,7 +43,6 @@
     "title": "Sync the clipboard",
     "subTitle": "Press the button and the clipboard synced between devices.",
     "syncButtonText": "Sync clipboard",
-    "fromSource": "From",
     "text": "TEXT",
     "screenshot": "SCREENSHOT",
     "file": "FILE",

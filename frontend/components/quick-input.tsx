@@ -41,7 +41,7 @@ export default function QuickInput({
       <textarea
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="textarea textarea-bordered block rounded-box leading-tight w-full min-h-12 p-2 flex-1"
+        className="textarea textarea-bordered block rounded-box leading-tight w-full min-h-12 p-2 flex-1 text-base"
       ></textarea>
     </div>
   );

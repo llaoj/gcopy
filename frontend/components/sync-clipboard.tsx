@@ -49,8 +49,6 @@ export default function SyncClipboard() {
   const [quickText, setQuickText] = useState<string>("");
   // 等待用户粘贴特殊剪贴板内容（如微信图片）
   const [waitingForPaste, setWaitingForPaste] = useState<boolean>(false);
-  // 最近一次同步内容的来源设备名
-  const [lastSource, setLastSource] = useState<string | null>(null);
   // 同步方向，用于日志框红绿灯动画：
   //   pending = 已触发但方向未定；in = 服务器→本机；out = 本机→服务器
   const [syncDirection, setSyncDirection] = useState<SyncDirection>(null);
@@ -473,7 +471,6 @@ export default function SyncClipboard() {
       return;
     }
     const xclientname = response.headers.get("x-clientname");
-    setLastSource(xclientname ?? "UNKNOWN");
     setSyncDirection("in");
     addLog({
       message: t("logs.received", {
@@ -827,7 +824,7 @@ export default function SyncClipboard() {
           <SyncShortcut />
         </div>
         <div className="grid grid-cols-9 gap-3 w-full">
-          <SyncButton syncFunc={syncFunc} lastSource={lastSource} />
+          <SyncButton syncFunc={syncFunc} />
           <LogBox logs={logs} direction={syncDirection} />
         </div>
       </div>
