@@ -1,38 +1,32 @@
 import { Log, LogLevel } from "@/lib/log";
+import type { SyncDirection } from "@/lib/log";
 import { useRef, useEffect, useState } from "react";
 
-// 红绿灯动画最短显示时长，避免快速同步一闪而过
-const MIN_SYNC_MS = 1200;
+// 红绿灯动画固定显示时长：方向确定后保持这段时间，
+// 让一次呼吸动画（约 1.5s）能完整播放完，避免一闪而过。
+const LIGHT_SHOW_MS = 1500;
 
 export default function LogBox({
   logs,
-  syncing,
+  direction,
 }: {
   logs: Log[];
-  syncing: boolean;
+  direction: SyncDirection;
 }) {
   const ulRef = useRef<HTMLUListElement>(null);
-  // 实际驱动红绿灯动画的状态：即便 syncing 很快变回 false，
-  // 也至少保持 MIN_SYNC_MS，保证动画能被看到。
-  const [active, setActive] = useState(false);
-  const startedAtRef = useRef(0);
+  // 实际驱动红绿灯动画的方向：direction 变回 null 后仍保持 LIGHT_SHOW_MS，
+  // 保证呼吸动画能被完整看到。
+  const [shownDir, setShownDir] = useState<SyncDirection>(null);
 
   useEffect(() => {
-    if (syncing) {
-      startedAtRef.current = Date.now();
-      setActive(true);
+    if (direction == null) {
       return;
     }
 
-    const remain = MIN_SYNC_MS - (Date.now() - startedAtRef.current);
-    if (remain <= 0) {
-      setActive(false);
-      return;
-    }
-
-    const timer = setTimeout(() => setActive(false), remain);
+    setShownDir(direction);
+    const timer = setTimeout(() => setShownDir(null), LIGHT_SHOW_MS);
     return () => clearTimeout(timer);
-  }, [syncing]);
+  }, [direction]);
 
   useEffect(() => {
     if (ulRef.current) {
@@ -66,7 +60,7 @@ export default function LogBox({
   return (
     <div
       className="logbox bg-neutral rounded-box h-52 col-span-9 md:col-span-7 flex flex-col  overflow-hidden py-2 text-white text-sm"
-      data-syncing={active}
+      data-dir={shownDir ?? undefined}
     >
       <div className="traffic">
         <span className="dot dot-red" />

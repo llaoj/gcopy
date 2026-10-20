@@ -42,41 +42,56 @@ body {
   gap: 0.4rem;
   margin-top: 0.25rem;
   margin-bottom: 0.5rem;
-  margin-left: 1em;
+  /* 让最左边的红灯与下面日志行的 • 圆点对齐 */
+  margin-left: 0.97rem;
   flex: none;
 }
 
+/* 每个灯保持自身颜色，未点亮时是暗态 */
 .dot {
   height: 0.625rem;
   width: 0.625rem;
   border-radius: 9999px;
-  background: rgba(255, 255, 255, 0.25);
-  transition:
-    background-color 0.2s,
-    opacity 0.2s;
+  opacity: 0.18;
+  transition: opacity 0.2s;
 }
 
-.logbox[data-syncing="true"] .dot-red {
+.dot-red {
   background: #ff5f56;
-  animation: dot-blink 1.5s infinite 0s;
 }
 
-.logbox[data-syncing="true"] .dot-yellow {
+.dot-yellow {
   background: #ffbd2e;
-  animation: dot-blink 1.5s infinite 0.5s;
 }
 
-.logbox[data-syncing="true"] .dot-green {
+.dot-green {
   background: #28c840;
-  animation: dot-blink 1.5s infinite 1s;
 }
 
-@keyframes dot-blink {
+/* 方向确定后，仅对应颜色的灯呼吸 3 次：
+   in = 拉取（服务端 → 本地）→ 红灯；out = 推送（本地 → 服务端）→ 绿灯；
+   pending = 方向未知 → 黄灯。 */
+.logbox[data-dir="pending"] .dot-yellow,
+.logbox[data-dir="in"] .dot-red,
+.logbox[data-dir="out"] .dot-green {
+  animation: dot-breath 0.5s ease-in-out 3;
+}
+
+@keyframes dot-breath {
   0%,
   100% {
-    opacity: 0.35;
+    opacity: 0.18;
   }
-  33% {
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .logbox[data-dir="pending"] .dot-yellow,
+  .logbox[data-dir="in"] .dot-red,
+  .logbox[data-dir="out"] .dot-green {
+    animation: none;
     opacity: 1;
   }
 }

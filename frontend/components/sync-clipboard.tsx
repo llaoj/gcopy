@@ -3,7 +3,7 @@
 import LogBox from "@/components/log-box";
 import useAuth from "@/lib/auth";
 import useSystemInfo from "@/hooks/useSystemInfo";
-import { LogLevel, useLog } from "@/lib/log";
+import { LogLevel, useLog, SyncDirection } from "@/lib/log";
 import { useState, useEffect, useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -51,8 +51,9 @@ export default function SyncClipboard() {
   const [waitingForPaste, setWaitingForPaste] = useState<boolean>(false);
   // 最近一次同步内容的来源设备名
   const [lastSource, setLastSource] = useState<string | null>(null);
-  // 是否正在同步，用于日志框红绿灯动画
-  const [syncing, setSyncing] = useState(false);
+  // 同步方向，用于日志框红绿灯动画：
+  //   pending = 已触发但方向未定；in = 服务器→本机；out = 本机→服务器
+  const [syncDirection, setSyncDirection] = useState<SyncDirection>(null);
 
   const { loggedIn } = useAuth();
   const { systemInfo } = useSystemInfo();
@@ -191,59 +192,64 @@ export default function SyncClipboard() {
 
       addLog({ message: t("logs.uploading"), isProgress: true });
 
-      const response = await uploadWithProgress(
-        "/api/v1/clipboard",
-        "POST",
-        {
-          "Content-Type": processedBlob.type,
-          "X-Type": xtype,
-          "X-FileName": "",
-        },
-        processedBlob,
-        (progress) => {
-          updateProgressLog(`${t("logs.uploading")} ${progress}%`);
-        },
-      );
+      setSyncDirection("out");
+      try {
+        const response = await uploadWithProgress(
+          "/api/v1/clipboard",
+          "POST",
+          {
+            "Content-Type": processedBlob.type,
+            "X-Type": xtype,
+            "X-FileName": "",
+          },
+          processedBlob,
+          (progress) => {
+            updateProgressLog(`${t("logs.uploading")} ${progress}%`);
+          },
+        );
 
-      if (response.status == 401) {
-        redirectToLogin(router);
-        return false;
-      }
-
-      if (response.status != 200) {
-        try {
-          const body = JSON.parse(response.body);
-          addLog({ message: body.message, level: LogLevel.Error });
-        } catch {
-          addLog({ message: response.body, level: LogLevel.Error });
+        if (response.status == 401) {
+          redirectToLogin(router);
+          return false;
         }
-        return false;
+
+        if (response.status != 200) {
+          try {
+            const body = JSON.parse(response.body);
+            addLog({ message: body.message, level: LogLevel.Error });
+          } catch {
+            addLog({ message: response.body, level: LogLevel.Error });
+          }
+          return false;
+        }
+
+        const xindex = response.headers.get("x-index");
+        if (xindex == null || xindex == "0") {
+          return false;
+        }
+
+        window.history.replaceState(
+          null,
+          document.title,
+          `${pathname}?ci=${xindex}&cbi=${nextBlobId}`,
+        );
+
+        await addHistoryItem({
+          index: xindex,
+          blobId: nextBlobId,
+          data: processedBlob,
+          type: xtype,
+        });
+
+        addLog({
+          message: t("logs.uploaded", { type: t(xtype), index: xindex }),
+          level: LogLevel.Success,
+        });
+
+        return true;
+      } finally {
+        setSyncDirection(null);
       }
-
-      const xindex = response.headers.get("x-index");
-      if (xindex == null || xindex == "0") {
-        return false;
-      }
-
-      window.history.replaceState(
-        null,
-        document.title,
-        `${pathname}?ci=${xindex}&cbi=${nextBlobId}`,
-      );
-
-      await addHistoryItem({
-        index: xindex,
-        blobId: nextBlobId,
-        data: processedBlob,
-        type: xtype,
-      });
-
-      addLog({
-        message: t("logs.uploaded", { type: t(xtype), index: xindex }),
-        level: LogLevel.Success,
-      });
-
-      return true;
     },
     [addLog, t, pathname, addHistoryItem, updateProgressLog, router],
   );
@@ -257,6 +263,7 @@ export default function SyncClipboard() {
         return;
       }
 
+      // 方向（out）由 uploadClipboardBlob 内部设置并在结束后清理
       const success = await uploadClipboardBlob(file);
       if (success) {
         setStatus("finished");
@@ -467,6 +474,7 @@ export default function SyncClipboard() {
     }
     const xclientname = response.headers.get("x-clientname");
     setLastSource(xclientname ?? "UNKNOWN");
+    setSyncDirection("in");
     addLog({
       message: t("logs.received", {
         type: t(xtype),
@@ -653,84 +661,88 @@ export default function SyncClipboard() {
 
   const uploadFileHandler = async (file: File) => {
     resetLog();
+    setSyncDirection("out");
+    try {
+      // Validate file size
+      if (systemInfo) {
+        const validation = validateFileSize(file, systemInfo.maxContentLength);
+        if (!validation.valid) {
+          addLog({
+            message: t("logs.fileTooLarge", {
+              size: (file.size / (1024 * 1024)).toFixed(2),
+              limit: systemInfo.maxContentLength,
+            }),
+            level: LogLevel.Error,
+          });
+          return;
+        }
+      }
 
-    // Validate file size
-    if (systemInfo) {
-      const validation = validateFileSize(file, systemInfo.maxContentLength);
-      if (!validation.valid) {
-        addLog({
-          message: t("logs.fileTooLarge", {
-            size: (file.size / (1024 * 1024)).toFixed(2),
-            limit: systemInfo.maxContentLength,
-          }),
-          level: LogLevel.Error,
-        });
+      addLog({ message: t("logs.uploading"), isProgress: true });
+
+      const response = await uploadWithProgress(
+        "/api/v1/clipboard",
+        "POST",
+        {
+          "Content-Type": file.type,
+          "X-Type": "file",
+          "X-FileName": encodeURI(file.name),
+        },
+        file,
+        (progress) => {
+          updateProgressLog(`${t("logs.uploading")} ${progress}%`);
+        },
+      );
+
+      if (response.status == 401) {
+        redirectToLogin(router);
         return;
       }
-    }
 
-    addLog({ message: t("logs.uploading"), isProgress: true });
-
-    const response = await uploadWithProgress(
-      "/api/v1/clipboard",
-      "POST",
-      {
-        "Content-Type": file.type,
-        "X-Type": "file",
-        "X-FileName": encodeURI(file.name),
-      },
-      file,
-      (progress) => {
-        updateProgressLog(`${t("logs.uploading")} ${progress}%`);
-      },
-    );
-
-    if (response.status == 401) {
-      redirectToLogin(router);
-      return;
-    }
-
-    if (response.status != 200) {
-      try {
-        const body = JSON.parse(response.body);
-        addLog({ message: body.message, level: LogLevel.Error });
-      } catch {
-        addLog({ message: response.body, level: LogLevel.Error });
+      if (response.status != 200) {
+        try {
+          const body = JSON.parse(response.body);
+          addLog({ message: body.message, level: LogLevel.Error });
+        } catch {
+          addLog({ message: response.body, level: LogLevel.Error });
+        }
+        return;
       }
-      return;
+      const xindex = response.headers.get("x-index");
+      if (xindex == null || xindex == "0") {
+        return;
+      }
+
+      const uploadBlobId = await hashBlob(file);
+
+      // 只显示文件名 不自动下载文件
+      setFileName(file.name);
+
+      // The file did not enter the clipboard,
+      // so we update the index and set cbi to the file's blob ID
+      window.history.replaceState(
+        null,
+        document.title,
+        `${pathname}?ci=${xindex}&cbi=${uploadBlobId}`,
+      );
+
+      await addHistoryItem({
+        index: xindex,
+        blobId: uploadBlobId,
+        data: file,
+        type: "file",
+        fileName: file.name,
+      });
+
+      addLog({
+        message: t("logs.uploaded", { type: t("file"), index: xindex }),
+        level: LogLevel.Success,
+      });
+
+      setStatus("finished");
+    } finally {
+      setSyncDirection(null);
     }
-    const xindex = response.headers.get("x-index");
-    if (xindex == null || xindex == "0") {
-      return;
-    }
-
-    const uploadBlobId = await hashBlob(file);
-
-    // 只显示文件名 不自动下载文件
-    setFileName(file.name);
-
-    // The file did not enter the clipboard,
-    // so we update the index and set cbi to the file's blob ID
-    window.history.replaceState(
-      null,
-      document.title,
-      `${pathname}?ci=${xindex}&cbi=${uploadBlobId}`,
-    );
-
-    await addHistoryItem({
-      index: xindex,
-      blobId: uploadBlobId,
-      data: file,
-      type: "file",
-      fileName: file.name,
-    });
-
-    addLog({
-      message: t("logs.uploaded", { type: t("file"), index: xindex }),
-      level: LogLevel.Success,
-    });
-
-    setStatus("finished");
   };
 
   const handleFileChange = async (file: File) => {
@@ -741,7 +753,7 @@ export default function SyncClipboard() {
   };
 
   const syncFunc = async () => {
-    setSyncing(true);
+    setSyncDirection("pending");
     try {
       if (!(await ensureLoggedIn())) {
         return;
@@ -802,7 +814,7 @@ export default function SyncClipboard() {
       addLog({ message: String(err), level: LogLevel.Error });
       setStatus("finished");
     } finally {
-      setSyncing(false);
+      setSyncDirection(null);
     }
   };
 
@@ -816,7 +828,7 @@ export default function SyncClipboard() {
         </div>
         <div className="grid grid-cols-9 gap-3 w-full">
           <SyncButton syncFunc={syncFunc} lastSource={lastSource} />
-          <LogBox logs={logs} syncing={syncing} />
+          <LogBox logs={logs} direction={syncDirection} />
         </div>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-stretch">

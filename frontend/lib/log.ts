@@ -15,6 +15,10 @@ export interface Log {
   isProgress?: boolean; // 标识是否为进度日志
 }
 
+// 同步方向，用于日志框红绿灯动画：
+//   pending = 已触发但方向未定；in = 服务器→本机(pull)；out = 本机→服务器(push)
+export type SyncDirection = "pending" | "in" | "out" | null;
+
 const recommendedBrowsers = [
   { osName: "Windows", browsers: ["Chrome", "Edge", "Opera"] },
   { osName: "iOS", browsers: ["Mobile Safari"] },
