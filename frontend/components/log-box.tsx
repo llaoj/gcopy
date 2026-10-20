@@ -17,6 +17,7 @@ export default function LogBox({
   // 实际驱动红绿灯动画的方向：direction 变回 null 后仍保持 LIGHT_SHOW_MS，
   // 保证呼吸动画能被完整看到。
   const [shownDir, setShownDir] = useState<SyncDirection>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (direction == null) {
@@ -24,9 +25,19 @@ export default function LogBox({
     }
 
     setShownDir(direction);
-    const timer = setTimeout(() => setShownDir(null), LIGHT_SHOW_MS);
-    return () => clearTimeout(timer);
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+    }
+    timerRef.current = setTimeout(() => setShownDir(null), LIGHT_SHOW_MS);
   }, [direction]);
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (ulRef.current) {
