@@ -2,6 +2,12 @@ import { useTranslations } from "next-intl";
 import HistoryItem from "./history-item";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/models/db";
+import {
+  HISTORY_RECENT_LIMIT,
+  HistoryItemEntity,
+  createdAtMs,
+  sortByCreatedAtDesc,
+} from "@/models/history";
 import { Log } from "@/lib/log";
 import {
   useCallback,
@@ -15,43 +21,48 @@ export default function History({ addLog }: { addLog: (log: Log) => void }) {
   const t = useTranslations("SyncClipboard.history");
   // 新加入列表的历史记录，用于播放"新数据进入"动画
   const [newId, setNewId] = useState<string | null>(null);
-  // 见过的最大 createdAt，用于判断是否真有“新数据”进入（pin/unpin 不会使其变大）
-  const maxSeenRef = useRef<string | null>(null);
+  // 见过的最大绝对时间，用于判断是否真有“新数据”进入（pin/unpin 不会使其变大）
+  const maxSeenRef = useRef<number | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
   // 每行上一次的布局位置，用于 FLIP：新数据进入时让其余行平滑下滑
   const rectsRef = useRef<Map<string, number>>(new Map());
 
   // 分离查询：pinned 和 unpinned items，减少不必要的重新渲染
-  const pinnedItems = useLiveQuery(
-    () => db.history.where("pin").equals("true").reverse().toArray(),
-    [],
-  );
+  const pinnedItems = useLiveQuery(async () => {
+    const items = await db.history.where("pin").equals("true").toArray();
+    return sortByCreatedAtDesc(items);
+  }, []);
 
-  const recentItems = useLiveQuery(
-    () => db.history.where("pin").equals("false").reverse().limit(20).toArray(),
-    [],
-  );
+  const recentItems = useLiveQuery(async () => {
+    const items = await db.history.where("pin").equals("false").toArray();
+    return sortByCreatedAtDesc(items).slice(0, HISTORY_RECENT_LIMIT);
+  }, []);
 
   // 新数据进入检测 + FLIP：新行播放 F 动画（由 isNew 驱动），
   // 其余行用 FLIP 平滑下滑到新位置。用 useLayoutEffect 在绘制前处理，避免闪烁。
   useLayoutEffect(() => {
     if (!pinnedItems || !recentItems) return;
 
-    // 新数据必然是 createdAt 最大的一条。用“见过的最大 createdAt”判断：
-    // pin/unpin 等重排不会产生更大的 createdAt，因此不会误触发动画。
-    let currentMax: string | null = null;
+    // 新数据必然是绝对时间最大的一条。用“见过的最大时间”判断：
+    // pin/unpin 等重排不会产生更大的时间，因此不会误触发动画。
+    let currentMax = -Infinity;
+    let newest: HistoryItemEntity | undefined;
     for (const item of [...pinnedItems, ...recentItems]) {
-      const t = item.createdAt;
-      if (t && (currentMax === null || t > currentMax)) {
-        currentMax = t;
+      const ms = createdAtMs(item.createdAt);
+      if (ms > currentMax) {
+        currentMax = ms;
+        newest = item;
       }
     }
     const prevMax = maxSeenRef.current;
     let newTop: string | null = null;
-    if (prevMax !== null && currentMax !== null && currentMax > prevMax) {
-      newTop = currentMax;
+    if (prevMax !== null && currentMax > prevMax && newest?.createdAt) {
+      newTop = newest.createdAt;
     }
-    if (currentMax !== null && (prevMax === null || currentMax > prevMax)) {
+    if (
+      currentMax !== -Infinity &&
+      (prevMax === null || currentMax > prevMax)
+    ) {
       maxSeenRef.current = currentMax;
     }
     if (newTop) {

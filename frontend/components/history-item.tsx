@@ -3,7 +3,7 @@ import { EllipsisHorizontalIcon } from "@heroicons/react/24/solid";
 import HistoryItemScreenshot from "@/components/history-item-screenshot";
 import HistoryItemText from "@/components/history-item-text";
 import { useRef, useCallback, memo } from "react";
-import { HistoryItemEntity } from "@/models/history";
+import { HISTORY_PIN_LIMIT, HistoryItemEntity } from "@/models/history";
 import moment from "moment";
 import { db } from "@/models/db";
 import { Log, LogLevel } from "@/lib/log";
@@ -45,13 +45,15 @@ const HistoryItem = memo(function HistoryItem({
     try {
       ulRef.current?.blur();
 
+      if (!item.dataArrayBuffer) {
+        return;
+      }
+
       if (item.type == "file") {
         // iOS Safari: 强制使用 application/octet-stream 避免 Safari 渲染 PDF 等文件
-        const blob = item.dataArrayBuffer
-          ? new Blob([item.dataArrayBuffer], {
-              type: "application/octet-stream",
-            })
-          : item.data;
+        const blob = new Blob([item.dataArrayBuffer], {
+          type: "application/octet-stream",
+        });
         downloadBlob(blob, item.fileName ?? "file");
         addLog({
           message: t("logs.autoDownload"),
@@ -61,9 +63,9 @@ const HistoryItem = memo(function HistoryItem({
       }
 
       if (item.type == "text" || item.type == "screenshot") {
-        const blob = item.dataArrayBuffer
-          ? new Blob([item.dataArrayBuffer], { type: item.dataType })
-          : item.data;
+        const blob = new Blob([item.dataArrayBuffer], {
+          type: item.dataType,
+        });
 
         if (browserName.includes("Safari")) {
           await clipboardWriteBlobPromise(blob);
@@ -87,7 +89,6 @@ const HistoryItem = memo(function HistoryItem({
     item.type,
     item.dataArrayBuffer,
     item.dataType,
-    item.data,
     item.fileName,
     addLog,
     t,
@@ -95,7 +96,7 @@ const HistoryItem = memo(function HistoryItem({
 
   const handlePin = useCallback(async () => {
     const count = await db.history.where("pin").equals("true").count();
-    if (count >= 10) {
+    if (count >= HISTORY_PIN_LIMIT) {
       ulRef.current?.blur();
       addLog({
         message: t("logs.pinLimit"),

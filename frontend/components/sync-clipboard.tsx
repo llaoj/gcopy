@@ -21,19 +21,18 @@ import {
 import { loadClipboardState, saveClipboardState } from "@/lib/clipboard-state";
 import { redirectToLogin } from "@/lib/navigation";
 // Chrome | Safari | Mobile Safari
-import {
-  browserName,
-  isAndroid,
-  isMobile,
-  isMobileSafari,
-} from "react-device-detect";
+import { browserName, isAndroid, isMobile } from "react-device-detect";
 import SyncButton from "@/components/sync-button";
 import SyncShortcut from "@/components/sync-shortcut";
 import SyncFile from "@/components/sync-file";
 import QuickInput from "@/components/quick-input";
 import History from "@/components/history";
 import { db } from "@/models/db";
-import { HistoryItemEntity } from "@/models/history";
+import {
+  HISTORY_RECENT_LIMIT,
+  HistoryItemEntity,
+  sortByCreatedAtDesc,
+} from "@/models/history";
 import moment from "moment";
 import { validateFileSize, downloadBlob } from "@/lib/file-utils";
 
@@ -76,31 +75,31 @@ export default function SyncClipboard() {
     setFileName("");
   };
 
-  const addHistoryItem = useCallback(async (history: HistoryItemEntity) => {
-    if (history.pin != "true") history.pin = "false";
-    history.createdAt = moment().format();
-    const buffer = await history.data.arrayBuffer();
-    history.dataArrayBuffer = buffer.slice(0);
-    history.dataType = history.data.type;
-    // Mobile Safari 不存储 data 相关字段，其他浏览器正常存储
-    if (isMobileSafari) {
-      // Mobile Safari 清空 data 字段，只存储元数据
-      delete (history as any).data;
-    }
+  const addHistoryItem = useCallback(
+    async (input: Clipboard & { pin?: string }) => {
+      const { data, ...rest } = input;
+      const buffer = await data.arrayBuffer();
+      const item: HistoryItemEntity = {
+        ...rest,
+        dataArrayBuffer: buffer.slice(0),
+        dataType: data.type,
+        createdAt: moment().format("YYYY-MM-DDTHH:mm:ss.SSSZ"),
+        pin: input.pin === "true" ? "true" : "false",
+      };
 
-    await db.history.put(history);
-    const items = await db.history
-      .where("pin")
-      .equals("false")
-      .reverse()
-      .primaryKeys();
-    await Promise.all(
-      items.map((item, idx) => {
-        if (idx > 19)
-          return db.history.where("createdAt").equals(item).delete();
-      }),
-    );
-  }, []);
+      await db.transaction("rw", db.history, async () => {
+        await db.history.put(item);
+        const items = await db.history.where("pin").equals("false").toArray();
+        const stale = sortByCreatedAtDesc(items).slice(HISTORY_RECENT_LIMIT);
+        if (stale.length > 0) {
+          await db.history.bulkDelete(
+            stale.map((staleItem) => staleItem.createdAt!),
+          );
+        }
+      });
+    },
+    [],
+  );
 
   const ensureLoggedIn = useCallback(async () => {
     if (!loggedIn) {
