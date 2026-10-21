@@ -3,6 +3,7 @@
 import LogBox from "@/components/log-box";
 import useAuth from "@/lib/auth";
 import useSystemInfo from "@/hooks/useSystemInfo";
+import useRemoteClipboardStatus from "@/hooks/useRemoteClipboardStatus";
 import { LogLevel, useLog, SyncDirection } from "@/lib/log";
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
@@ -59,6 +60,16 @@ export default function SyncClipboard() {
   const { systemInfo } = useSystemInfo();
   const router = useRouter();
   const { logs, addLog, resetLog, updateProgressLog } = useLog();
+
+  // 后台检查远端是否有更新; 同步进行中或等待用户粘贴时暂停.
+  const { hasNew } = useRemoteClipboardStatus({
+    userId,
+    enabled: loggedIn,
+    paused:
+      syncDirection !== null ||
+      waitingForPaste ||
+      status.startsWith("interrupted"),
+  });
 
   // 清空"最近上传文件名"的显示
   const resetFile = () => {
@@ -825,7 +836,7 @@ export default function SyncClipboard() {
           <SyncShortcut />
         </div>
         <div className="grid grid-cols-9 gap-3 w-full">
-          <SyncButton syncFunc={syncFunc} />
+          <SyncButton syncFunc={syncFunc} hasNew={hasNew} />
           <LogBox logs={logs} direction={syncDirection} />
         </div>
       </div>

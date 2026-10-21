@@ -5,8 +5,10 @@ import { useDevice } from "@/hooks/useDevice";
 
 export default function SyncButton({
   syncFunc,
+  hasNew,
 }: {
   syncFunc: () => Promise<void>;
+  hasNew?: boolean;
 }) {
   const [clicked, setClicked] = useState<boolean>(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -50,11 +52,23 @@ export default function SyncButton({
         ref={buttonRef}
         disabled={clicked}
         className="btn btn-outline btn-primary col-span-9 md:col-span-2 h-full min-h-16 md:min-h-0 rounded-box bg-base-100 content-center"
+        title={hasNew ? t("hasNewContent") : undefined}
         onClick={onClick}
       >
         <span className="flex items-center gap-2 whitespace-nowrap">
           <CursorArrowRippleIcon className="h-6 w-6" />
-          {t("syncButtonText")}
+          <span className="relative inline-block">
+            {t("syncButtonText")}
+            {hasNew && (
+              <span
+                aria-hidden="true"
+                className="absolute -right-2 -top-1.5 h-1.5 w-1.5 rounded-full bg-success ring-1 ring-base-100"
+              />
+            )}
+          </span>
+        </span>
+        <span className="sr-only" aria-live="polite">
+          {hasNew ? t("hasNewContent") : ""}
         </span>
       </button>
     </>

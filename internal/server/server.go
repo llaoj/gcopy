@@ -89,6 +89,7 @@ func (s *Server) Run() {
 
 	v1.Use(s.verifyAuthMiddleware)
 	v1.GET("/clipboard", s.getClipboardHandler)
+	v1.GET("/clipboard/status", s.getClipboardStatusHandler)
 	v1.POST("/clipboard", s.updateClipboardHandler)
 
 	// Static files from embedded frontend
@@ -147,6 +148,34 @@ func (s *Server) getClipboardHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "Write data failed"})
 		s.log.Error(err)
 	}
+}
+
+func (s *Server) getClipboardStatusHandler(c *gin.Context) {
+	subject, ok := c.Get("subject")
+	if !ok {
+		c.JSON(http.StatusNotFound, gin.H{"message": "Subject not found"})
+		return
+	}
+	sub, ok := subject.(string)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "Subject type assert failed"})
+		return
+	}
+
+	// The status must not be cached by browsers or proxies.
+	c.Header("Cache-Control", "no-store")
+
+	cb := s.wall.Get(sub)
+	if cb == nil {
+		c.JSON(http.StatusOK, gin.H{"index": 0})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"index":      cb.Index,
+		"type":       cb.Type,
+		"clientName": cb.ClientName,
+	})
 }
 
 func (s *Server) updateClipboardHandler(c *gin.Context) {
