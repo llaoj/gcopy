@@ -5,7 +5,7 @@ import useAuth from "@/lib/auth";
 import useSystemInfo from "@/hooks/useSystemInfo";
 import { LogLevel, useLog, SyncDirection } from "@/lib/log";
 import { useState, useEffect, useCallback } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
   initTmpClipboard,
@@ -17,6 +17,7 @@ import {
   Clipboard,
   clipboardRead,
 } from "@/lib/clipboard";
+import { loadClipboardState, saveClipboardState } from "@/lib/clipboard-state";
 import { redirectToLogin } from "@/lib/navigation";
 // Chrome | Safari | Mobile Safari
 import {
@@ -35,9 +36,10 @@ import { HistoryItemEntity } from "@/models/history";
 import moment from "moment";
 import { validateFileSize, downloadBlob } from "@/lib/file-utils";
 
-// route: /locale?ci=123&cbi=abc
-// - ci: clipboard index
-// - cbi: clipboard blob id
+// route: /
+// The clipboard sync cursor (server index + content hash) is kept in
+// localStorage per user, not in the URL, so reloads keep it and sharing a link
+// cannot leak a stale "already up to date" state.
 export default function SyncClipboard() {
   const t = useTranslations("SyncClipboard");
   // 最近一次 push（上传）出去的文件名
@@ -53,10 +55,9 @@ export default function SyncClipboard() {
   //   pending = 已触发但方向未定；in = 服务器→本机；out = 本机→服务器
   const [syncDirection, setSyncDirection] = useState<SyncDirection>(null);
 
-  const { loggedIn } = useAuth();
+  const { loggedIn, userId } = useAuth();
   const { systemInfo } = useSystemInfo();
   const router = useRouter();
-  const pathname = usePathname();
   const { logs, addLog, resetLog, updateProgressLog } = useLog();
 
   // 清空"最近上传文件名"的显示
@@ -177,10 +178,10 @@ export default function SyncClipboard() {
       }
 
       const nextBlobId = await hashBlob(processedBlob);
-      const searchParams = new URLSearchParams(window.location.search);
+      const { cbi } = loadClipboardState(userId);
 
       // 检查是否与当前剪贴板内容相同
-      if (nextBlobId == searchParams.get("cbi")) {
+      if (nextBlobId === cbi) {
         addLog({ message: t("logs.unchanged") });
         return false;
       }
@@ -226,11 +227,10 @@ export default function SyncClipboard() {
           return false;
         }
 
-        window.history.replaceState(
-          null,
-          document.title,
-          `${pathname}?ci=${xindex}&cbi=${nextBlobId}`,
-        );
+        saveClipboardState(userId, {
+          ci: Number(xindex),
+          cbi: nextBlobId,
+        });
 
         await addHistoryItem({
           index: xindex,
@@ -249,7 +249,7 @@ export default function SyncClipboard() {
         setSyncDirection(null);
       }
     },
-    [addLog, t, pathname, addHistoryItem, updateProgressLog, router],
+    [userId, addLog, t, addHistoryItem, updateProgressLog, router],
   );
 
   /**
@@ -424,14 +424,14 @@ export default function SyncClipboard() {
   const pullClipboard = async () => {
     resetLog();
     addLog({ message: t("logs.fetching"), isProgress: true });
-    const searchParams = new URLSearchParams(window.location.search);
+    const { ci: localIndex, cbi: localCbi } = loadClipboardState(userId);
 
     // 使用带进度的fetch
     const { response, blob: getBlob } = await fetchWithProgress(
       "/api/v1/clipboard",
       {
         headers: {
-          "X-Index": searchParams.get("ci") ?? "",
+          "X-Index": localIndex ? String(localIndex) : "",
         },
       },
       (progress) => {
@@ -454,7 +454,7 @@ export default function SyncClipboard() {
     if (
       xindex == null ||
       xindex == "0" ||
-      xindex == searchParams.get("ci") ||
+      Number(xindex) === localIndex ||
       xtype == "" ||
       xtype == null
     ) {
@@ -492,7 +492,14 @@ export default function SyncClipboard() {
       }
 
       const nextBlobId: string = await hashBlob(blob);
-      if (nextBlobId == searchParams.get("cbi")) {
+      if (nextBlobId === localCbi) {
+        // Same content under a new index: remember the index so we don't fetch
+        // it again (and so the "new content" hint clears), but don't rewrite
+        // the clipboard.
+        saveClipboardState(userId, {
+          ci: Number(xindex),
+          cbi: nextBlobId,
+        });
         return;
       }
 
@@ -512,7 +519,6 @@ export default function SyncClipboard() {
       }
 
       await clipboardWriteBlob(blob);
-      searchParams.set("ci", xindex);
       addLog({ message: t("logs.writeSuccess"), level: LogLevel.Success });
 
       // Cannot read the clipboard after writing immediately on Chrome for Android, Edge for Android, Edge for HarmonyOS.
@@ -527,25 +533,19 @@ export default function SyncClipboard() {
       // Although they are the same,
       // the blob read from the clipboard is different from
       // the blob just fetched from the server.
+      let nextCbi = nextBlobId;
       const shadowBlob = await clipboardRead();
       if (shadowBlob) {
-        const realBlobId = await hashBlob(shadowBlob);
-        searchParams.set("cbi", realBlobId);
+        nextCbi = await hashBlob(shadowBlob);
       } else {
         console.warn("Failed to read back clipboard after writing");
-        // Use the blob we just wrote as fallback
-        searchParams.set("cbi", nextBlobId);
       }
 
-      window.history.replaceState(
-        null,
-        document.title,
-        "?" + searchParams.toString(),
-      );
+      saveClipboardState(userId, { ci: Number(xindex), cbi: nextCbi });
 
       await addHistoryItem({
         index: xindex,
-        blobId: searchParams.get("cbi") ?? "",
+        blobId: nextCbi,
         data: blob,
         type: xtype,
       });
@@ -560,15 +560,6 @@ export default function SyncClipboard() {
       }
       xfilename = decodeURI(xfilename);
 
-      // The file did not enter the clipboard,
-      // so only update the index.
-      searchParams.set("ci", xindex);
-      window.history.replaceState(
-        null,
-        document.title,
-        "?" + searchParams.toString(),
-      );
-
       // 先将 blob 转换为 ArrayBuffer，避免在异步操作中被垃圾回收
       const arrayBuffer = await blob.arrayBuffer();
       // iOS Safari: 强制使用 application/octet-stream 避免 Safari 渲染 PDF 等文件
@@ -578,6 +569,10 @@ export default function SyncClipboard() {
 
       // 先插入历史记录，确保数据安全保存
       const fileBlobId = await hashBlob(downloadedFile);
+      saveClipboardState(userId, {
+        ci: Number(xindex),
+        cbi: fileBlobId,
+      });
       await addHistoryItem({
         index: xindex,
         blobId: fileBlobId,
@@ -660,7 +655,6 @@ export default function SyncClipboard() {
 
   const uploadFileHandler = async (file: File) => {
     resetLog();
-    setSyncDirection("out");
     try {
       // Validate file size
       if (systemInfo) {
@@ -677,6 +671,15 @@ export default function SyncClipboard() {
         }
       }
 
+      const fileHash = await hashBlob(file);
+      const { cbi } = loadClipboardState(userId);
+      if (fileHash === cbi) {
+        addLog({ message: t("logs.fileUnchanged") });
+        setStatus("finished");
+        return;
+      }
+
+      setSyncDirection("out");
       addLog({ message: t("logs.uploading"), isProgress: true });
 
       const response = await uploadWithProgress(
@@ -712,22 +715,19 @@ export default function SyncClipboard() {
         return;
       }
 
-      const uploadBlobId = await hashBlob(file);
-
       // 只显示文件名 不自动下载文件
       setFileName(file.name);
 
       // The file did not enter the clipboard,
       // so we update the index and set cbi to the file's blob ID
-      window.history.replaceState(
-        null,
-        document.title,
-        `${pathname}?ci=${xindex}&cbi=${uploadBlobId}`,
-      );
+      saveClipboardState(userId, {
+        ci: Number(xindex),
+        cbi: fileHash,
+      });
 
       await addHistoryItem({
         index: xindex,
-        blobId: uploadBlobId,
+        blobId: fileHash,
         data: file,
         type: "file",
         fileName: file.name,
@@ -779,11 +779,10 @@ export default function SyncClipboard() {
         //   This blobId is hashed by the fetched blob
         //   which is different from the blob read from clipboard.
         //   So this will upload the blob back to the server once.
-        window.history.replaceState(
-          null,
-          document.title,
-          `${pathname}?ci=${tmpClipboard.index}&cbi=${tmpClipboard.blobId}`,
-        );
+        saveClipboardState(userId, {
+          ci: Number(tmpClipboard.index),
+          cbi: tmpClipboard.blobId ?? "",
+        });
 
         await addHistoryItem({
           index: tmpClipboard.index,

@@ -75,6 +75,7 @@
       "pressAgain": "👈 因为浏览器安全策略, 请再次按下",
       "pressPaste": "如果出现\"粘贴\"按钮, 按下它以允许读取剪切板.",
       "unchanged": "剪切板没有改变.",
+      "fileUnchanged": "文件没有改变, 已跳过上传.",
       "uploading": "正在上传...",
       "uploaded": "已上传 {type}({index}).",
       "received": "已接收 {type}({index}) 来自 {clientname}.",
