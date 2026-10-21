@@ -639,11 +639,13 @@ export default function SyncClipboard() {
         setWaitingForPaste(true);
         return;
       }
+
+      if (blob) {
+        addLog({ message: t("logs.readClipboardSuccess") });
+      }
     }
 
-    if (blob) {
-      addLog({ message: t("logs.readClipboardSuccess") });
-    } else {
+    if (!blob) {
       addLog({ message: t("logs.emptyClipboard") });
       return;
     }
