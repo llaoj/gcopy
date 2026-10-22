@@ -50,6 +50,12 @@ go test ./...        # Makefile: make test (also runs vet + gofmt + prettier)
 - Go: `gofmt -s -w <files>` (and `make fmt`).
 - Frontend: `cd frontend && npx prettier --write <files>`.
 
+## Engineering principles
+
+- Keep helpers single-purpose. A function named `push*` / `upload*` should only perform that operation. Do not hide local persistence or shared-state mutations inside low-level network helpers.
+- Let callers own state transitions. Different callers often need different semantics (for example, sharing a history item advances the server index but must not change the local clipboard hash), so update state at each call site or in a dedicated state helper.
+- If a helper intentionally mutates state, its name and contract must say so explicitly. Otherwise return the result (e.g. `{ index, blobId }`) and let the caller decide what to persist.
+
 ## Auth
 
 - Token-only. There is **no** `-auth-mode` / `-smtp-*` config anymore; the token is 8 chars and reservations are tracked in an in-memory registry.
