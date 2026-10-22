@@ -161,8 +161,8 @@ export default function SyncClipboard() {
   };
 
   /**
-   * 上传任意内容到服务器，并更新本地同步游标。
-   * 文本、截图、文件以及历史记录发送共用这套逻辑。
+   * 上传任意内容到服务器。
+   * 本地同步游标由调用方根据上传结果更新。
    */
   const pushBlobToServer = useCallback(
     async (
@@ -209,17 +209,12 @@ export default function SyncClipboard() {
           return null;
         }
 
-        saveClipboardState(userId, {
-          ci: Number(xindex),
-          cbi: blobId,
-        });
-
         return { index: xindex, blobId };
       } finally {
         setSyncDirection(null);
       }
     },
-    [userId, addLog, t, updateProgressLog, router],
+    [addLog, t, updateProgressLog, router],
   );
 
   /**
@@ -270,6 +265,11 @@ export default function SyncClipboard() {
       if (!uploaded) {
         return false;
       }
+
+      saveClipboardState(userId, {
+        ci: Number(uploaded.index),
+        cbi: uploaded.blobId,
+      });
 
       await addHistoryItem({
         index: uploaded.index,
@@ -354,6 +354,13 @@ export default function SyncClipboard() {
           return false;
         }
 
+        // 共享不会修改本机剪贴板，因此只推进服务端 index，保留 cbi。
+        const { cbi } = loadClipboardState(userId);
+        saveClipboardState(userId, {
+          ci: Number(uploaded.index),
+          cbi,
+        });
+
         addLog({
           message: t("logs.uploaded", {
             type: t(xtype),
@@ -368,7 +375,7 @@ export default function SyncClipboard() {
         return false;
       }
     },
-    [ensureLoggedIn, systemInfo, addLog, t, pushBlobToServer],
+    [ensureLoggedIn, systemInfo, userId, addLog, t, pushBlobToServer],
   );
 
   /**
@@ -802,6 +809,11 @@ export default function SyncClipboard() {
     if (!uploaded) {
       return;
     }
+
+    saveClipboardState(userId, {
+      ci: Number(uploaded.index),
+      cbi: uploaded.blobId,
+    });
 
     // 只显示文件名 不自动下载文件
     setFileName(file.name);
