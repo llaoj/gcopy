@@ -1,6 +1,6 @@
 {
   "name": "gcopy",
-  "version": "2.1.8",
+  "version": "2.1.9",
   "private": true,
   "scripts": {
     "dev": "./run-dev.sh",
