@@ -68,13 +68,18 @@ body {
   background: #28c840;
 }
 
-/* 方向确定后，仅对应颜色的灯呼吸 3 次：
+/* 方向确定后，对应颜色的灯持续呼吸，直到同步结束：
    in = 拉取（服务端 → 本地）→ 红灯；out = 推送（本地 → 服务端）→ 绿灯；
    pending = 方向未知 → 黄灯。 */
 .logbox[data-dir="pending"] .dot-yellow,
 .logbox[data-dir="in"] .dot-red,
 .logbox[data-dir="out"] .dot-green {
-  animation: dot-breath 0.5s ease-in-out 3;
+  animation: dot-breath 0.5s ease-in-out infinite;
+}
+
+/* 等待用户操作时，黄灯持续呼吸，直到状态结束。 */
+.logbox[data-awaiting] .dot-yellow {
+  animation: dot-breath 0.8s ease-in-out infinite;
 }
 
 @keyframes dot-breath {
@@ -90,7 +95,8 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .logbox[data-dir="pending"] .dot-yellow,
   .logbox[data-dir="in"] .dot-red,
-  .logbox[data-dir="out"] .dot-green {
+  .logbox[data-dir="out"] .dot-green,
+  .logbox[data-awaiting] .dot-yellow {
     animation: none;
     opacity: 1;
   }

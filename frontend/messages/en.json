@@ -44,6 +44,12 @@
     "subTitle": "Press the button and the clipboard synced between devices.",
     "syncButtonText": "Sync clipboard",
     "hasNewContent": "New content, click to sync",
+    "prompt": {
+      "syncButtonCancelWaiting": "Cancel waiting",
+      "syncButtonPressAgain": "Press again",
+      "canceled": "Pending sync canceled.",
+      "timeout": "Pending sync closed automatically after 20 seconds without action."
+    },
     "text": "TEXT",
     "screenshot": "SCREENSHOT",
     "file": "FILE",

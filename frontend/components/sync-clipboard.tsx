@@ -35,6 +35,8 @@ import {
 } from "@/models/history";
 import moment from "moment";
 import { validateFileSize, downloadBlob } from "@/lib/file-utils";
+import { PROMPT_TIMEOUT_MS } from "@/lib/sync-prompt";
+import type { PendingPrompt } from "@/lib/sync-prompt";
 
 // route: /
 // The clipboard sync cursor (server index + content hash) is kept in
@@ -45,12 +47,13 @@ export default function SyncClipboard() {
   // 最近一次 push（上传）出去的文件名
   const [fileName, setFileName] = useState<string>("");
   const [tmpClipboard, setTmpClipboard] = useState<Clipboard>(initTmpClipboard);
-  // "" | interrupted-[r|w] | finished
-  const [status, setStatus] = useState<string>("");
   // 快捷输入框内容
   const [quickText, setQuickText] = useState<string>("");
-  // 等待用户粘贴特殊剪贴板内容（如微信图片）
-  const [waitingForPaste, setWaitingForPaste] = useState<boolean>(false);
+  // 需要用户下一步操作的挂起状态：
+  //   paste        = 等待用户粘贴特殊剪贴板内容（如微信图片）
+  //   safari-read  = Safari 需要用户再次点击以读取剪贴板
+  //   safari-write = Safari 需要用户再次点击以写入剪贴板
+  const [prompt, setPrompt] = useState<PendingPrompt | null>(null);
   // 同步方向，用于日志框红绿灯动画：
   //   pending = 已触发但方向未定；in = 服务器→本机；out = 本机→服务器
   const [syncDirection, setSyncDirection] = useState<SyncDirection>(null);
@@ -64,11 +67,35 @@ export default function SyncClipboard() {
   const { hasNew } = useRemoteClipboardStatus({
     userId,
     enabled: loggedIn,
-    paused:
-      syncDirection !== null ||
-      waitingForPaste ||
-      status.startsWith("interrupted"),
+    paused: syncDirection !== null || prompt !== null,
   });
+
+  const clearPrompt = useCallback(
+    (reason: "canceled" | "timeout") => {
+      setPrompt(null);
+      setTmpClipboard(initTmpClipboard);
+      addLog({
+        message: t(reason === "timeout" ? "prompt.timeout" : "prompt.canceled"),
+        level: LogLevel.Warn,
+      });
+    },
+    [addLog, t],
+  );
+
+  const cancelPrompt = useCallback(
+    () => clearPrompt("canceled"),
+    [clearPrompt],
+  );
+
+  // 挂起状态不会一直等待：用户没注意时自动关闭，避免拦截后续粘贴。
+  useEffect(() => {
+    if (!prompt) {
+      return;
+    }
+
+    const timer = setTimeout(() => clearPrompt("timeout"), PROMPT_TIMEOUT_MS);
+    return () => clearTimeout(timer);
+  }, [prompt, clearPrompt]);
 
   // 清空"最近上传文件名"的显示
   const resetFile = () => {
@@ -388,10 +415,7 @@ export default function SyncClipboard() {
       }
 
       // 方向（out）由 uploadClipboardBlob 内部设置并在结束后清理
-      const success = await uploadClipboardBlob(file);
-      if (success) {
-        setStatus("finished");
-      }
+      await uploadClipboardBlob(file);
     },
     [ensureLoggedIn, uploadClipboardBlob],
   );
@@ -433,9 +457,20 @@ export default function SyncClipboard() {
    * 通过 paste 事件读取原始数据。
    */
   useEffect(() => {
+    // 监听器只在等待粘贴时存在，避免常驻监听意外截获后续粘贴。
+    if (prompt !== "paste") {
+      return;
+    }
+
     const handlePaste = async (e: ClipboardEvent) => {
-      // 只在等待粘贴状态时处理
-      if (!waitingForPaste) {
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable)
+      ) {
+        // 让输入框里的普通粘贴正常进行，不劫持用户输入。
         return;
       }
 
@@ -449,15 +484,11 @@ export default function SyncClipboard() {
 
         // 如果是图片文件
         if (item.kind === "file" && item.type.startsWith("image/")) {
-          e.preventDefault();
-
           const file = item.getAsFile();
           if (file) {
-            // 重置等待状态
-            setWaitingForPaste(false);
+            e.preventDefault();
+            setPrompt(null);
             addLog({ message: t("logs.readClipboardSuccess") });
-
-            // 处理图片上传
             await handlePastedContent(file);
           }
           return;
@@ -465,12 +496,10 @@ export default function SyncClipboard() {
 
         // 如果是文字内容
         if (item.kind === "string") {
-          e.preventDefault();
-
           const text = e.clipboardData.getData(item.type);
           if (text) {
-            // 重置等待状态
-            setWaitingForPaste(false);
+            e.preventDefault();
+            setPrompt(null);
             addLog({ message: t("logs.readClipboardSuccess") });
 
             // 创建 File 对象并处理
@@ -478,22 +507,19 @@ export default function SyncClipboard() {
               type: "text/plain",
             });
             await handlePastedContent(file);
+            return;
           }
-          return;
         }
       }
 
       addLog({ message: t("logs.emptyClipboard") });
     };
 
-    // 添加 paste 事件监听器
     document.addEventListener("paste", handlePaste);
-
-    // 清理
     return () => {
       document.removeEventListener("paste", handlePaste);
     };
-  }, [waitingForPaste, loggedIn, router, addLog, handlePastedContent, t]);
+  }, [prompt, addLog, handlePastedContent, t]);
 
   // 带进度跟踪的fetch下载
   const fetchWithProgress = async (
@@ -587,7 +613,7 @@ export default function SyncClipboard() {
       addLog({ message: t("logs.upToDate") });
 
       if (browserName.includes("Safari")) {
-        setStatus("interrupted-r");
+        setPrompt("safari-read");
         addLog({ message: t("logs.pressAgain"), level: LogLevel.Warn });
         addLog({ message: t("logs.pressPaste"), level: LogLevel.Warn });
         return;
@@ -639,7 +665,7 @@ export default function SyncClipboard() {
           data: blob,
           type: xtype,
         });
-        setStatus("interrupted-w");
+        setPrompt("safari-write");
         addLog({ message: t("logs.pressAgain"), level: LogLevel.Warn });
         return;
       }
@@ -757,7 +783,7 @@ export default function SyncClipboard() {
         });
 
         // 激活 paste 事件监听
-        setWaitingForPaste(true);
+        setPrompt("paste");
         return;
       }
 
@@ -801,7 +827,6 @@ export default function SyncClipboard() {
     const { cbi } = loadClipboardState(userId);
     if (fileHash === cbi) {
       addLog({ message: t("logs.fileUnchanged") });
-      setStatus("finished");
       return;
     }
 
@@ -833,8 +858,6 @@ export default function SyncClipboard() {
       }),
       level: LogLevel.Success,
     });
-
-    setStatus("finished");
   };
 
   const handleFileChange = async (file: File) => {
@@ -866,7 +889,7 @@ export default function SyncClipboard() {
 
       // Safari requires that every call to the clipboard API must be triggered by the user.
       // So we have to interrupt before the next call to the clipboard API.
-      if (status == "interrupted-w") {
+      if (prompt === "safari-write") {
         await clipboardWriteBlobPromise(tmpClipboard.data);
         // Known bug:
         //   This blobId is hashed by the fetched blob
@@ -887,23 +910,19 @@ export default function SyncClipboard() {
         addLog({ message: t("logs.writeSuccess"), level: LogLevel.Success });
 
         setTmpClipboard(initTmpClipboard);
-        setStatus("finished");
+        setPrompt(null);
         return;
       }
-      if (status == "interrupted-r") {
+      if (prompt === "safari-read") {
         await pushClipboard();
-        setStatus("finished");
+        // pushClipboard may switch to the special "paste" prompt; keep it.
+        setPrompt((current) => (current === "safari-read" ? null : current));
         return;
       }
 
       await pullClipboard();
-
-      setStatus((current) =>
-        current.startsWith("interrupted") ? current : "finished",
-      );
     } catch (err) {
       addLog({ message: String(err), level: LogLevel.Error });
-      setStatus("finished");
     } finally {
       setSyncDirection(null);
     }
@@ -918,8 +937,17 @@ export default function SyncClipboard() {
           <SyncShortcut />
         </div>
         <div className="grid grid-cols-9 gap-3 w-full">
-          <SyncButton syncFunc={syncFunc} hasNew={hasNew} />
-          <LogBox logs={logs} direction={syncDirection} />
+          <SyncButton
+            syncFunc={syncFunc}
+            hasNew={hasNew}
+            prompt={prompt}
+            onCancelPrompt={cancelPrompt}
+          />
+          <LogBox
+            logs={logs}
+            direction={syncDirection}
+            awaiting={prompt !== null}
+          />
         </div>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-stretch">
