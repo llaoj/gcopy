@@ -62,6 +62,7 @@
       "subTitle": "仅存储在本地浏览器并且可以随时删除.",
       "delete": "删除",
       "use": "使用",
+      "share": "共享发送",
       "empty": "空"
     },
     "logs": {
@@ -79,6 +80,7 @@
       "fileUnchanged": "文件没有改变, 已跳过上传.",
       "uploading": "正在上传...",
       "uploaded": "已上传 {type}({index}).",
+      "historyItemEmpty": "该历史项没有可发送的数据.",
       "received": "已接收 {type}({index}) 来自 {clientname}.",
       "unsupportedFormat": "不支持的格式: {format}.",
       "emptyClipboard": "剪切板是空的.",

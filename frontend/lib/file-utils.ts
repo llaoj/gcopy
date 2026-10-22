@@ -1,14 +1,14 @@
 /**
  * Validate if file size is within the allowed limit
- * @param file The file to validate
+ * @param blob The blob to validate
  * @param maxContentLengthMB Maximum content length in MiB
  * @returns { valid: boolean, message?: string }
  */
 export function validateFileSize(
-  file: File,
+  blob: Blob,
   maxContentLengthMB: number,
 ): { valid: boolean; message?: string } {
-  const fileSizeMB = file.size / (1024 * 1024);
+  const fileSizeMB = blob.size / (1024 * 1024);
 
   if (fileSizeMB > maxContentLengthMB) {
     return {

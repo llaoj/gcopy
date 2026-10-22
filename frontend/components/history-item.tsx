@@ -2,7 +2,7 @@ import { useTranslations } from "next-intl";
 import { EllipsisHorizontalIcon } from "@heroicons/react/24/solid";
 import HistoryItemScreenshot from "@/components/history-item-screenshot";
 import HistoryItemText from "@/components/history-item-text";
-import { useRef, useCallback, memo } from "react";
+import { useRef, useCallback, memo, useState } from "react";
 import { HISTORY_PIN_LIMIT, HistoryItemEntity } from "@/models/history";
 import moment from "moment";
 import { db } from "@/models/db";
@@ -11,13 +11,21 @@ import { clipboardWriteBlob, clipboardWriteBlobPromise } from "@/lib/clipboard";
 import { downloadBlob } from "@/lib/file-utils";
 import { browserName } from "react-device-detect";
 
+type HistoryItemProps = {
+  item: HistoryItemEntity;
+  addLog: (log: Log) => void;
+  onShare: (item: HistoryItemEntity) => Promise<boolean>;
+  isNew?: boolean;
+};
+
 // 自定义比较函数：只有核心字段变化时才重新渲染
 function arePropsEqual(
-  prevProps: { item: HistoryItemEntity; isNew?: boolean },
-  nextProps: { item: HistoryItemEntity; isNew?: boolean },
+  prevProps: HistoryItemProps,
+  nextProps: HistoryItemProps,
 ) {
   return (
     prevProps.isNew === nextProps.isNew &&
+    prevProps.onShare === nextProps.onShare &&
     prevProps.item.createdAt === nextProps.item.createdAt &&
     prevProps.item.pin === nextProps.item.pin &&
     prevProps.item.index === nextProps.item.index &&
@@ -31,14 +39,12 @@ function arePropsEqual(
 const HistoryItem = memo(function HistoryItem({
   item,
   addLog,
+  onShare,
   isNew,
-}: {
-  item: HistoryItemEntity;
-  addLog: (log: Log) => void;
-  isNew?: boolean;
-}) {
+}: HistoryItemProps) {
   const t = useTranslations("SyncClipboard");
   const ulRef = useRef<HTMLUListElement>(null);
+  const [sharing, setSharing] = useState<boolean>(false);
 
   // 使用 useCallback 缓存事件处理函数
   const handleUse = useCallback(async () => {
@@ -93,6 +99,19 @@ const HistoryItem = memo(function HistoryItem({
     addLog,
     t,
   ]);
+
+  const handleShare = useCallback(async () => {
+    if (sharing) {
+      return;
+    }
+    ulRef.current?.blur();
+    setSharing(true);
+    try {
+      await onShare(item);
+    } finally {
+      setSharing(false);
+    }
+  }, [item, onShare, sharing]);
 
   const handlePin = useCallback(async () => {
     const count = await db.history.where("pin").equals("true").count();
@@ -165,12 +184,23 @@ const HistoryItem = memo(function HistoryItem({
           </div>
           <ul
             tabIndex={0}
-            className="dropdown-content menu bg-base-100 rounded-box z-[1] w-28 p-2 shadow-lg border border-base-300"
+            className="dropdown-content menu bg-base-100 rounded-box z-[1] w-32 p-2 shadow-lg border border-base-300"
             ref={ulRef}
           >
             <li>
               <a className="hover:bg-base-300 opacity-70" onClick={handleUse}>
                 {t("history.use")}
+              </a>
+            </li>
+            <li>
+              <a
+                className={`hover:bg-base-300 ${
+                  sharing ? "pointer-events-none opacity-40" : "opacity-70"
+                }`}
+                onClick={sharing ? undefined : handleShare}
+                aria-disabled={sharing}
+              >
+                {t("history.share")}
               </a>
             </li>
             {item.pin == "true" && (

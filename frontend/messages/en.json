@@ -62,6 +62,7 @@
       "subTitle": "Stored only locally on the browser and can be deleted at any time.",
       "delete": "Delete",
       "use": "Use",
+      "share": "Share",
       "empty": "Empty"
     },
     "logs": {
@@ -79,6 +80,7 @@
       "fileUnchanged": "File unchanged, upload skipped.",
       "uploading": "Uploading...",
       "uploaded": "Uploaded {type}({index}).",
+      "historyItemEmpty": "This history item has no data to send.",
       "received": "Received {type}({index}) from {clientname}.",
       "unsupportedFormat": "Unsupported format: {format}.",
       "emptyClipboard": "Clipboard is empty.",

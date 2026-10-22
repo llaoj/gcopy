@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { osName, browserName } from "react-device-detect";
 import { useTranslations, useFormatter } from "next-intl";
 
@@ -55,7 +55,7 @@ export function useLog() {
     setLogs(initLogs);
   }, [t, format]);
 
-  const addLog = (log: Log) => {
+  const addLog = useCallback((log: Log) => {
     setLogs((current) => [
       ...current,
       {
@@ -64,9 +64,9 @@ export function useLog() {
         isProgress: log.isProgress,
       },
     ]);
-  };
+  }, []);
 
-  const updateProgressLog = (message: string) => {
+  const updateProgressLog = useCallback((message: string) => {
     setLogs((current) => {
       const lastIndex = current.length - 1;
       if (lastIndex >= 0 && current[lastIndex].isProgress) {
@@ -79,11 +79,11 @@ export function useLog() {
         return [...current, { message, isProgress: true }];
       }
     });
-  };
+  }, []);
 
-  const resetLog = () => {
+  const resetLog = useCallback(() => {
     setLogs([]);
-  };
+  }, []);
 
   return { logs, addLog, resetLog, updateProgressLog };
 }

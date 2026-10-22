@@ -17,7 +17,13 @@ import {
   useState,
 } from "react";
 
-export default function History({ addLog }: { addLog: (log: Log) => void }) {
+export default function History({
+  addLog,
+  onShare,
+}: {
+  addLog: (log: Log) => void;
+  onShare: (item: HistoryItemEntity) => Promise<boolean>;
+}) {
   const t = useTranslations("SyncClipboard.history");
   // 新加入列表的历史记录，用于播放"新数据进入"动画
   const [newId, setNewId] = useState<string | null>(null);
@@ -131,13 +137,19 @@ export default function History({ addLog }: { addLog: (log: Log) => void }) {
           </div>
         )}
         {pinnedItems.map((item) => (
-          <HistoryItem key={item.createdAt} item={item} addLog={stableAddLog} />
+          <HistoryItem
+            key={item.createdAt}
+            item={item}
+            addLog={stableAddLog}
+            onShare={onShare}
+          />
         ))}
         {recentItems.map((item) => (
           <HistoryItem
             key={item.createdAt}
             item={item}
             addLog={stableAddLog}
+            onShare={onShare}
             isNew={item.createdAt === newId}
           />
         ))}
