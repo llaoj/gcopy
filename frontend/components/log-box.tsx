@@ -9,11 +9,9 @@ const LIGHT_SHOW_MS = 1500;
 export default function LogBox({
   logs,
   direction,
-  awaiting,
 }: {
   logs: Log[];
   direction: SyncDirection;
-  awaiting?: boolean;
 }) {
   const ulRef = useRef<HTMLUListElement>(null);
   // 实际驱动红绿灯动画的方向：同步期间保持显示，结束后至少再保留
@@ -90,7 +88,6 @@ export default function LogBox({
     <div
       className="logbox bg-neutral rounded-box h-52 col-span-9 md:col-span-7 flex flex-col  overflow-hidden py-2 text-white text-sm"
       data-dir={shownDir ?? undefined}
-      data-awaiting={awaiting ? "" : undefined}
     >
       <div className="traffic">
         <span className="dot dot-red" />

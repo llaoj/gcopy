@@ -5,7 +5,7 @@ import useAuth from "@/lib/auth";
 import useSystemInfo from "@/hooks/useSystemInfo";
 import useRemoteClipboardStatus from "@/hooks/useRemoteClipboardStatus";
 import { LogLevel, useLog, SyncDirection } from "@/lib/log";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
@@ -54,8 +54,10 @@ export default function SyncClipboard() {
   //   safari-read  = Safari 需要用户再次点击以读取剪贴板
   //   safari-write = Safari 需要用户再次点击以写入剪贴板
   const [prompt, setPrompt] = useState<PendingPrompt | null>(null);
-  // 同步方向，用于日志框红绿灯动画：
+  const promptRef = useRef<PendingPrompt | null>(null);
+  // 同步流程当前方向，用于日志框红绿灯动画：
   //   pending = 已触发但方向未定；in = 服务器→本机；out = 本机→服务器
+  // 等待用户操作期间方向保持不变，流程结束或取消后才清空。
   const [syncDirection, setSyncDirection] = useState<SyncDirection>(null);
 
   const { loggedIn, userId } = useAuth();
@@ -63,23 +65,29 @@ export default function SyncClipboard() {
   const router = useRouter();
   const { logs, addLog, resetLog, updateProgressLog } = useLog();
 
-  // 后台检查远端是否有更新; 同步进行中或等待用户粘贴时暂停.
+  // 后台检查远端是否有更新; 同步中或等待用户操作时暂停.
   const { hasNew } = useRemoteClipboardStatus({
     userId,
     enabled: loggedIn,
-    paused: syncDirection !== null || prompt !== null,
+    paused: syncDirection !== null,
   });
+
+  const setPendingPrompt = useCallback((kind: PendingPrompt | null) => {
+    promptRef.current = kind;
+    setPrompt(kind);
+  }, []);
 
   const clearPrompt = useCallback(
     (reason: "canceled" | "timeout") => {
-      setPrompt(null);
+      setPendingPrompt(null);
+      setSyncDirection(null);
       setTmpClipboard(initTmpClipboard);
       addLog({
         message: t(reason === "timeout" ? "prompt.timeout" : "prompt.canceled"),
         level: LogLevel.Warn,
       });
     },
-    [addLog, t],
+    [addLog, t, setPendingPrompt],
   );
 
   const cancelPrompt = useCallback(
@@ -410,12 +418,13 @@ export default function SyncClipboard() {
    */
   const handlePastedContent = useCallback(
     async (file: File) => {
-      if (!(await ensureLoggedIn())) {
-        return;
+      try {
+        if (await ensureLoggedIn()) {
+          await uploadClipboardBlob(file);
+        }
+      } finally {
+        setSyncDirection(null);
       }
-
-      // 方向（out）由 uploadClipboardBlob 内部设置并在结束后清理
-      await uploadClipboardBlob(file);
     },
     [ensureLoggedIn, uploadClipboardBlob],
   );
@@ -487,7 +496,7 @@ export default function SyncClipboard() {
           const file = item.getAsFile();
           if (file) {
             e.preventDefault();
-            setPrompt(null);
+            setPendingPrompt(null);
             addLog({ message: t("logs.readClipboardSuccess") });
             await handlePastedContent(file);
           }
@@ -499,7 +508,7 @@ export default function SyncClipboard() {
           const text = e.clipboardData.getData(item.type);
           if (text) {
             e.preventDefault();
-            setPrompt(null);
+            setPendingPrompt(null);
             addLog({ message: t("logs.readClipboardSuccess") });
 
             // 创建 File 对象并处理
@@ -519,7 +528,7 @@ export default function SyncClipboard() {
     return () => {
       document.removeEventListener("paste", handlePaste);
     };
-  }, [prompt, addLog, handlePastedContent, t]);
+  }, [prompt, addLog, handlePastedContent, setPendingPrompt, t]);
 
   // 带进度跟踪的fetch下载
   const fetchWithProgress = async (
@@ -613,7 +622,8 @@ export default function SyncClipboard() {
       addLog({ message: t("logs.upToDate") });
 
       if (browserName.includes("Safari")) {
-        setPrompt("safari-read");
+        setSyncDirection("pending");
+        setPendingPrompt("safari-read");
         addLog({ message: t("logs.pressAgain"), level: LogLevel.Warn });
         addLog({ message: t("logs.pressPaste"), level: LogLevel.Warn });
         return;
@@ -665,7 +675,8 @@ export default function SyncClipboard() {
           data: blob,
           type: xtype,
         });
-        setPrompt("safari-write");
+        setSyncDirection("in");
+        setPendingPrompt("safari-write");
         addLog({ message: t("logs.pressAgain"), level: LogLevel.Warn });
         return;
       }
@@ -783,7 +794,8 @@ export default function SyncClipboard() {
         });
 
         // 激活 paste 事件监听
-        setPrompt("paste");
+        setSyncDirection("out");
+        setPendingPrompt("paste");
         return;
       }
 
@@ -868,7 +880,6 @@ export default function SyncClipboard() {
   };
 
   const syncFunc = async () => {
-    setSyncDirection("pending");
     try {
       if (!(await ensureLoggedIn())) {
         return;
@@ -910,20 +921,28 @@ export default function SyncClipboard() {
         addLog({ message: t("logs.writeSuccess"), level: LogLevel.Success });
 
         setTmpClipboard(initTmpClipboard);
-        setPrompt(null);
+        setPendingPrompt(null);
+        setSyncDirection(null);
         return;
       }
       if (prompt === "safari-read") {
+        setPendingPrompt(null);
         await pushClipboard();
-        // pushClipboard may switch to the special "paste" prompt; keep it.
-        setPrompt((current) => (current === "safari-read" ? null : current));
+        if (!promptRef.current) {
+          setSyncDirection(null);
+        }
         return;
       }
 
+      setSyncDirection("pending");
       await pullClipboard();
+      if (!promptRef.current) {
+        setSyncDirection(null);
+      }
     } catch (err) {
       addLog({ message: String(err), level: LogLevel.Error });
-    } finally {
+      setPendingPrompt(null);
+      setTmpClipboard(initTmpClipboard);
       setSyncDirection(null);
     }
   };
@@ -943,11 +962,7 @@ export default function SyncClipboard() {
             prompt={prompt}
             onCancelPrompt={cancelPrompt}
           />
-          <LogBox
-            logs={logs}
-            direction={syncDirection}
-            awaiting={prompt !== null}
-          />
+          <LogBox logs={logs} direction={syncDirection} />
         </div>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-stretch">
