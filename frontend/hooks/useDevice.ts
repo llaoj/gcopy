@@ -5,6 +5,7 @@ export function useDevice() {
     isDesktop: false,
     isMacOs: false,
     isSafari: false,
+    isMobile: false,
   });
 
   useEffect(() => {
@@ -13,6 +14,7 @@ export function useDevice() {
         isDesktop: m.isDesktop,
         isMacOs: m.isMacOs,
         isSafari: m.isSafari,
+        isMobile: m.isMobile,
       });
     });
   }, []);

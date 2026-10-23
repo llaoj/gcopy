@@ -46,6 +46,8 @@ export default function SyncClipboard() {
   const t = useTranslations("SyncClipboard");
   // 最近一次 push（上传）出去的文件名
   const [fileName, setFileName] = useState<string>("");
+  const [fileUploading, setFileUploading] = useState<boolean>(false);
+  const fileUploadingRef = useRef<boolean>(false);
   const [tmpClipboard, setTmpClipboard] = useState<Clipboard>(initTmpClipboard);
   // 快捷输入框内容
   const [quickText, setQuickText] = useState<string>("");
@@ -873,10 +875,20 @@ export default function SyncClipboard() {
   };
 
   const handleFileChange = async (file: File) => {
-    if (!(await ensureLoggedIn())) {
+    if (fileUploadingRef.current) {
       return;
     }
-    await uploadFileHandler(file);
+
+    fileUploadingRef.current = true;
+    setFileUploading(true);
+    try {
+      if (await ensureLoggedIn()) {
+        await uploadFileHandler(file);
+      }
+    } finally {
+      fileUploadingRef.current = false;
+      setFileUploading(false);
+    }
   };
 
   const syncFunc = async () => {
@@ -966,7 +978,11 @@ export default function SyncClipboard() {
         </div>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-stretch">
-        <SyncFile fileName={fileName} onFileChange={handleFileChange} />
+        <SyncFile
+          fileName={fileName}
+          uploading={fileUploading}
+          onFileChange={handleFileChange}
+        />
         <QuickInput value={quickText} onChange={setQuickText} />
       </div>
       <History addLog={addLog} onShare={shareHistoryItem} />

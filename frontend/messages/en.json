@@ -56,7 +56,9 @@
     "syncFile": {
       "title": "Sync file",
       "subTitle": "Choose a file to sync across devices.",
-      "dragDropTip": "Click or drag a file here"
+      "dragDropTip": "Click or drag a file here",
+      "selectFileTip": "Click to choose a file",
+      "uploading": "Uploading..."
     },
     "quickInput": {
       "title": "Quick input",

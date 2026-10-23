@@ -56,7 +56,9 @@
     "syncFile": {
       "title": "同步文件",
       "subTitle": "选择文件, 跨设备同步.",
-      "dragDropTip": "点击或拖拽文件到这里"
+      "dragDropTip": "点击或拖拽文件到这里",
+      "selectFileTip": "点击选择文件",
+      "uploading": "正在上传..."
     },
     "quickInput": {
       "title": "快捷输入",

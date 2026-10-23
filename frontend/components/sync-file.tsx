@@ -1,15 +1,20 @@
 import { DragEvent, useRef, useState } from "react";
+import { DocumentIcon } from "@heroicons/react/24/outline";
 import clsx from "clsx";
 import { useTranslations } from "next-intl";
+import { useDevice } from "@/hooks/useDevice";
 
 export default function SyncFile({
   fileName,
+  uploading,
   onFileChange,
 }: {
   fileName: string;
+  uploading: boolean;
   onFileChange: (file: File) => Promise<void>;
 }) {
   const t = useTranslations("SyncClipboard");
+  const { isMobile } = useDevice();
   const [dragging, setDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -21,23 +26,30 @@ export default function SyncFile({
       </div>
       <div
         className={clsx(
-          "preview flex-1 min-h-24 md:min-h-40 border rounded-box flex flex-col items-center justify-center gap-y-1 px-4 cursor-pointer",
+          "preview flex-1 min-h-24 md:min-h-40 border rounded-box flex flex-col items-center justify-center gap-y-1 px-4",
+          uploading ? "cursor-progress" : "cursor-pointer",
           { "border-primary text-primary": dragging },
           { "border-base-300": !dragging },
         )}
+        aria-busy={uploading}
         onDragOver={(ev: DragEvent<HTMLElement>) => {
           ev.preventDefault();
         }}
         onDragEnter={() => {
-          setDragging(true);
+          if (!uploading) {
+            setDragging(true);
+          }
         }}
         onDragLeave={() => {
           setDragging(false);
         }}
         onDrop={async (ev: DragEvent<HTMLElement>) => {
           ev.preventDefault();
-          const droppedFile = ev.dataTransfer?.files?.[0];
           setDragging(false);
+          if (uploading) {
+            return;
+          }
+          const droppedFile = ev.dataTransfer?.files?.[0];
           if (droppedFile) {
             await onFileChange(droppedFile);
           }
@@ -45,10 +57,12 @@ export default function SyncFile({
         role="button"
         tabIndex={0}
         onClick={() => {
-          fileInputRef.current?.click();
+          if (!uploading) {
+            fileInputRef.current?.click();
+          }
         }}
         onKeyDown={(ev) => {
-          if (ev.key === "Enter" || ev.key === " ") {
+          if (!uploading && (ev.key === "Enter" || ev.key === " ")) {
             ev.preventDefault();
             fileInputRef.current?.click();
           }
@@ -56,11 +70,22 @@ export default function SyncFile({
       >
         {!dragging && (
           <>
-            {fileName && (
-              <p className="w-full truncate text-center">{fileName}</p>
-            )}
+            <p className="w-full truncate text-center">
+              {uploading ? (
+                t("syncFile.uploading")
+              ) : fileName ? (
+                fileName
+              ) : (
+                <DocumentIcon
+                  className="mx-auto h-5 w-5 opacity-40"
+                  aria-hidden="true"
+                />
+              )}
+            </p>
             <div className="text-sm opacity-40">
-              {t("syncFile.dragDropTip")}
+              {isMobile
+                ? t("syncFile.selectFileTip")
+                : t("syncFile.dragDropTip")}
             </div>
           </>
         )}
@@ -69,6 +94,7 @@ export default function SyncFile({
         type="file"
         hidden
         ref={fileInputRef}
+        disabled={uploading}
         onChange={async () => {
           const selectedFile = fileInputRef.current?.files?.[0];
           if (fileInputRef.current) {
