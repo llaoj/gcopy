@@ -69,6 +69,8 @@
       "delete": "删除",
       "use": "使用",
       "share": "共享发送",
+      "copied": "已复制",
+      "downloaded": "已下载",
       "empty": "空"
     },
     "logs": {

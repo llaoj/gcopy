@@ -2,7 +2,7 @@ import { useTranslations } from "next-intl";
 import { EllipsisHorizontalIcon } from "@heroicons/react/24/solid";
 import HistoryItemScreenshot from "@/components/history-item-screenshot";
 import HistoryItemText from "@/components/history-item-text";
-import { useRef, useCallback, memo, useState } from "react";
+import { useRef, useCallback, memo, useState, useEffect } from "react";
 import { HISTORY_PIN_LIMIT, HistoryItemEntity } from "@/models/history";
 import moment from "moment";
 import { db } from "@/models/db";
@@ -45,6 +45,26 @@ const HistoryItem = memo(function HistoryItem({
   const t = useTranslations("SyncClipboard");
   const ulRef = useRef<HTMLUListElement>(null);
   const [sharing, setSharing] = useState<boolean>(false);
+  const [feedback, setFeedback] = useState<"copied" | "downloaded" | null>(
+    null,
+  );
+  const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const showFeedback = useCallback((kind: "copied" | "downloaded") => {
+    setFeedback(kind);
+    if (feedbackTimerRef.current) {
+      clearTimeout(feedbackTimerRef.current);
+    }
+    feedbackTimerRef.current = setTimeout(() => setFeedback(null), 2000);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (feedbackTimerRef.current) {
+        clearTimeout(feedbackTimerRef.current);
+      }
+    };
+  }, []);
 
   // 使用 useCallback 缓存事件处理函数
   const handleUse = useCallback(async () => {
@@ -61,6 +81,7 @@ const HistoryItem = memo(function HistoryItem({
           type: "application/octet-stream",
         });
         downloadBlob(blob, item.fileName ?? "file");
+        showFeedback("downloaded");
         addLog({
           message: t("logs.autoDownload"),
           level: LogLevel.Success,
@@ -75,14 +96,11 @@ const HistoryItem = memo(function HistoryItem({
 
         if (browserName.includes("Safari")) {
           await clipboardWriteBlobPromise(blob);
-          addLog({
-            message: t("logs.writeSuccess"),
-            level: LogLevel.Success,
-          });
-          return;
+        } else {
+          await clipboardWriteBlob(blob);
         }
 
-        await clipboardWriteBlob(blob);
+        showFeedback("copied");
         addLog({
           message: t("logs.writeSuccess"),
           level: LogLevel.Success,
@@ -98,6 +116,7 @@ const HistoryItem = memo(function HistoryItem({
     item.fileName,
     addLog,
     t,
+    showFeedback,
   ]);
 
   const handleShare = useCallback(async () => {
@@ -138,46 +157,68 @@ const HistoryItem = memo(function HistoryItem({
   return (
     <div
       data-key={item.createdAt}
-      className={`flex items-center gap-2 h-14 px-2 text-sm${
+      role="button"
+      tabIndex={0}
+      onClick={handleUse}
+      onKeyDown={(e) => {
+        if (e.target !== e.currentTarget) {
+          return;
+        }
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          void handleUse();
+        }
+      }}
+      className={`flex items-center gap-2 h-14 pr-2 text-sm cursor-pointer transition-colors hover:bg-base-200/60${
         isNew ? " history-enter" : ""
       }`}
     >
-      <div className="w-4 shrink-0 text-center text-sm opacity-50">
-        {item.pin == "true" ? (
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="currentColor"
-            className="w-4 h-4 mx-auto rotate-45"
-          >
-            <path d="M16 9V4h1c.55 0 1-.45 1-1s-.45-1-1-1H7c-.55 0-1 .45-1 1s.45 1 1 1h1v5c0 1.66-1.34 3-3 3v2h5.97v7l1 1 1-1v-7H19v-2c-1.66 0-3-1.34-3-3z" />
-          </svg>
-        ) : (
-          <span>{item.index}</span>
-        )}
+      <div className="flex flex-1 min-w-0 items-center gap-2 h-full pl-2 pr-1 text-left">
+        <span className="w-4 shrink-0 text-center text-sm opacity-50">
+          {item.pin == "true" ? (
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              className="w-4 h-4 mx-auto rotate-45"
+            >
+              <path d="M16 9V4h1c.55 0 1-.45 1-1s-.45-1-1-1H7c-.55 0-1 .45-1 1s.45 1 1 1h1v5c0 1.66-1.34 3-3 3v2h5.97v7l1 1 1-1v-7H19v-2c-1.66 0-3-1.34-3-3z" />
+            </svg>
+          ) : (
+            <span>{item.index}</span>
+          )}
+        </span>
+        <span className="flex-1 min-w-0 h-full flex items-center px-2">
+          {item.type == "text" && (
+            <span className="w-full min-w-0">
+              <HistoryItemText item={item} />
+            </span>
+          )}
+          {item.type == "screenshot" && <HistoryItemScreenshot item={item} />}
+          {item.type == "file" && (
+            <span className="w-full min-w-0 line-clamp-1 opacity-70 break-all">
+              {"[" + t("file") + "]" + decodeURI(item.fileName ?? "")}
+            </span>
+          )}
+        </span>
+        <span className="shrink-0 whitespace-pre text-xs text-nowrap text-right">
+          {feedback ? (
+            <span role="status" className="text-success">
+              {feedback === "copied"
+                ? t("history.copied")
+                : t("history.downloaded")}
+            </span>
+          ) : (
+            <span className="opacity-50">
+              {moment(item.createdAt).fromNow()}
+            </span>
+          )}
+        </span>
       </div>
-      <div className="flex-1 min-w-0 h-full flex items-center px-2">
-        {item.type == "text" && (
-          <div className="w-full min-w-0">
-            <HistoryItemText item={item} />
-          </div>
-        )}
-        {item.type == "screenshot" && <HistoryItemScreenshot item={item} />}
-        {item.type == "file" && (
-          <a
-            onClick={handleUse}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-full min-w-0 line-clamp-1 opacity-70 break-all cursor-pointer hover:underline"
-          >
-            {"[" + t("file") + "]" + decodeURI(item.fileName ?? "")}
-          </a>
-        )}
-      </div>
-      <div className="shrink-0 whitespace-pre text-xs text-nowrap opacity-50 text-right">
-        {moment(item.createdAt).fromNow()}
-      </div>
-      <div className="w-9 shrink-0 flex justify-center">
+      <div
+        className="w-9 shrink-0 flex justify-center"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="dropdown dropdown-end">
           <div tabIndex={0} role="button" className="btn btn-ghost btn-xs">
             <EllipsisHorizontalIcon className="h-4 w-4" />

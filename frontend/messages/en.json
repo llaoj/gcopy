@@ -69,6 +69,8 @@
       "delete": "Delete",
       "use": "Use",
       "share": "Share",
+      "copied": "Copied",
+      "downloaded": "Downloaded",
       "empty": "Empty"
     },
     "logs": {
