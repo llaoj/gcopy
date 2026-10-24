@@ -36,6 +36,7 @@ import {
 } from "@/models/history";
 import moment from "moment";
 import { validateFileSize, downloadBlob } from "@/lib/file-utils";
+import { UploadError, uploadBlobWithRetry } from "@/lib/upload";
 import { PROMPT_TIMEOUT_MS } from "@/lib/sync-prompt";
 import type { PendingPrompt } from "@/lib/sync-prompt";
 
@@ -151,53 +152,6 @@ export default function SyncClipboard() {
     return new Promise((resolve) => setTimeout(resolve, ms));
   };
 
-  // 带进度跟踪的XMLHttpRequest上传
-  const uploadWithProgress = (
-    url: string,
-    method: string,
-    headers: Record<string, string>,
-    body: Blob,
-    onProgress: (progress: number) => void,
-  ): Promise<{ status: number; headers: Headers; body: string }> => {
-    return new Promise((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-      xhr.open(method, url);
-
-      // 设置headers
-      Object.entries(headers).forEach(([key, value]) => {
-        xhr.setRequestHeader(key, value);
-      });
-
-      xhr.upload.onprogress = (event) => {
-        if (event.lengthComputable) {
-          const progress = Math.round((event.loaded / event.total) * 100);
-          onProgress(progress);
-        }
-      };
-
-      xhr.onload = () => {
-        const headers = new Headers();
-        xhr
-          .getAllResponseHeaders()
-          .split("\r\n")
-          .forEach((line) => {
-            const [key, value] = line.split(": ");
-            if (key && value) {
-              headers.set(key, value);
-            }
-          });
-        resolve({
-          status: xhr.status,
-          headers,
-          body: xhr.responseText,
-        });
-      };
-
-      xhr.onerror = () => reject(new Error("Upload failed"));
-      xhr.send(body);
-    });
-  };
-
   /**
    * 上传任意内容到服务器。
    * 本地同步游标由调用方根据上传结果更新。
@@ -213,19 +167,24 @@ export default function SyncClipboard() {
 
       setSyncDirection("out");
       try {
-        const response = await uploadWithProgress(
-          "/api/v1/clipboard",
-          "POST",
-          {
+        const response = await uploadBlobWithRetry({
+          url: "/api/v1/clipboard",
+          blob,
+          headers: {
             "Content-Type": blob.type,
             "X-Type": xtype,
             "X-FileName": xtype == "file" ? encodeURI(fileName) : "",
           },
-          blob,
-          (progress) => {
+          onProgress: (progress) => {
             updateProgressLog(`${t("logs.uploading")} ${progress}%`);
           },
-        );
+          onRetry: () => {
+            addLog({
+              message: t("logs.uploadRetrying"),
+              level: LogLevel.Warn,
+            });
+          },
+        });
 
         if (response.status == 401) {
           redirectToLogin(router);
@@ -248,6 +207,19 @@ export default function SyncClipboard() {
         }
 
         return { index: xindex, blobId };
+      } catch (err) {
+        if (err instanceof UploadError) {
+          addLog({
+            message:
+              err.kind === "timeout"
+                ? t("logs.uploadTimeout")
+                : t("logs.uploadNetworkError"),
+            level: LogLevel.Error,
+          });
+        } else {
+          addLog({ message: String(err), level: LogLevel.Error });
+        }
+        return null;
       } finally {
         setSyncDirection(null);
       }

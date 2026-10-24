@@ -59,7 +59,7 @@
 
 ## P3 细节
 
-- [ ] **12. 上传超时与重试**: `uploadWithProgress` (`sync-clipboard.tsx:106-150`) 无超时/重试, 弱网只报 "Upload failed".
+- [x] **12. 上传超时与重试**: `uploadWithProgress` (`sync-clipboard.tsx:106-150`) 无超时/重试, 弱网只报 "Upload failed".
 - [ ] **13. 分享当前剪贴板链接**: 头像菜单"复制链接"目前是登录链接 (`avator.tsx:24-32`); 可做"打开即同步"的内容分享链接 (注意 token 泄露风险).
 - [ ] **14. 文案澄清**: `subTitle`"按下按钮剪切板就能在不同设备间同步"未说明"先拉取远端, 无更新再推送本地"的真实逻辑.
 
