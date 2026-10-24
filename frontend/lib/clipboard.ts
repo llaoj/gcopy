@@ -1,3 +1,17 @@
+export class ClipboardPermissionError extends Error {
+  constructor() {
+    super("Clipboard permission denied");
+    this.name = "ClipboardPermissionError";
+  }
+}
+
+function isPermissionError(err: unknown) {
+  return (
+    err instanceof DOMException &&
+    (err.name === "NotAllowedError" || err.name === "SecurityError")
+  );
+}
+
 export interface Clipboard {
   index: string;
   data: Blob;
@@ -58,6 +72,9 @@ export async function clipboardRead() {
           try {
             return await items[i].getType(imageType);
           } catch (err) {
+            if (isPermissionError(err)) {
+              throw new ClipboardPermissionError();
+            }
             console.warn(`Failed to read ${imageType}:`, err);
             continue;
           }
@@ -72,6 +89,9 @@ export async function clipboardRead() {
           try {
             return await items[i].getType(textType);
           } catch (err) {
+            if (isPermissionError(err)) {
+              throw new ClipboardPermissionError();
+            }
             console.warn(`Failed to read ${textType}:`, err);
             continue;
           }
@@ -85,6 +105,9 @@ export async function clipboardRead() {
         try {
           return await items[i].getType(type);
         } catch (err) {
+          if (isPermissionError(err)) {
+            throw new ClipboardPermissionError();
+          }
           console.warn(`Failed to read type ${type}:`, err);
           continue;
         }
@@ -94,6 +117,12 @@ export async function clipboardRead() {
     console.error("All clipboard types failed to read");
     return null;
   } catch (err) {
+    if (err instanceof ClipboardPermissionError) {
+      throw err;
+    }
+    if (isPermissionError(err)) {
+      throw new ClipboardPermissionError();
+    }
     console.error("Failed to read clipboard:", err);
     return null;
   }

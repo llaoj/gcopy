@@ -82,7 +82,7 @@
       "readClipboardSuccess": "Read the clipboard.",
       "writeSuccess": "Copied to clipboard.",
       "autoDownload": "File received. Download should start shortly. If not, click the file in the history below.",
-      "denyRead": "Unable to read the clipboard. Allow clipboard access in your browser and try again.",
+      "denyRead": "Unable to read the clipboard. Allow clipboard access in the site settings from the address bar and try again.",
       "fileTooLarge": "File size {size} MiB exceeds the limit {limit} MiB.",
       "pressAgain": "Safari needs another click on the sync button.",
       "pressPaste": "If a \"Paste\" button appears, click it to allow clipboard access.",

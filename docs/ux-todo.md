@@ -35,7 +35,7 @@
   - 涉及: `frontend/components/history-item-text.tsx:30-40`.
   - 建议: 整行可点 + 就地"已复制"反馈 (参考头像菜单复制 token 的实现).
 
-- [ ] **7. 剪贴板权限被拒的补救指引**
+- [x] **7. 剪贴板权限被拒的补救指引**
   - 现象: `denyRead` 仅一条日志, 而读取权限是本类工具的命门.
   - 涉及: `frontend/components/sync-clipboard.tsx:766-768`.
   - 建议: 一次性帮助提示, 说明如何重新允许.

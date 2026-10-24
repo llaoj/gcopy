@@ -17,6 +17,7 @@ import {
   toPngBlob,
   Clipboard,
   clipboardRead,
+  ClipboardPermissionError,
 } from "@/lib/clipboard";
 import { loadClipboardState, saveClipboardState } from "@/lib/clipboard-state";
 import { redirectToLogin } from "@/lib/navigation";
@@ -98,6 +99,10 @@ export default function SyncClipboard() {
     () => clearPrompt("canceled"),
     [clearPrompt],
   );
+
+  const handlePermissionDenied = useCallback(() => {
+    addLog({ message: t("logs.denyRead"), level: LogLevel.Error });
+  }, [addLog, t]);
 
   // 挂起状态不会一直等待：用户没注意时自动关闭，避免拦截后续粘贴。
   useEffect(() => {
@@ -672,7 +677,14 @@ export default function SyncClipboard() {
       // the blob read from the clipboard is different from
       // the blob just fetched from the server.
       let nextCbi = nextBlobId;
-      const shadowBlob = await clipboardRead();
+      let shadowBlob: Blob | null = null;
+      try {
+        shadowBlob = await clipboardRead();
+      } catch (err) {
+        if (!(err instanceof ClipboardPermissionError)) {
+          throw err;
+        }
+      }
       if (shadowBlob) {
         nextCbi = await hashBlob(shadowBlob);
       } else {
@@ -737,7 +749,16 @@ export default function SyncClipboard() {
       if (!navigator.clipboard || !navigator.clipboard.read) {
         return;
       }
-      blob = await clipboardRead();
+
+      try {
+        blob = await clipboardRead();
+      } catch (err) {
+        if (err instanceof ClipboardPermissionError) {
+          handlePermissionDenied();
+          return;
+        }
+        throw err;
+      }
 
       if (!blob && !isMobile) {
         /**
@@ -883,14 +904,18 @@ export default function SyncClipboard() {
 
       // Ask for permission
       if (!browserName.includes("Safari")) {
-        const permissionClipboardRead: PermissionName =
-          "clipboard-read" as PermissionName;
-        const permission = await navigator.permissions.query({
-          name: permissionClipboardRead,
-        });
-        if (permission.state === "denied") {
-          addLog({ message: t("logs.denyRead"), level: LogLevel.Error });
-          return;
+        try {
+          const permissionClipboardRead: PermissionName =
+            "clipboard-read" as PermissionName;
+          const permission = await navigator.permissions.query({
+            name: permissionClipboardRead,
+          });
+          if (permission.state === "denied") {
+            handlePermissionDenied();
+            return;
+          }
+        } catch {
+          // Permission query is not supported by this browser.
         }
       }
 

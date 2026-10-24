@@ -82,7 +82,7 @@
       "readClipboardSuccess": "已读取剪切板.",
       "writeSuccess": "已写入剪切板.",
       "autoDownload": "文件已获取, 正在下载. 若未开始, 请在下方历史记录中点击文件.",
-      "denyRead": "无法读取剪切板. 请允许浏览器访问剪切板后重试.",
+      "denyRead": "无法读取剪切板. 请在地址栏的站点设置中允许剪切板权限后重试.",
       "fileTooLarge": "文件大小 {size} MiB, 超过上限 {limit} MiB.",
       "pressAgain": "Safari 需要再次点击同步按钮.",
       "pressPaste": "如果出现\"粘贴\"按钮, 请点击以允许读取剪切板.",
