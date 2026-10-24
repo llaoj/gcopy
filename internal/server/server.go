@@ -15,9 +15,9 @@ import (
 	"github.com/gorilla/sessions"
 	"github.com/llaoj/gcopy/internal/config"
 	"github.com/llaoj/gcopy/internal/gcopy"
+	applog "github.com/llaoj/gcopy/internal/log"
 	"github.com/llaoj/gcopy/internal/server/auth"
 	"github.com/llaoj/gcopy/internal/static"
-	"github.com/llaoj/gcopy/pkg/utils"
 	"github.com/mileusna/useragent"
 	"github.com/sirupsen/logrus"
 )
@@ -25,7 +25,7 @@ import (
 type Server struct {
 	wall         *Wall
 	config       *config.Config
-	log          *logrus.Logger
+	log          *applog.Logger
 	sessionStore sessions.Store
 	tokenAuth    *auth.TokenAuth
 	// clipboardMu serializes the read-modify-write of the clipboard index.
@@ -34,7 +34,7 @@ type Server struct {
 	clipboardMu sync.Mutex
 }
 
-func NewServer(log *logrus.Logger) *Server {
+func NewServer(baseLog *logrus.Logger) *Server {
 	cfg := config.Get()
 	sessionStore := sessions.NewCookieStore([]byte(cfg.AppKey))
 	sessionStore.Options.HttpOnly = true
@@ -44,11 +44,12 @@ func NewServer(log *logrus.Logger) *Server {
 	sessionStore.Options.Secure = true
 
 	tokenAuth := auth.NewTokenAuth(sessionStore)
+	appLogger := applog.New(baseLog, cfg.AppKey)
 
 	s := &Server{
-		wall:         NewWall(log),
+		wall:         NewWall(appLogger),
 		config:       cfg,
-		log:          log,
+		log:          appLogger,
 		sessionStore: sessionStore,
 		tokenAuth:    tokenAuth,
 	}
@@ -147,7 +148,13 @@ func (s *Server) getClipboardHandler(c *gin.Context) {
 	if _, err := c.Writer.Write(cb.Data); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "Write data failed"})
 		s.log.Error(err)
+		return
 	}
+
+	s.log.Analytics("sync_download", sub, logrus.Fields{
+		"type":  cb.Type,
+		"index": cb.Index,
+	})
 }
 
 func (s *Server) getClipboardStatusHandler(c *gin.Context) {
@@ -244,7 +251,10 @@ func (s *Server) updateClipboardHandler(c *gin.Context) {
 	s.wall.Set(sub, cb)
 	s.clipboardMu.Unlock()
 
-	s.log.Infof("[%s] Received %s(%v)", utils.StrMaskMiddle(sub), cb.Type, cb.Index)
+	s.log.Analytics("sync_upload", sub, logrus.Fields{
+		"type":  cb.Type,
+		"index": cb.Index,
+	})
 
 	c.Header("X-Index", strconv.Itoa(cb.Index))
 	c.JSON(http.StatusOK, gin.H{"message": "Success"})

@@ -39,6 +39,8 @@ func (s *Server) getUserHandler(c *gin.Context) {
 			return
 		}
 
+		s.log.Analytics("active", userId, nil)
+
 		// Unified response format
 		c.JSON(http.StatusOK, gin.H{
 			"userId":   userId,

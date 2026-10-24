@@ -5,17 +5,16 @@ import (
 	"time"
 
 	"github.com/llaoj/gcopy/internal/gcopy"
-	"github.com/llaoj/gcopy/pkg/utils"
-	"github.com/sirupsen/logrus"
+	applog "github.com/llaoj/gcopy/internal/log"
 )
 
 // Clipboards on the wall
 type Wall struct {
-	log *logrus.Logger
+	log *applog.Logger
 	cbs sync.Map
 }
 
-func NewWall(log *logrus.Logger) *Wall {
+func NewWall(log *applog.Logger) *Wall {
 	return &Wall{log: log}
 }
 
@@ -42,7 +41,7 @@ func (w *Wall) Housekeeping() func() {
 					// CompareAndDelete avoids removing an entry that has been
 					// replaced with a newer one since it was read.
 					w.cbs.CompareAndDelete(key, value)
-					w.log.Infof("[%s] Clipboard expired", utils.StrMaskMiddle(key.(string)))
+					w.log.Info("Clipboard expired")
 				}
 				return true
 			})

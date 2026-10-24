@@ -9,6 +9,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/llaoj/gcopy/internal/gcopy"
+	applog "github.com/llaoj/gcopy/internal/log"
 	"github.com/sirupsen/logrus"
 )
 
@@ -82,7 +83,7 @@ func TestFrontendHandlerRedirectsDirWithoutSlash(t *testing.T) {
 func TestClipboardStatusHandler(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	wall := NewWall(logrus.New())
+	wall := NewWall(applog.New(logrus.New(), "test-app-key"))
 	s := &Server{wall: wall}
 	r := gin.New()
 	// Mimic verifyAuthMiddleware so the handler sees a subject.

@@ -29,10 +29,11 @@ func GetSession(store sessions.Store, r *http.Request, name string) (*sessions.S
 	return session, nil
 }
 
-// GetUserIdFromSession extracts the unified userId from session
+// GetUserIdFromSession extracts the unified userId from session.
+// Only token-shaped ids are accepted so stale non-token sessions are discarded.
 func GetUserIdFromSession(session *sessions.Session) (string, bool) {
 	userId, ok := session.Values["userId"].(string)
-	return userId, ok && userId != ""
+	return userId, ok && tokenPattern.MatchString(userId)
 }
 
 // IsAuthenticated checks if the session has valid authentication

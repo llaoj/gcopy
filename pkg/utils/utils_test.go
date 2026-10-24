@@ -2,17 +2,21 @@ package utils
 
 import "testing"
 
-func TestStrMaskMiddle(t *testing.T) {
-	str := StrMaskMiddle("qustwwy@163.com")
-	if str != "qust*******.com" {
-		t.Error(str)
+func TestHashID(t *testing.T) {
+	first := HashID("secret", "ABC12345")
+	second := HashID("secret", "ABC12345")
+	otherSecret := HashID("other-secret", "ABC12345")
+
+	if first != second {
+		t.Fatalf("HashID is not stable: %q != %q", first, second)
 	}
-	str = StrMaskMiddle("h@qq.com")
-	if str != "h@qq.com" {
-		t.Error(str)
+	if first == otherSecret {
+		t.Fatalf("HashID should depend on the secret")
 	}
-	str = StrMaskMiddle("h@qq.cc")
-	if str != "h@qq.cc" {
-		t.Error(str)
+	if len(first) != 16 {
+		t.Fatalf("HashID length = %d, want 16", len(first))
+	}
+	if first == "ABC12345" {
+		t.Fatalf("HashID must not return the raw id")
 	}
 }
