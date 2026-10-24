@@ -7,11 +7,11 @@ import { useDevice } from "@/hooks/useDevice";
 export default function SyncFile({
   fileName,
   uploading,
-  onFileChange,
+  onFilesChange,
 }: {
   fileName: string;
   uploading: boolean;
-  onFileChange: (file: File) => Promise<void>;
+  onFilesChange: (files: File[]) => Promise<void>;
 }) {
   const t = useTranslations("SyncClipboard");
   const { isMobile } = useDevice();
@@ -49,9 +49,9 @@ export default function SyncFile({
           if (uploading) {
             return;
           }
-          const droppedFile = ev.dataTransfer?.files?.[0];
-          if (droppedFile) {
-            await onFileChange(droppedFile);
+          const droppedFiles = Array.from(ev.dataTransfer?.files ?? []);
+          if (droppedFiles.length > 0) {
+            await onFilesChange(droppedFiles);
           }
         }}
         role="button"
@@ -93,15 +93,16 @@ export default function SyncFile({
       <input
         type="file"
         hidden
+        multiple
         ref={fileInputRef}
         disabled={uploading}
         onChange={async () => {
-          const selectedFile = fileInputRef.current?.files?.[0];
+          const selectedFiles = Array.from(fileInputRef.current?.files ?? []);
           if (fileInputRef.current) {
             fileInputRef.current.value = "";
           }
-          if (selectedFile) {
-            await onFileChange(selectedFile);
+          if (selectedFiles.length > 0) {
+            await onFilesChange(selectedFiles);
           }
         }}
       />

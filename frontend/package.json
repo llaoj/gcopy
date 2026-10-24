@@ -17,6 +17,7 @@
     "clsx": "^2.1.0",
     "dexie": "^4.0.8",
     "dexie-react-hooks": "^1.1.7",
+    "fflate": "^0.8.3",
     "moment": "^2.30.1",
     "next": "^14.2.5",
     "next-intl": "^3.26.5",

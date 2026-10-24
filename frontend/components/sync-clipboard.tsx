@@ -25,6 +25,7 @@ import { browserName, isAndroid, isMobile } from "react-device-detect";
 import SyncButton from "@/components/sync-button";
 import SyncShortcut from "@/components/sync-shortcut";
 import SyncFile from "@/components/sync-file";
+import { createZipFile } from "@/lib/zip-files";
 import QuickInput from "@/components/quick-input";
 import History from "@/components/history";
 import { db } from "@/models/db";
@@ -820,8 +821,6 @@ export default function SyncClipboard() {
   };
 
   const uploadFileHandler = async (file: File) => {
-    resetLog();
-
     // Validate file size
     if (systemInfo) {
       const validation = validateFileSize(file, systemInfo.maxContentLength);
@@ -874,17 +873,30 @@ export default function SyncClipboard() {
     });
   };
 
-  const handleFileChange = async (file: File) => {
-    if (fileUploadingRef.current) {
+  const handleFilesChange = async (files: File[]) => {
+    if (files.length === 0 || fileUploadingRef.current) {
       return;
     }
 
     fileUploadingRef.current = true;
     setFileUploading(true);
+    const multiple = files.length > 1;
+    resetLog();
+
     try {
-      if (await ensureLoggedIn()) {
-        await uploadFileHandler(file);
+      if (!(await ensureLoggedIn())) {
+        return;
       }
+
+      if (!multiple) {
+        await uploadFileHandler(files[0]);
+        return;
+      }
+
+      const zipFile = await createZipFile(files);
+      await uploadFileHandler(zipFile);
+    } catch (err) {
+      addLog({ message: String(err), level: LogLevel.Error });
     } finally {
       fileUploadingRef.current = false;
       setFileUploading(false);
@@ -981,7 +993,7 @@ export default function SyncClipboard() {
         <SyncFile
           fileName={fileName}
           uploading={fileUploading}
-          onFileChange={handleFileChange}
+          onFilesChange={handleFilesChange}
         />
         <QuickInput value={quickText} onChange={setQuickText} />
       </div>

@@ -40,7 +40,7 @@
   - 涉及: `frontend/components/sync-clipboard.tsx:766-768`.
   - 建议: 一次性帮助提示, 说明如何重新允许.
 
-- [ ] **8. 文件同步增强**
+- [x] **8. 文件同步增强**
   - 现象: 仅单文件; 拖拽即上传无确认; 移动端仍提示"拖拽文件到这里"; 接收端文件静默自动下载.
   - 涉及: `frontend/components/sync-file.tsx:39,73`, `frontend/components/sync-clipboard.tsx:590`.
   - 建议: 多文件, 上传进度就地显示, 按设备切换文案, 接收端改为"下载"动作.
