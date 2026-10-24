@@ -1,3 +1,7 @@
+> [!IMPORTANT]
+> GCopy 已迁移到 **https://gcopy.link**.
+> 旧域名 **https://gcopy.llaoj.cn** 不再使用.
+
 <p align="center">
   <img alt="GCopy Logo" src="../gcopy.png" height="120" />
   <p align="center">Share your clipboard. Text, Screenshot, File are supported.</p>
@@ -19,7 +23,7 @@ GCopy 重视您的数据隐私, 不持久化存储您的数据, 它们都在内�
 
 ## 快速开始
 
-**立即体验：** 访问 [https://gcopy.llaoj.cn](https://gcopy.llaoj.cn) 直接使用 GCopy。
+**立即体验：** 访问 [https://gcopy.link](https://gcopy.link) 直接使用 GCopy。
 
 **自建部署：** 参见下方部署文档：
 - [使用 Docker 部署](deploy-by-docker.md) — 使用官方容器镜像
@@ -47,7 +51,7 @@ GCopy 重视您的数据隐私, 不持久化存储您的数据, 它们都在内�
 
 所以, 我开发了 GCopy, 它解决了这些问题. 目前, 你可以在 PC、Mac 和移动端之间共享剪切板, 支持文字, 截图和文件. 它对网络没有太高的要求, 不同的设备可以在同一个局域网, 也可以不在.
 
-最开始我使用 Git 作为后端存储, 使用 PowerShell、osascript 这样的脚本在不同的设备之间同步剪切板. 但是因为它依赖 Git, 注定不能让更多的非技术朋友使用. 所以, 我使用 Golang 替换了 Git, 来作为不同设备之间的数据中转服务, 但是它仍然需要您在设备上下载运行 GCopy 客户端, 给使用带来了门槛. 所以, 我做了现在的 `GCopy v1.0`, 它是一个 Web 服务, 您可以直接打开网站 [https://gcopy.llaoj.cn](https://gcopy.llaoj.cn) 使用, 同时不用担心您的数据泄露.
+最开始我使用 Git 作为后端存储, 使用 PowerShell、osascript 这样的脚本在不同的设备之间同步剪切板. 但是因为它依赖 Git, 注定不能让更多的非技术朋友使用. 所以, 我使用 Golang 替换了 Git, 来作为不同设备之间的数据中转服务, 但是它仍然需要您在设备上下载运行 GCopy 客户端, 给使用带来了门槛. 所以, 我做了现在的 `GCopy v1.0`, 它是一个 Web 服务, 您可以直接打开网站 [https://gcopy.link](https://gcopy.link) 使用, 同时不用担心您的数据泄露.
 
 ## 浏览器兼容性
 

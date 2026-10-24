@@ -1,3 +1,7 @@
+> [!IMPORTANT]
+> GCopy has moved to **https://gcopy.link**.
+> The old domain **https://gcopy.llaoj.cn** is no longer in use.
+
 <p align="center">
   <img alt="GCopy Logo" src="docs/gcopy.png" height="120" />
   <p align="center">Share your clipboard. Text, Screenshot, File are supported.</p>
@@ -19,7 +23,7 @@ Users authenticate with an 8-character token, which is used as the shared clipbo
 
 ## Quick Start
 
-**Try it now:** Visit [https://gcopy.llaoj.cn](https://gcopy.llaoj.cn) to experience GCopy directly.
+**Try it now:** Visit [https://gcopy.link](https://gcopy.link) to experience GCopy directly.
 
 **Self-host:** See deployment guides below:
 - [Deploy by Docker](docs/deploy-by-docker.md) — using the official container image
@@ -47,7 +51,7 @@ This is not ideal!
 
 Therefore, I developed GCopy to address these issues. Currently, you can share the clipboard across PC, Mac, and mobile devices, supporting text, screenshots, and files. It has low network requirements, allowing different devices to be on the same local network or not.
 
-Initially, I used Git as the backend storage and utilized scripts like PowerShell and osascript to synchronize the clipboard between different devices. However, due to its dependence on Git, it was not user-friendly for non-technical users. So, I replaced Git with Golang to serve as a data transfer service between different devices, but it still required users to download and run the GCopy client on their devices, creating a barrier to entry. That led to the development of the current version, 'GCopy v1.0', as a web service. You can directly access the website [https://gcopy.llaoj.cn](https://gcopy.llaoj.cn) without worrying about data leakage.
+Initially, I used Git as the backend storage and utilized scripts like PowerShell and osascript to synchronize the clipboard between different devices. However, due to its dependence on Git, it was not user-friendly for non-technical users. So, I replaced Git with Golang to serve as a data transfer service between different devices, but it still required users to download and run the GCopy client on their devices, creating a barrier to entry. That led to the development of the current version, 'GCopy v1.0', as a web service. You can directly access the website [https://gcopy.link](https://gcopy.link) without worrying about data leakage.
 
 ## Browser compatibility
 
