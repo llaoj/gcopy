@@ -1,13 +1,9 @@
 package log
 
 import (
-	"time"
-
 	"github.com/llaoj/gcopy/pkg/utils"
 	"github.com/sirupsen/logrus"
 )
-
-const dateFormat = "2006-01-02"
 
 // Logger wraps logrus and adds application-specific event logging.
 type Logger struct {
@@ -31,7 +27,6 @@ func (l *Logger) Analytics(event, subject string, fields logrus.Fields) {
 		fields = logrus.Fields{}
 	}
 	fields["event"] = event
-	fields["date"] = time.Now().Format(dateFormat)
 	fields["user"] = utils.HashID(l.secret, subject)
 	l.WithFields(fields).Info("ANALYTICS")
 }
