@@ -1,6 +1,5 @@
 > [!IMPORTANT]
 > GCopy 已迁移到 **https://gcopy.link**.
-> 旧域名 **https://gcopy.llaoj.cn** 不再使用.
 
 <p align="center">
   <img alt="GCopy Logo" src="../gcopy.png" height="120" />
@@ -75,9 +74,8 @@ GCopy 依赖浏览器的 Clipboard API. 它的浏览器兼容性请参考: [brow
 
 ## 不足之处
 
-- 由于浏览器不支持在剪切板中读取和设置文件. 所以文件只能通过上传和下载的方式实现. 不过体验同样很丝滑.
-- 同时只能同步一个文件.
-- 因为服务器内存有限, 您同步的文件不能超过 `-max-content-length` MB.
+- 由于浏览器不支持在剪切板中读取和设置文件. 所以文件只能通过上传和下载的方式实现（多文件会自动打包为 zip）, 不过体验同样很丝滑.
+- 因为服务器内存有限, 您同步的内容大小不能超过 `-max-content-length` MB.
 
 ## 感谢支持
 
@@ -98,7 +96,7 @@ GCopy 需要购买公有云服务来维持在线服务的运行。如果您觉�
 
 ### 邮箱
 
-这是我的个人邮箱: qustwwy@163.com, 你有什么问题, 可以给我写信.
+联系邮箱: hmmmbiubiubiu@gmail.com, 你有什么问题, 可以给我写信.
 
 ### 微信
 

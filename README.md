@@ -1,6 +1,5 @@
 > [!IMPORTANT]
 > GCopy has moved to **https://gcopy.link**.
-> The old domain **https://gcopy.llaoj.cn** is no longer in use.
 
 <p align="center">
   <img alt="GCopy Logo" src="docs/gcopy.png" height="120" />
@@ -75,9 +74,8 @@ The tested browsers and its versions are listed below:
 
 ## Limitations
 
-- Due to browser limitations, reading and setting files directly in the clipboard are not supported. Therefore, file synchronization is achieved through uploading and downloading, ensuring a smooth user experience.
-- At any given time, only one file can be synchronized.
-- Due to limited server memory, the size of the files you synchronize must not exceed `-max-content-length` MB.
+- Due to browser limitations, reading and setting files directly in the clipboard are not supported. Therefore, file synchronization is achieved through uploading and downloading (multiple files are automatically zipped), ensuring a smooth user experience.
+- Due to limited server memory, the size of the content you synchronize must not exceed `-max-content-length` MB.
 
 ## Sponsor
 
@@ -98,7 +96,7 @@ If you have any questions or need support related to GCopy, you can contact me t
 
 ### Email
 
-Feel free to reach out to my personal email: qustwwy@163.com. If you have any questions, you can drop me a message.
+Feel free to reach out via email: hmmmbiubiubiu@gmail.com. If you have any questions, you can drop me a message.
 
 ### Discord
 

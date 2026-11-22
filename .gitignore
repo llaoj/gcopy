@@ -5,5 +5,10 @@ frontend/.env
 output/
 bin/
 .vscode
+.claude/
+docs/node_modules/
+docs/.vitepress/dist/
+docs/.vitepress/cache/
+docs/.cloudflare/
 internal/static/dist/*
 !internal/static/dist/.gitkeep

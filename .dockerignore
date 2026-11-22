@@ -1,0 +1,15 @@
+.git
+.github
+.dev
+.vscode
+.claude
+bin
+output
+dist
+docs
+frontend/node_modules
+frontend/.next
+frontend/out
+frontend/.env
+internal/static/dist/*
+!internal/static/dist/.gitkeep

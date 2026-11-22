@@ -1,0 +1,198 @@
+/* ==========================================================================
+   GCopy Aurora Glass Theme for VitePress
+   ========================================================================== */
+
+:root {
+  /* Brand Colors: Indigo -> Violet -> Cyan */
+  --vp-c-brand-1: #4f46e5;
+  --vp-c-brand-2: #6366f1;
+  --vp-c-brand-3: #4338ca;
+  --vp-c-brand-soft: rgba(99, 102, 241, 0.12);
+
+  /* Clean Slate Surfaces (Light Mode) */
+  --vp-c-bg: #fcfdff;
+  --vp-c-bg-alt: #f4f6fb;
+  --vp-c-bg-elv: rgba(255, 255, 255, 0.88);
+  --vp-c-bg-soft: #f3f5fb;
+
+  /* Hero Gradient & Ambient Glow */
+  --vp-home-hero-name-color: transparent;
+  --vp-home-hero-name-background: linear-gradient(
+    125deg,
+    #4f46e5 0%,
+    #7c3aed 48%,
+    #06b6d4 100%
+  );
+  --vp-home-hero-image-background-image: linear-gradient(
+    -45deg,
+    rgba(79, 70, 229, 0.36) 30%,
+    rgba(6, 182, 212, 0.36) 70%
+  );
+  --vp-home-hero-image-filter: blur(56px);
+
+  /* Typography & Radius */
+  --vp-font-family-base:
+    "Inter", -apple-system, BlinkMacSystemFont, "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --vp-button-brand-border: transparent;
+  --vp-button-brand-text: #ffffff;
+  --vp-button-brand-bg: #4f46e5;
+  --vp-button-brand-hover-border: transparent;
+  --vp-button-brand-hover-text: #ffffff;
+  --vp-button-brand-hover-bg: #4338ca;
+}
+
+.dark {
+  --vp-c-brand-1: #818cf8;
+  --vp-c-brand-2: #6366f1;
+  --vp-c-brand-3: #4f46e5;
+  --vp-c-brand-soft: rgba(129, 140, 248, 0.16);
+
+  /* Deep Space Surfaces (Dark Mode) */
+  --vp-c-bg: #0b0e17;
+  --vp-c-bg-alt: #0f1320;
+  --vp-c-bg-elv: rgba(17, 22, 37, 0.86);
+  --vp-c-bg-soft: #131829;
+
+  --vp-home-hero-name-background: linear-gradient(
+    125deg,
+    #818cf8 0%,
+    #c084fc 50%,
+    #22d3ee 100%
+  );
+  --vp-home-hero-image-background-image: linear-gradient(
+    -45deg,
+    rgba(99, 102, 241, 0.45) 30%,
+    rgba(34, 211, 238, 0.38) 70%
+  );
+  --vp-home-hero-image-filter: blur(68px);
+}
+
+/* Subtle Dot-Grid Background on Home Page */
+.VPHome {
+  position: relative;
+  background-image:
+    radial-gradient(rgba(99, 102, 241, 0.11) 1px, transparent 1px);
+  background-size: 26px 26px;
+}
+
+.dark .VPHome {
+  background-image:
+    radial-gradient(rgba(129, 140, 248, 0.12) 1px, transparent 1px);
+}
+
+/* Frosted Glass Sticky Navbar */
+.VPNavBar:not(.top) {
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  background-color: rgba(252, 253, 255, 0.78) !important;
+  border-bottom: 1px solid rgba(99, 102, 241, 0.1);
+}
+
+.dark .VPNavBar:not(.top) {
+  background-color: rgba(11, 14, 23, 0.78) !important;
+  border-bottom: 1px solid rgba(129, 140, 248, 0.14);
+}
+
+.VPNavBarTitle .logo {
+  height: 28px;
+  width: 28px;
+  margin-right: 10px;
+}
+
+.dark .VPNavBarTitle .logo {
+  filter: invert(1);
+}
+
+/* Hero Buttons & Typography Polish */
+.VPHero .text {
+  letter-spacing: -0.02em;
+}
+
+.VPButton.medium {
+  border-radius: 12px !important;
+  padding: 0 22px !important;
+  font-weight: 600 !important;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease !important;
+}
+
+.VPButton.brand {
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 55%, #0891b2 100%) !important;
+  box-shadow: 0 8px 22px -6px rgba(79, 70, 229, 0.5);
+}
+
+.VPButton.brand:hover {
+  transform: translateY(-1.5px);
+  box-shadow: 0 12px 28px -6px rgba(79, 70, 229, 0.65);
+}
+
+.VPButton.alt {
+  border: 1px solid rgba(99, 102, 241, 0.2) !important;
+  background-color: var(--vp-c-bg-elv) !important;
+  backdrop-filter: blur(8px);
+}
+
+.VPButton.alt:hover {
+  transform: translateY(-1.5px);
+  border-color: rgba(99, 102, 241, 0.45) !important;
+}
+
+/* Interactive Feature Cards */
+.VPFeature {
+  border-radius: 16px !important;
+  border: 1px solid rgba(99, 102, 241, 0.12) !important;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.92) 0%,
+    rgba(244, 246, 251, 0.85) 100%
+  ) !important;
+  box-shadow: 0 4px 20px -8px rgba(15, 23, 42, 0.06);
+  transition:
+    transform 0.24s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.24s ease,
+    box-shadow 0.24s ease !important;
+}
+
+.dark .VPFeature {
+  border: 1px solid rgba(129, 140, 248, 0.14) !important;
+  background: linear-gradient(
+    180deg,
+    rgba(22, 28, 46, 0.88) 0%,
+    rgba(15, 19, 32, 0.88) 100%
+  ) !important;
+  box-shadow: 0 8px 28px -10px rgba(0, 0, 0, 0.45);
+}
+
+.VPFeature:hover {
+  transform: translateY(-4px);
+  border-color: rgba(99, 102, 241, 0.42) !important;
+  box-shadow: 0 14px 32px -10px rgba(79, 70, 229, 0.18);
+}
+
+.VPFeature .icon {
+  background: linear-gradient(
+    135deg,
+    rgba(79, 70, 229, 0.12),
+    rgba(6, 182, 212, 0.14)
+  ) !important;
+  border: 1px solid rgba(99, 102, 241, 0.18);
+  border-radius: 12px !important;
+  font-size: 22px !important;
+}
+
+/* Terminal-style Code Blocks (matching GCopy LogBox traffic lights) */
+.vp-doc div[class*="language-"] {
+  border-radius: 14px;
+  border: 1px solid rgba(99, 102, 241, 0.14);
+  box-shadow: 0 8px 24px -12px rgba(15, 23, 42, 0.12);
+}
+
+/* Polished Screenshot Framing inside Docs */
+.vp-doc img {
+  border-radius: 14px;
+  border: 1px solid rgba(99, 102, 241, 0.14);
+  box-shadow: 0 12px 32px -12px rgba(15, 23, 42, 0.16);
+}

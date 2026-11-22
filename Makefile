@@ -1,7 +1,7 @@
 .PHONY: all \
         vet fmt version release test \
         push-container clean gomod \
-        frontend-build
+        frontend-build docs-dev docs-build
 
 DOCKER_PLATFORMS=linux/amd64,linux/arm64
 VERSION=$(shell cat version.txt)
@@ -24,6 +24,12 @@ frontend-build:
 	cd frontend && npm ci && npm run build
 	cp -r frontend/out $(STATIC_DIR)
 	touch $(STATIC_DIR)/.gitkeep
+
+docs-dev:
+	cd docs && npm run docs:dev
+
+docs-build:
+	cd docs && npm run docs:build
 
 vet:
 	go vet ./...
