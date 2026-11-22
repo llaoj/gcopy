@@ -2,7 +2,7 @@
 
 GCopy 是一个基于 Web 的跨平台剪贴板同步工具。无需在办公电脑或个人设备上安装客户端，即可在 Windows、macOS、Linux、iOS 和 Android 之间秒级同步**文字**、**截图**和**文件**。
 
-![GCopy 页面预览](../../screenshot-chrome.png)
+![GCopy 跨设备同步演示](../../demo.gif)
 
 ## 三步开始使用
 

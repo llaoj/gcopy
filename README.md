@@ -1,119 +1,124 @@
-> [!IMPORTANT]
-> GCopy has moved to **https://gcopy.link**.
+<div align="center">
+  <img alt="GCopy Logo" src="docs/gcopy.png" width="96" />
+  <h1>GCopy</h1>
+  <p><strong>Instant cross-platform clipboard sync for Text, Screenshots & Files — in a single Go binary.</strong></p>
 
-<p align="center">
-  <img alt="GCopy Logo" src="docs/gcopy.png" height="120" />
-  <p align="center">Share your clipboard. Text, Screenshot, File are supported.</p>
-</p>
+  <p>
+    <a href="https://github.com/llaoj/gcopy/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/llaoj/gcopy/actions/workflows/ci.yml/badge.svg" /></a>
+    <a href="https://github.com/llaoj/gcopy/releases"><img alt="GitHub Release" src="https://img.shields.io/github/v/release/llaoj/gcopy?color=4f46e5" /></a>
+    <a href="https://hub.docker.com/r/llaoj/gcopy"><img alt="Docker Pulls" src="https://img.shields.io/docker/pulls/llaoj/gcopy?color=0891b2" /></a>
+    <a href="https://goreportcard.com/report/github.com/llaoj/gcopy"><img alt="Go Report Card" src="https://goreportcard.com/badge/github.com/llaoj/gcopy" /></a>
+    <a href="LICENSE.md"><img alt="License" src="https://img.shields.io/github/license/llaoj/gcopy" /></a>
+  </p>
+
+  <p>
+    <a href="https://gcopy.link"><strong>🚀 Live Demo</strong></a> ·
+    <a href="https://docs.gcopy.link"><strong>📖 Documentation</strong></a> ·
+    <a href="docs/zh-CN/README.md"><strong>🇨🇳 中文文档</strong></a> ·
+    <a href="https://discord.gg/pyTrT3aAaC"><strong>💬 Discord</strong></a>
+  </p>
+
+  <img alt="GCopy Cross-Device Sync Demo" src="docs/demo.gif" width="860" />
+</div>
 
 ---
 
-[中文文档](docs/zh-CN/README.md) · [Official Documentation](https://docs.gcopy.link)
+## ✨ Why GCopy?
 
-A clipboard synchronization service between different operating systems.
+Working across a macOS laptop, a Windows PC, and a phone at the same time shouldn't hurt. Most existing tools break down on locked-down office machines or isolated corporate VLANs:
 
-`Text`, `Screenshot` & `File` are supported.
+| Feature | **GCopy** | LocalSend / AirDrop | Chat Apps (WeChat / Slack) |
+| :--- | :--- | :--- | :--- |
+| **Client Installation** | **None (Web Browser)** | Requires native app / Apple-only | Requires logging into personal account |
+| **Network Requirement** | **Any network (cross-VLAN / Internet / LAN)** | Same Wi-Fi / LAN multicast required | Internet required |
+| **Supported Payloads** | **Text, Lossless Screenshots & Multi-File (`.zip`)** | Files & Text | Compresses images unless sent as file |
+| **Server Persistence** | **RAM-only (0 DB, 24h auto-expire)** | P2P | Stored on vendor cloud servers |
+| **Self-Host Footprint** | **Single Go binary (~10 MB) / 1 Docker container** | N/A | N/A |
 
-GCopy values your data privacy, it does not persistently store your data; it is all kept in memory. If you are inactive for 24h, the data will expire.
+### Key Highlights
 
-## Authentication
+- **📋 Text, Screenshots & Multi-File**: Sync plain text, direct OS screenshots (with automatic `Ctrl+V` fallback for non-standard clipboard images like WeChat), and drag-and-drop multiple files (automatically zipped in the browser).
+- **🌐 Zero Network Friction**: Pair any two devices with an **8-character token** (or scan the login QR code). Works seamlessly across isolated corporate subnets, VPNs, 4G/5G mobile data, and home labs.
+- **🛡️ Ephemeral In-Memory Design**: No database, no disk storage. Clipboard payloads live strictly in Go server memory and expire automatically after 24 hours of inactivity. Local history is stored only in your own browser's IndexedDB.
+- **⚡ Single-Binary Deployment**: Static Next.js frontend embedded into one Go binary via `go:embed` — zero Nginx or Node.js runtime required.
 
-Users authenticate with an 8-character token, which is used as the shared clipboard key across devices.
+---
 
-## Quick Start
+## 🚀 Quick Start
 
-**Try it now:** Visit [https://gcopy.link](https://gcopy.link) to experience GCopy directly.
+### 1. Try Online Immediately
 
-**Documentation:** Full user guides & self-hosting docs at [https://docs.gcopy.link](https://docs.gcopy.link).
+Open **[https://gcopy.link](https://gcopy.link)** in your browser on two devices, sign in with the same 8-character token, and press **Sync clipboard** (or `Enter`).
 
-**Self-host:**
-- [Deploy by Docker](https://docs.gcopy.link/deploy-by-docker) — using the official container image
-- [Deploy from Source](https://docs.gcopy.link/deploy-from-source) — build and run from source, or download the release binary
+### 2. Self-Host in 30 Seconds (Docker)
 
-## Usage
+> [!NOTE]
+> Modern browsers require **HTTPS** (Secure Context) to grant Clipboard API access. You can use GCopy's built-in TLS flags or place it behind Caddy / Nginx / Cloudflare Tunnel.
 
-![screenshot on chrome](docs/screenshot-chrome.png)
+```bash
+# 1. Generate a quick self-signed cert (or bring your own domain cert / reverse proxy)
+curl -sSL https://raw.githubusercontent.com/llaoj/gcopy/main/scripts/gen-cert.sh | bash
 
-Steps:
+# 2. Run the all-in-one container
+docker run -d \
+  --name gcopy \
+  --restart unless-stopped \
+  -p 3375:3375 \
+  -v $(pwd)/cert.pem:/cert.pem:ro \
+  -v $(pwd)/key.pem:/key.pem:ro \
+  -e GCOPY_APP_KEY=your-secret-key-min-16-chars \
+  -e GCOPY_TLS_CERT_FILE=/cert.pem \
+  -e GCOPY_TLS_KEY_FILE=/key.pem \
+  llaoj/gcopy:latest
+```
 
-1. Open the website on two devices, A and B, using a browser and log in with the same token.
-2. On device A, copy (e.g., `Ctrl+C`) and then press the button on the right side of the page.
-3. Switch to device B, press the button again, and the data will be synchronized. Now, go ahead and paste (`Ctrl+V`)!
+Prefer prebuilt binaries (`linux` / `darwin` / `windows`, `amd64` & `arm64`) or building from source? See the full guides:
+- **[Deploy by Docker](https://docs.gcopy.link/deploy-by-docker)**
+- **[Deploy from Binary / Source](https://docs.gcopy.link/deploy-from-source)**
 
-## Background
+---
 
-In our daily office routines, especially for software developers, we often find ourselves working with more than two computers.
+## 🖥️ Screenshots
 
-If you need to operate both a Windows PC and a MacOS device simultaneously, exchanging information between these two devices becomes quite troublesome. For various reasons, I couldn't find a good tool to share the clipboard between devices with different operating systems. When I copy a piece of text, pasting it on another computer usually proves to be quite challenging.
+<table>
+  <tr>
+    <th width="68%">Desktop (macOS / Windows / Linux)</th>
+    <th width="32%">Mobile (iOS / Android)</th>
+  </tr>
+  <tr>
+    <td><img alt="GCopy Desktop UI" src="docs/screenshot-chrome.png" /></td>
+    <td><img alt="GCopy Mobile UI" src="docs/screenshot-ios-safari.jpeg" /></td>
+  </tr>
+</table>
 
-Current tools typically only support text, excluding screenshots and files. Additionally, they often require devices to be on the same local network and accessible to each other, not to mention some of them come with a fee.
+---
 
-This is not ideal!
+## 🌐 Browser Compatibility
 
-Therefore, I developed GCopy to address these issues. Currently, you can share the clipboard across PC, Mac, and mobile devices, supporting text, screenshots, and files. It has low network requirements, allowing different devices to be on the same local network or not.
+GCopy builds on the standard [W3C Clipboard API](https://developer.mozilla.org/en-US/docs/Web/API/Clipboard#browser_compatibility) with tailored handling for Safari user-gesture windows and mobile browsers:
 
-Initially, I used Git as the backend storage and utilized scripts like PowerShell and osascript to synchronize the clipboard between different devices. However, due to its dependence on Git, it was not user-friendly for non-technical users. So, I replaced Git with Golang to serve as a data transfer service between different devices, but it still required users to download and run the GCopy client on their devices, creating a barrier to entry. That led to the development of the current version, 'GCopy v1.0', as a web service. You can directly access the website [https://gcopy.link](https://gcopy.link) without worrying about data leakage.
+| Browser | Tested Version | Status |
+| :--- | :--- | :--- |
+| Chrome (macOS / Windows / Android) | 107+ / 121+ | ✅ Tested |
+| Edge (Windows / Linux / Android / HarmonyOS) | 108+ / 122+ / 130+ | ✅ Tested |
+| Safari (macOS / iOS) | 15.6+ / 16.1+ | ✅ Tested |
+| Opera (macOS / Windows) | 109+ | ✅ Tested |
 
-## Browser compatibility
+### Notes & Limits
+- Browsers do not expose raw OS file paths to `navigator.clipboard`, so files are synced smoothly via drag-and-drop upload and automatic browser download (multiple files are zipped automatically).
+- Maximum payload size defaults to `10 MiB` (configurable via `-max-content-length` / `GCOPY_MAX_CONTENT_LENGTH`).
 
-GCopy depends on the browser's Clipboard API. Please refer to [browser_compatibility](https://developer.mozilla.org/en-US/docs/Web/API/Clipboard#browser_compatibility) for more information.
+---
 
-The tested browsers and its versions are listed below:
+## ☕ Sponsor & Community
 
-|Browser|Version||
-|-|-|-|
-|Chrome for Android|107.0.5304.105|✅ Tested|
-|Chrome for macOS|Version 121.0.6167.85 (Official Build) (x86_64)|✅ Tested|
-|Chrome for Windows|Version 123.0.6312.86 (Official Build) (x86_64)|✅ Tested|
-|Edge for Android|Edge 108.0.1462.48|✅ Tested|
-|Edge for HarmonyOS 3.0/4.0|Edge 122.0.2365.99|✅ Tested|
-|Edge for Linux|Edge 130.0.2849.52|✅ Tested|
-|Edge for Windows 10|Version 124.0.2478.80 (Official build) (64-bit)|✅ Tested|
-|Opera for macOS|Opera One(version: 109.0.5097.68) (x86_64)|✅ Tested|
-|Opera for Windows 10|Opera One(version: 109.0.5097.68)|✅ Tested|
-|Safari|Version 15.6.1 (17613.3.9.1.16)|✅ Tested|
-|Safari for iOS|Version 16.1|✅ Tested|
+GCopy maintains a free public instance at [gcopy.link](https://gcopy.link). If GCopy saves you time every day, consider supporting the project:
 
-## Limitations
+- Give a **[GitHub Star](https://github.com/llaoj/gcopy)** ⭐
+- **[Buy me a coffee](https://docs.gcopy.link/sponsor)** ☕
+- **Email**: [hmmmbiubiubiu@gmail.com](mailto:hmmmbiubiubiu@gmail.com)
+- **Discord**: [https://discord.gg/pyTrT3aAaC](https://discord.gg/pyTrT3aAaC)
 
-- Due to browser limitations, reading and setting files directly in the clipboard are not supported. Therefore, file synchronization is achieved through uploading and downloading (multiple files are automatically zipped), ensuring a smooth user experience.
-- Due to limited server memory, the size of the content you synchronize must not exceed `-max-content-length` MB.
+## 📄 License
 
-## Sponsor
-
-GCopy requires cloud server resources to keep the online service running. If you find GCopy helpful, please consider supporting:
-
-- Give a [GitHub Star](https://github.com/llaoj/gcopy) ⭐
-- Or make a donation (any amount is greatly appreciated 😄)
-
-Thank you for your support!
-
-[Buy me a coffee](https://docs.gcopy.link/sponsor)
-
-## Community
-
-Welcome to join GCopy, whether you're a user or a contributor!
-
-If you have any questions or need support related to GCopy, you can contact me through the following channels:
-
-### Email
-
-Feel free to reach out via email: hmmmbiubiubiu@gmail.com. If you have any questions, you can drop me a message.
-
-### Discord
-
-Here, some interesting discussions are happening.
-
-Server link: https://discord.gg/pyTrT3aAaC
-
-## Screenshot
-
-Safari on iOS
-
-<img width="300" alt="screenshot on ios safari" src="docs/screenshot-ios-safari.jpeg">
-
-## More
-
-- [Official Documentation](https://docs.gcopy.link)
-- [Deploy by Docker](https://docs.gcopy.link/deploy-by-docker)
-- [Deploy from Source](https://docs.gcopy.link/deploy-from-source)
+Released under the [MIT License](LICENSE.md).

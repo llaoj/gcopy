@@ -18,7 +18,7 @@ Build process: compile Next.js frontend to static files → embed via `go:embed`
 
 ### Download from Release
 
-Download the binary for your platform from [GitHub Releases](https://github.com/llaoj/gcopy/releases).
+Download the prebuilt archive for your platform (`linux`, `darwin`, or `windows` on `amd64` / `arm64`) from [GitHub Releases](https://github.com/llaoj/gcopy/releases) and extract `gcopy` (`gcopy.exe` on Windows).
 
 ## Quick Start
 

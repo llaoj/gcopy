@@ -18,7 +18,7 @@ make bin/gcopy
 
 ### 从 Release 下载
 
-从 [GitHub Releases](https://github.com/llaoj/gcopy/releases) 下载对应平台的二进制文件。
+从 [GitHub Releases](https://github.com/llaoj/gcopy/releases) 下载对应平台（支持 `linux`、`darwin`、`windows` 的 `amd64` 与 `arm64` 架构）的压缩包，解压即可获得单文件 `gcopy`（Windows 为 `gcopy.exe`）。
 
 ## 快速开始
 

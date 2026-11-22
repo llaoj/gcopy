@@ -2,7 +2,7 @@
 
 GCopy is a web-based cross-platform clipboard synchronization tool. Without installing native apps on corporate or personal machines, you can transfer **text**, **screenshots**, and **files** across Windows, macOS, Linux, iOS, and Android in seconds.
 
-![GCopy on Chrome](../screenshot-chrome.png)
+![GCopy Cross-Device Sync Demo](../demo.gif)
 
 ## How It Works
 
