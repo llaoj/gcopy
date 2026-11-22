@@ -6,7 +6,6 @@ import { useTranslations } from "next-intl";
 import { useLocale } from "@/lib/i18n";
 import useAuth from "@/lib/auth";
 import useSystemInfo from "@/hooks/useSystemInfo";
-import pack from "@/package.json";
 import { getLoginPath } from "@/lib/navigation";
 
 export default function Navbar() {
@@ -47,12 +46,8 @@ export default function Navbar() {
               <Link
                 href={
                   locale == "zh-CN"
-                    ? "https://github.com/llaoj/gcopy/blob/v" +
-                      pack.version +
-                      "/docs/zh-CN/README.md"
-                    : "https://github.com/llaoj/gcopy/blob/v" +
-                      pack.version +
-                      "/README.md"
+                    ? "https://docs.gcopy.link/zh-CN/"
+                    : "https://docs.gcopy.link/"
                 }
                 target="_blank"
               >
@@ -67,9 +62,9 @@ export default function Navbar() {
             <li>
               <Link
                 href={
-                  "https://github.com/llaoj/gcopy/blob/v" +
-                  pack.version +
-                  "/docs/sponsor.md"
+                  locale == "zh-CN"
+                    ? "https://docs.gcopy.link/zh-CN/sponsor"
+                    : "https://docs.gcopy.link/sponsor"
                 }
                 target="_blank"
               >

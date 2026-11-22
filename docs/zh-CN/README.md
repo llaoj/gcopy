@@ -8,7 +8,7 @@
 
 ---
 
-[ENGLISH](../../README.md)
+[ENGLISH](../../README.md) · [官方文档站](https://docs.gcopy.link/zh-CN/)
 
 一个剪切板同步的工具, 支持`文字`、`截图`和`文件`.
 
@@ -24,9 +24,11 @@ GCopy 重视您的数据隐私, 不持久化存储您的数据, 它们都在内�
 
 **立即体验：** 访问 [https://gcopy.link](https://gcopy.link) 直接使用 GCopy。
 
-**自建部署：** 参见下方部署文档：
-- [使用 Docker 部署](deploy-by-docker.md) — 使用官方容器镜像
-- [使用源代码部署](deploy-from-source.md) — 从源码构建或下载二进制文件
+**在线文档：** 完整使用指南与部署文档请访问 [https://docs.gcopy.link/zh-CN/](https://docs.gcopy.link/zh-CN/)。
+
+**自建部署：**
+- [使用 Docker 部署](https://docs.gcopy.link/zh-CN/deploy-by-docker) — 使用官方容器镜像
+- [使用源代码部署](https://docs.gcopy.link/zh-CN/deploy-from-source) — 从源码构建或下载二进制文件
 
 ## 使用方法
 
@@ -86,7 +88,7 @@ GCopy 需要购买公有云服务来维持在线服务的运行。如果您觉�
 
 感谢您的支持！
 
-[打赏杯咖啡吧](../sponsor.md)
+[打赏杯咖啡吧](https://docs.gcopy.link/zh-CN/sponsor)
 
 ## 社区
 
@@ -112,5 +114,6 @@ Safari on iOS
 
 ## 更多
 
-- [使用 Docker 部署](./deploy-by-docker.md)
-- [使用源代码部署](./deploy-from-source.md)
+- [官方文档站](https://docs.gcopy.link/zh-CN/)
+- [使用 Docker 部署](https://docs.gcopy.link/zh-CN/deploy-by-docker)
+- [使用源代码部署](https://docs.gcopy.link/zh-CN/deploy-from-source)

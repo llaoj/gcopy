@@ -8,7 +8,7 @@
 
 ---
 
-[中文文档](docs/zh-CN/README.md)
+[中文文档](docs/zh-CN/README.md) · [Official Documentation](https://docs.gcopy.link)
 
 A clipboard synchronization service between different operating systems.
 
@@ -24,9 +24,11 @@ Users authenticate with an 8-character token, which is used as the shared clipbo
 
 **Try it now:** Visit [https://gcopy.link](https://gcopy.link) to experience GCopy directly.
 
-**Self-host:** See deployment guides below:
-- [Deploy by Docker](docs/deploy-by-docker.md) — using the official container image
-- [Deploy from Source](docs/deploy-from-source.md) — build and run from source, or download the release binary
+**Documentation:** Full user guides & self-hosting docs at [https://docs.gcopy.link](https://docs.gcopy.link).
+
+**Self-host:**
+- [Deploy by Docker](https://docs.gcopy.link/deploy-by-docker) — using the official container image
+- [Deploy from Source](https://docs.gcopy.link/deploy-from-source) — build and run from source, or download the release binary
 
 ## Usage
 
@@ -86,7 +88,7 @@ GCopy requires cloud server resources to keep the online service running. If you
 
 Thank you for your support!
 
-[Buy me a coffee](docs/sponsor.md)
+[Buy me a coffee](https://docs.gcopy.link/sponsor)
 
 ## Community
 
@@ -112,5 +114,6 @@ Safari on iOS
 
 ## More
 
-- [Deploy by Docker](/docs/deploy-by-docker.md)
-- [Deploy from source code](/docs/deploy-from-source.md)
+- [Official Documentation](https://docs.gcopy.link)
+- [Deploy by Docker](https://docs.gcopy.link/deploy-by-docker)
+- [Deploy from Source](https://docs.gcopy.link/deploy-from-source)

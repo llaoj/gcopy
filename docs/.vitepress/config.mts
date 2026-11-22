@@ -10,6 +10,9 @@ export default defineConfig({
   srcExclude: ["**/README.md"],
   cleanUrls: true,
   lastUpdated: true,
+  sitemap: {
+    hostname: "https://docs.gcopy.link",
+  },
   head: [
     ["link", { rel: "icon", href: `${base}favicon.ico` }],
     ["meta", { property: "og:type", content: "website" }],
