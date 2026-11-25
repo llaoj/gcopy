@@ -50,7 +50,21 @@
 
 在两台设备的浏览器中打开 **[https://gcopy.link](https://gcopy.link)**，使用相同的 8 位令牌登录，复制内容后按页面右侧的 **同步剪贴板** 按钮（或直接按 `Enter`）即可同步！
 
-### 2. 30 秒私有部署（Docker）
+### 2. 从远程 SSH 服务器同步（`curl` 免安装）
+
+无需额外部署命令行客户端，在任何 Linux 服务器终端一行 `curl` 即可与本地电脑剪贴板互通：
+
+```bash
+# 将远程服务器上的日志或文本直接推入本地剪贴板
+cat app.log | curl -fsSL https://gcopy.link/api/v1/clipboard -H "Authorization: Bearer 你的8位令牌" --data-binary @-
+
+# 在远程服务器终端拉取电脑刚复制的内容
+curl -fsSL https://gcopy.link/api/v1/clipboard -H "Authorization: Bearer 你的8位令牌"
+```
+
+更多传文件、`gpush`/`gpull` 快捷别名及 iPhone 轻点背面自动同步配置，请查看 **[命令行与快捷指令指南](https://docs.gcopy.link/zh-CN/guide/cli)**。
+
+### 3. 30 秒私有部署（Docker）
 
 > [!NOTE]
 > 现代浏览器的 Clipboard API 强制要求 **HTTPS** 安全上下文。你可以使用 GCopy 内置的 TLS 参数，也可以配合 Caddy / Nginx / Cloudflare Tunnel 提供 HTTPS。

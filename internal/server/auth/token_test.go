@@ -63,3 +63,27 @@ func TestGenerateTokenUniqueness(t *testing.T) {
 		t.Errorf("Duplicate tokens generated: %d", duplicates)
 	}
 }
+
+func TestExtractBearerToken(t *testing.T) {
+	tests := []struct {
+		header string
+		want   string
+		ok     bool
+	}{
+		{"Bearer G8K2P9X4", "G8K2P9X4", true},
+		{"bearer aBcD1234", "aBcD1234", true},
+		{"Bearer   Z9y8X7w6  ", "Z9y8X7w6", true},
+		{"Bearer short", "", false},
+		{"Bearer toolong123", "", false},
+		{"Bearer bad-char", "", false},
+		{"Basic G8K2P9X4", "", false},
+		{"", "", false},
+	}
+
+	for _, tt := range tests {
+		got, ok := ExtractBearerToken(tt.header)
+		if ok != tt.ok || got != tt.want {
+			t.Errorf("ExtractBearerToken(%q) = (%q, %v), want (%q, %v)", tt.header, got, ok, tt.want, tt.ok)
+		}
+	}
+}

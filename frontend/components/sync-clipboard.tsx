@@ -178,7 +178,7 @@ export default function SyncClipboard() {
           headers: {
             "Content-Type": blob.type,
             "X-Type": xtype,
-            "X-FileName": xtype == "file" ? encodeURI(fileName) : "",
+            "X-FileName": xtype == "file" ? encodeURIComponent(fileName) : "",
           },
           onProgress: (progress) => {
             updateProgressLog(`${t("logs.uploading")} ${progress}%`);
@@ -708,7 +708,11 @@ export default function SyncClipboard() {
       if (xfilename == null || xfilename == "") {
         return;
       }
-      xfilename = decodeURI(xfilename);
+      try {
+        xfilename = decodeURIComponent(xfilename);
+      } catch {
+        // Keep raw header value if a CLI caller sent an unencoded '%' character.
+      }
 
       // 先将 blob 转换为 ArrayBuffer，避免在异步操作中被垃圾回收
       const arrayBuffer = await blob.arrayBuffer();

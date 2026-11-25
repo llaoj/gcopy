@@ -50,7 +50,21 @@ Working across a macOS laptop, a Windows PC, and a phone at the same time should
 
 Open **[https://gcopy.link](https://gcopy.link)** in your browser on two devices, sign in with the same 8-character token, and press **Sync clipboard** (or `Enter`).
 
-### 2. Self-Host in 30 Seconds (Docker)
+### 2. Sync from SSH / Terminal (`curl`)
+
+No CLI client required — push or pull straight from any remote Linux server using your 8-character token:
+
+```bash
+# Push command output from SSH server -> your local clipboard
+cat app.log | curl -fsSL https://gcopy.link/api/v1/clipboard -H "Authorization: Bearer YOUR_TOKEN" --data-binary @-
+
+# Pull your clipboard -> terminal
+curl -fsSL https://gcopy.link/api/v1/clipboard -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+See **[CLI, SSH & iOS Shortcuts Guide](https://docs.gcopy.link/guide/cli)** for file uploads, shell aliases, and iPhone Back-Tap automation.
+
+### 3. Self-Host in 30 Seconds (Docker)
 
 > [!NOTE]
 > Modern browsers require **HTTPS** (Secure Context) to grant Clipboard API access. You can use GCopy's built-in TLS flags or place it behind Caddy / Nginx / Cloudflare Tunnel.

@@ -7,6 +7,7 @@ import (
 	"math/big"
 	"net/http"
 	"regexp"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/sessions"
@@ -40,8 +41,8 @@ type TokenRequest struct {
 	Token string `form:"token" json:"token" binding:"required,len=8"`
 }
 
-// validateTokenFormat validates that a token contains only alphanumeric characters
-func validateTokenFormat(token string) error {
+// ValidateTokenFormat validates that a token contains only 8 alphanumeric characters.
+func ValidateTokenFormat(token string) error {
 	if len(token) != TokenLength {
 		return fmt.Errorf("token must be exactly %d characters", TokenLength)
 	}
@@ -49,6 +50,20 @@ func validateTokenFormat(token string) error {
 		return errors.New("token must contain only letters and numbers (A-Z, a-z, 0-9)")
 	}
 	return nil
+}
+
+// ExtractBearerToken parses an HTTP Authorization header ("Bearer <token>")
+// and validates that the token matches GCopy's 8-character token format.
+func ExtractBearerToken(authHeader string) (string, bool) {
+	const prefix = "Bearer "
+	if len(authHeader) < len(prefix) || !strings.EqualFold(authHeader[:len(prefix)], prefix) {
+		return "", false
+	}
+	token := strings.TrimSpace(authHeader[len(prefix):])
+	if err := ValidateTokenFormat(token); err != nil {
+		return "", false
+	}
+	return token, true
 }
 
 // generateToken generates a token using crypto/rand
@@ -103,7 +118,7 @@ func (a *TokenAuth) verifyTokenHandler(c *gin.Context) {
 	}
 
 	// 后端校验：验证令牌格式（只允许字母和数字）
-	if err := validateTokenFormat(req.Token); err != nil {
+	if err := ValidateTokenFormat(req.Token); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 		return
 	}

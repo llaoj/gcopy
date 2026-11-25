@@ -58,6 +58,17 @@ func (s *Server) getUserHandler(c *gin.Context) {
 }
 
 func (s *Server) verifyAuthMiddleware(c *gin.Context) {
+	if authHeader := c.GetHeader("Authorization"); authHeader != "" {
+		token, ok := auth.ExtractBearerToken(authHeader)
+		if !ok {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "Invalid authorization token"})
+			return
+		}
+		c.Set("subject", token)
+		c.Next()
+		return
+	}
+
 	session, err := auth.GetSession(s.sessionStore, c.Request, auth.UserSessionName)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "Unauthorized"})

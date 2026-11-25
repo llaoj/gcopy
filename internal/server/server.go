@@ -219,19 +219,44 @@ func (s *Server) updateClipboardHandler(c *gin.Context) {
 
 	xType := c.Request.Header.Get("X-Type")
 	xFileName := c.Request.Header.Get("X-FileName")
-	if xType == "" || (xType == gcopy.TypeFile && xFileName == "") {
+	mimeType := c.Request.Header.Get("Content-Type")
+
+	// Infer X-Type when omitted so simple curl / Shortcuts requests don't have
+	// to pass extra headers for common text, image, or named-file uploads.
+	if xType == "" {
+		switch {
+		case xFileName != "":
+			xType = gcopy.TypeFile
+		case strings.HasPrefix(mimeType, "image/"):
+			xType = gcopy.TypeScreenshot
+		default:
+			xType = gcopy.TypeText
+		}
+	}
+
+	switch xType {
+	case gcopy.TypeText:
+		if mimeType == "" || strings.HasPrefix(mimeType, "application/x-www-form-urlencoded") {
+			mimeType = "text/plain; charset=utf-8"
+		}
+	case gcopy.TypeScreenshot:
+		if mimeType == "" || strings.HasPrefix(mimeType, "application/x-www-form-urlencoded") {
+			mimeType = "image/png"
+		}
+	case gcopy.TypeFile:
+		if xFileName == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"message": "Request header invalid"})
+			return
+		}
+		if mimeType == "" || strings.HasPrefix(mimeType, "application/x-www-form-urlencoded") {
+			mimeType = "application/octet-stream"
+		}
+	default:
 		c.JSON(http.StatusBadRequest, gin.H{"message": "Request header invalid"})
 		return
 	}
 
-	var clientName string
-	ua := useragent.Parse(c.Request.Header.Get("User-Agent"))
-	if ua.OS != "" {
-		clientName = ua.OS
-		if ua.Name != "" {
-			clientName += fmt.Sprintf(" %s", ua.Name)
-		}
-	}
+	clientName := parseClientName(c.Request.Header.Get("User-Agent"))
 
 	// Serialize the read-modify-write of the clipboard index so concurrent
 	// uploads don't collide on the same index.
@@ -247,7 +272,7 @@ func (s *Server) updateClipboardHandler(c *gin.Context) {
 		Data:       data,
 		CreatedAt:  time.Now(),
 		ClientName: clientName,
-		MIMEType:   c.Request.Header.Get("Content-Type"),
+		MIMEType:   mimeType,
 	}
 	s.wall.Set(sub, cb)
 	s.clipboardMu.Unlock()
@@ -259,6 +284,25 @@ func (s *Server) updateClipboardHandler(c *gin.Context) {
 
 	c.Header("X-Index", strconv.Itoa(cb.Index))
 	c.JSON(http.StatusOK, gin.H{"message": "Success"})
+}
+
+func parseClientName(rawUA string) string {
+	ua := useragent.Parse(rawUA)
+	if ua.OS != "" {
+		if ua.Name != "" {
+			return fmt.Sprintf("%s %s", ua.OS, ua.Name)
+		}
+		return ua.OS
+	}
+	// Fallback for CLI / automation clients (e.g. "curl/8.7.1" -> "curl").
+	product := strings.TrimSpace(rawUA)
+	if idx := strings.IndexAny(product, "/ "); idx > 0 {
+		product = product[:idx]
+	}
+	if len(product) > 32 {
+		product = product[:32]
+	}
+	return product
 }
 
 func (s *Server) securityHeadersMiddleware() gin.HandlerFunc {

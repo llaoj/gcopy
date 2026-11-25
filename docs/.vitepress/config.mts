@@ -67,6 +67,7 @@ export default defineConfig({
             text: "Guide",
             items: [
               { text: "Getting Started", link: "/guide/getting-started" },
+              { text: "CLI, SSH & Shortcuts", link: "/guide/cli" },
               { text: "FAQ & Compatibility", link: "/guide/faq" },
             ],
           },
@@ -110,6 +111,7 @@ export default defineConfig({
             text: "使用指南",
             items: [
               { text: "快速上手", link: "/zh-CN/guide/getting-started" },
+              { text: "命令行与快捷指令", link: "/zh-CN/guide/cli" },
               { text: "常见问题与兼容性", link: "/zh-CN/guide/faq" },
             ],
           },
