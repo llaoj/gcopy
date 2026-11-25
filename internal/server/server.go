@@ -45,9 +45,10 @@ func NewServer(baseLog *logrus.Logger) *Server {
 
 	tokenAuth := auth.NewTokenAuth(sessionStore)
 	appLogger := applog.New(baseLog, cfg.AppKey)
+	maxBytes := int64(cfg.MaxMemory) * 1024 * 1024
 
 	s := &Server{
-		wall:         NewWall(appLogger),
+		wall:         NewWall(appLogger, maxBytes),
 		config:       cfg,
 		log:          appLogger,
 		sessionStore: sessionStore,

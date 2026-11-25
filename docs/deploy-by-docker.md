@@ -31,7 +31,7 @@ Visit `https://<host>:3375`. The browser will warn about the self-signed certifi
 
 All configuration is done via environment variables with the `GCOPY_` prefix.
 
-> **Rate limiting:** GCopy has no built-in rate limiting. If it is exposed to untrusted clients, apply traffic control at the edge (nginx, Istio, sidecar, ...), especially for `POST /api/v1/user/token/generate`, `POST /api/v1/user/token/verify` and `POST /api/v1/clipboard`.
+> **Rate limiting:** GCopy has no built-in rate limiting — traffic control belongs at the edge gateway (Cloudflare WAF, nginx, Caddy, Istio, ...), especially for `POST /api/v1/user/token/generate`, `POST /api/v1/user/token/verify` and `POST /api/v1/clipboard`. In-memory clipboard storage itself is bounded by `GCOPY_MAX_MEMORY` (LRU eviction).
 
 ### Token Authentication
 
@@ -76,4 +76,5 @@ Configure the reverse proxy to forward HTTPS traffic to port 3375.
 | `GCOPY_TLS_CERT_FILE` | TLS certificate file path | - | No |
 | `GCOPY_TLS_KEY_FILE` | TLS key file path | - | No |
 | `GCOPY_MAX_CONTENT_LENGTH` | Max clipboard size (MiB) | `10` | No |
+| `GCOPY_MAX_MEMORY` | Total RAM cap with LRU eviction (MiB, `0` = unlimited) | `512` | No |
 | `GCOPY_DEBUG` | Debug mode | `false` | No |

@@ -83,7 +83,7 @@ func TestFrontendHandlerRedirectsDirWithoutSlash(t *testing.T) {
 func TestClipboardStatusHandler(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
-	wall := NewWall(applog.New(logrus.New(), "test-app-key"))
+	wall := NewWall(applog.New(logrus.New(), "test-app-key"), 0)
 	s := &Server{wall: wall}
 	r := gin.New()
 	// Mimic verifyAuthMiddleware so the handler sees a subject.

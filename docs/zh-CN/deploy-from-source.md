@@ -40,9 +40,10 @@ curl -sSL https://raw.githubusercontent.com/llaoj/gcopy/main/scripts/gen-cert.sh
 
 所有配置可通过命令行参数或环境变量（`GCOPY_` 前缀）完成。用户使用 8 位字符令牌认证。
 
-## 限流
+## 限流与内存上限
 
-GCopy **不内置限流**，专注于核心同步逻辑。如果它会暴露给不可信客户端，请在边缘（nginx `limit_req`、Istio、sidecar 等）做流量控制，尤其是 `POST /api/v1/user/token/generate`、`POST /api/v1/user/token/verify` 和 `POST /api/v1/clipboard`。
+- **流量控制**：GCopy **不内置限流**，专注核心同步逻辑；若暴露给不可信客户端，请在边缘网关（Cloudflare WAF、nginx `limit_req`、Istio、sidecar 等）做流量控制，尤其是 `POST /api/v1/user/token/generate`、`POST /api/v1/user/token/verify` 和 `POST /api/v1/clipboard`。
+- **内存上限（LRU 淘汰）**：通过 `-max-memory`（`GCOPY_MAX_MEMORY`，默认 `512` MiB）限制剪贴板占用的总内存；超出水位时自动按最久未使用（LRU）淘汰旧数据。
 
 ## HTTPS 配置
 
@@ -88,6 +89,7 @@ GCopy 以 HTTP 启动，由反向代理（Nginx、Caddy 等）处理 TLS：
 | `-tls-cert-file` | `GCOPY_TLS_CERT_FILE` | - | TLS 证书文件 |
 | `-tls-key-file` | `GCOPY_TLS_KEY_FILE` | - | TLS 密钥文件 |
 | `-max-content-length` | `GCOPY_MAX_CONTENT_LENGTH` | `10` | 最大剪切板大小（MiB） |
+| `-max-memory` | `GCOPY_MAX_MEMORY` | `512` | 全局内存上限（LRU 自动淘汰，MiB，`0` 为不限） |
 | `-debug` | `GCOPY_DEBUG` | `false` | 调试模式 |
 | `-version` | - | `false` | 打印版本 |
 

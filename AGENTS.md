@@ -6,6 +6,7 @@ Notes for working in this repo. Read this before running builds/tests.
 
 - `internal/` — Go backend (Gin). `cmd/gcopy.go` is the entrypoint.
 - `frontend/` — Next.js app (App Router), statically exported into the Go binary.
+- `docs/` — VitePress documentation site (`docs.gcopy.link`); build/preview via `make docs-build` / `make docs-dev`.
 - `vendor/` — Go vendored deps; run `make gomod` after changing `go.mod`.
 - `internal/static/dist/` — embedded frontend build output (gitignored; produced by `make frontend-build`).
 
@@ -55,6 +56,7 @@ go test ./...        # Makefile: make test (also runs vet + gofmt + prettier)
 - Keep helpers single-purpose. A function named `push*` / `upload*` should only perform that operation. Do not hide local persistence or shared-state mutations inside low-level network helpers.
 - Let callers own state transitions. Different callers often need different semantics (for example, sharing a history item advances the server index but must not change the local clipboard hash), so update state at each call site or in a dedicated state helper.
 - If a helper intentionally mutates state, its name and contract must say so explicitly. Otherwise return the result (e.g. `{ index, blobId }`) and let the caller decide what to persist.
+- Keep GCopy scoped strictly to clipboard synchronization and its own internal resource bounds (e.g. `Wall` memory limits). Do **not** add edge/gateway concerns such as HTTP rate limiting, IP/WAF filtering, or `X-Forwarded-For` / proxy header parsing into the application layer — those belong at the edge gateway (Cloudflare, Nginx, Caddy, Istio, etc.).
 
 ## Auth
 

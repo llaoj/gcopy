@@ -55,6 +55,7 @@ func Get() *Config {
 	tlsKeyFile := flag.String("tls-key-file", EnvOr("tls-key-file", ""), "Path to TLS key file")
 
 	maxContentLength := flag.Int("max-content-length", EnvOr("max-content-length", 10), "The max synchronized content length, unit: MiB.")
+	maxMemory := flag.Int("max-memory", EnvOr("max-memory", 512), "Total memory cap for in-memory clipboards (LRU eviction), unit: MiB (0 = unlimited).")
 
 	flag.Parse()
 
@@ -68,6 +69,15 @@ func Get() *Config {
 	if len(*appKey) < 16 {
 		log.Fatal("app-key must be at least 16 characters")
 	}
+	if *maxContentLength <= 0 {
+		log.Fatal("max-content-length must be positive")
+	}
+	if *maxMemory < 0 {
+		log.Fatal("max-memory cannot be negative")
+	}
+	if *maxMemory > 0 && *maxMemory < *maxContentLength {
+		log.Fatal("max-memory must be greater than or equal to max-content-length (or 0 for unlimited)")
+	}
 
 	cfg = &Config{
 		Debug:            *debug,
@@ -76,6 +86,7 @@ func Get() *Config {
 		TLSCertFile:      *tlsCertFile,
 		TLSKeyFile:       *tlsKeyFile,
 		MaxContentLength: *maxContentLength,
+		MaxMemory:        *maxMemory,
 	}
 	return cfg
 }

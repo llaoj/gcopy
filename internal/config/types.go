@@ -9,4 +9,5 @@ type Config struct {
 	TLSCertFile      string
 	TLSKeyFile       string
 	MaxContentLength int
+	MaxMemory        int
 }

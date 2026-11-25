@@ -40,9 +40,10 @@ Visit `https://<host>:3375`. The browser will warn about the self-signed certifi
 
 All configuration can be done via command-line flags or environment variables (with `GCOPY_` prefix). Users authenticate with an 8-character token.
 
-## Rate Limiting
+## Rate Limiting & Memory Cap
 
-GCopy has **no built-in rate limiting** — it focuses on the core sync logic. If it is reachable by untrusted clients, apply traffic control at the edge (nginx `limit_req`, Istio, a sidecar, etc.), especially for `POST /api/v1/user/token/generate`, `POST /api/v1/user/token/verify` and `POST /api/v1/clipboard`.
+- **Rate Limiting**: GCopy has **no built-in rate limiting** — it focuses strictly on clipboard sync logic. If exposed to untrusted clients, apply traffic control at the edge gateway (Cloudflare WAF, nginx `limit_req`, Istio, a sidecar, etc.), especially for `POST /api/v1/user/token/generate`, `POST /api/v1/user/token/verify` and `POST /api/v1/clipboard`.
+- **Memory Cap (LRU)**: Total in-memory clipboard usage is bounded by `-max-memory` (`GCOPY_MAX_MEMORY`, default `512` MiB). When exceeded, least-recently-used clipboards are evicted automatically.
 
 ## HTTPS Configuration
 
@@ -88,6 +89,7 @@ Configure the reverse proxy to forward HTTPS traffic to port 3375.
 | `-tls-cert-file` | `GCOPY_TLS_CERT_FILE` | - | TLS certificate file |
 | `-tls-key-file` | `GCOPY_TLS_KEY_FILE` | - | TLS key file |
 | `-max-content-length` | `GCOPY_MAX_CONTENT_LENGTH` | `10` | Max clipboard size (MiB) |
+| `-max-memory` | `GCOPY_MAX_MEMORY` | `512` | Total RAM cap with LRU eviction (MiB, `0` = unlimited) |
 | `-debug` | `GCOPY_DEBUG` | `false` | Debug mode |
 | `-version` | - | `false` | Print version |
 

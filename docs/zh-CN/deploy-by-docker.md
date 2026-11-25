@@ -31,7 +31,7 @@ docker run -d \
 
 所有配置通过 `GCOPY_` 前缀的环境变量完成。
 
-> **限流：** GCopy 不内置限流。若会暴露给不可信客户端，请在边缘（nginx、Istio、sidecar 等）做流量控制，尤其是 `POST /api/v1/user/token/generate`、`POST /api/v1/user/token/verify` 和 `POST /api/v1/clipboard`。
+> **限流与内存上限：** GCopy 不内置流量控制（限流属于边缘网关职责，公网部署请在 Cloudflare WAF、nginx、Caddy、Istio 等边缘层针对 `POST /api/v1/user/token/generate`、`POST /api/v1/user/token/verify` 和 `POST /api/v1/clipboard` 配置限流）。进程自身的剪贴板内存占用由 `GCOPY_MAX_MEMORY`（LRU 自动淘汰）保护。
 
 ### 令牌认证
 
@@ -75,4 +75,5 @@ GCopy 以 HTTP 启动，由反向代理（Nginx、Caddy 等）处理 TLS：
 | `GCOPY_TLS_CERT_FILE` | TLS 证书文件路径 | - | 否 |
 | `GCOPY_TLS_KEY_FILE` | TLS 密钥文件路径 | - | 否 |
 | `GCOPY_MAX_CONTENT_LENGTH` | 最大剪切板大小（MiB） | `10` | 否 |
+| `GCOPY_MAX_MEMORY` | 全局内存上限（LRU 自动淘汰，MiB，`0` 为不限） | `512` | 否 |
 | `GCOPY_DEBUG` | 调试模式 | `false` | 否 |
