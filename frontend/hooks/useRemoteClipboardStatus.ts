@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { loadClipboardState } from "@/lib/clipboard-state";
 
 export interface RemoteClipboardStatus {
@@ -9,15 +9,8 @@ export interface RemoteClipboardStatus {
   clientName?: string;
 }
 
-// Poll every 10s while the tab is visible; pause entirely while it is hidden
-// (browsers throttle or suspend timers in background tabs anyway). Focus and
-// visibility events trigger an immediate check when the user comes back.
-const POLL_INTERVAL_MS = 10_000;
-const JITTER_MS = 2_000;
-const REQUEST_TIMEOUT_MS = 5_000;
-// Collapse duplicate triggers (focus + visibilitychange, pageshow, ...).
-const DEDUPE_MS = 1_000;
-
+// Listen to `/api/v1/clipboard/events` (SSE) while the tab is visible; close
+// the stream when hidden so background tabs hold zero server connections.
 export default function useRemoteClipboardStatus({
   userId,
   enabled,
@@ -30,32 +23,27 @@ export default function useRemoteClipboardStatus({
   const [hasNew, setHasNew] = useState(false);
   const [remoteStatus, setRemoteStatus] =
     useState<RemoteClipboardStatus | null>(null);
+  const latestIndexRef = useRef<number>(0);
 
-  const check = useCallback(async () => {
-    if (!userId) {
-      return;
-    }
-
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
-    try {
-      const response = await fetch("/api/v1/clipboard/status", {
-        headers: { accept: "application/json" },
-        cache: "no-store",
-        signal: controller.signal,
-      });
-
-      // 401 is handled by the auth flow; 404 means the server is an older
-      // version without this endpoint. Neither should surface as an error.
-      if (!response.ok) {
+  const recomputeHasNew = useCallback(
+    (remoteIndex: number) => {
+      if (!userId) {
+        setHasNew(false);
         return;
       }
+      setHasNew(
+        remoteIndex > 0 && remoteIndex !== loadClipboardState(userId).ci,
+      );
+    },
+    [userId],
+  );
 
-      const data = (await response.json()) as RemoteClipboardStatus;
+  const applyStatus = useCallback(
+    (data: RemoteClipboardStatus) => {
       if (typeof data.index !== "number") {
         return;
       }
-
+      latestIndexRef.current = data.index;
       setRemoteStatus((prev) =>
         prev &&
         prev.index === data.index &&
@@ -64,104 +52,104 @@ export default function useRemoteClipboardStatus({
           ? prev
           : data,
       );
-      // Match the app's index-based sync semantics: any different non-zero
-      // index means there is content to fetch. The local index lives in the
-      // shared localStorage state (see lib/clipboard-state).
-      setHasNew(data.index > 0 && data.index !== loadClipboardState(userId).ci);
-    } catch {
-      // Network errors and timeouts are ignored; the next tick retries.
-    } finally {
-      clearTimeout(timeout);
+      recomputeHasNew(data.index);
+    },
+    [recomputeHasNew],
+  );
+
+  // Re-evaluate `hasNew` immediately when a local sync finishes (`paused`
+  // flips back to false after updating localStorage) or when another tab
+  // updates localStorage.
+  useEffect(() => {
+    if (!paused) {
+      recomputeHasNew(latestIndexRef.current);
     }
-  }, [userId]);
+  }, [paused, recomputeHasNew]);
 
   useEffect(() => {
-    if (!enabled || paused || !userId) {
+    if (!userId) {
+      return;
+    }
+    const onStorage = () => recomputeHasNew(latestIndexRef.current);
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, [userId, recomputeHasNew]);
+
+  useEffect(() => {
+    if (
+      !enabled ||
+      paused ||
+      !userId ||
+      typeof window === "undefined" ||
+      typeof window.EventSource === "undefined"
+    ) {
       return;
     }
 
-    let cancelled = false;
-    let timer: ReturnType<typeof setTimeout> | null = null;
-    let lastCheckAt = 0;
-    let inFlight = false;
+    let eventSource: EventSource | null = null;
 
-    function clearTimer() {
-      if (timer) {
-        clearTimeout(timer);
-        timer = null;
+    function close() {
+      if (eventSource) {
+        eventSource.close();
+        eventSource = null;
       }
     }
 
-    function schedule() {
-      if (cancelled || document.visibilityState !== "visible") {
+    function connect() {
+      if (document.visibilityState !== "visible" || eventSource) {
         return;
       }
-      clearTimer();
-      timer = setTimeout(
-        () => void run(),
-        POLL_INTERVAL_MS + Math.random() * JITTER_MS,
-      );
-    }
+      const es = new EventSource("/api/v1/clipboard/events", {
+        withCredentials: true,
+      });
+      eventSource = es;
 
-    async function run() {
-      if (cancelled || document.visibilityState !== "visible" || inFlight) {
-        return;
-      }
+      es.onmessage = (ev) => {
+        try {
+          applyStatus(JSON.parse(ev.data) as RemoteClipboardStatus);
+        } catch {
+          // Ignore malformed event payloads.
+        }
+      };
 
-      clearTimer();
-
-      const now = Date.now();
-      if (now - lastCheckAt < DEDUPE_MS) {
-        schedule();
-        return;
-      }
-      lastCheckAt = now;
-
-      inFlight = true;
-      try {
-        await check();
-      } finally {
-        inFlight = false;
-        schedule();
-      }
+      es.onerror = () => {
+        // When the server rejects with non-200 (e.g. 401/429), browsers mark
+        // readyState CLOSED; clear the reference so `online`/`pageshow` can
+        // reconnect cleanly later. For transient network drops, readyState is
+        // CONNECTING and EventSource reconnects automatically on its own.
+        if (es.readyState === EventSource.CLOSED) {
+          eventSource = null;
+        }
+      };
     }
 
     function onVisibilityChange() {
       if (document.visibilityState === "visible") {
-        void run();
+        connect();
       } else {
-        clearTimer();
+        close();
       }
     }
 
-    function onFocus() {
-      void run();
+    function onReconnectTrigger() {
+      if (document.visibilityState === "visible") {
+        connect();
+      }
     }
 
-    function onPageShow() {
-      void run();
-    }
-
-    function onOnline() {
-      void run();
-    }
-
-    void run();
+    connect();
 
     document.addEventListener("visibilitychange", onVisibilityChange);
-    window.addEventListener("focus", onFocus);
-    window.addEventListener("pageshow", onPageShow);
-    window.addEventListener("online", onOnline);
+    window.addEventListener("online", onReconnectTrigger);
+    window.addEventListener("pageshow", onReconnectTrigger);
 
     return () => {
-      cancelled = true;
-      clearTimer();
+      close();
       document.removeEventListener("visibilitychange", onVisibilityChange);
-      window.removeEventListener("focus", onFocus);
-      window.removeEventListener("pageshow", onPageShow);
-      window.removeEventListener("online", onOnline);
+      window.removeEventListener("online", onReconnectTrigger);
+      window.removeEventListener("pageshow", onReconnectTrigger);
     };
-  }, [enabled, paused, userId, check]);
+  }, [enabled, paused, userId, applyStatus]);
 
   return { hasNew, remoteStatus };
 }

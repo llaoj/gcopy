@@ -1,6 +1,7 @@
 package server
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -24,6 +25,7 @@ import (
 
 type Server struct {
 	wall         *Wall
+	notifier     *Notifier
 	config       *config.Config
 	log          *applog.Logger
 	sessionStore sessions.Store
@@ -49,6 +51,7 @@ func NewServer(baseLog *logrus.Logger) *Server {
 
 	s := &Server{
 		wall:         NewWall(appLogger, maxBytes),
+		notifier:     NewNotifier(),
 		config:       cfg,
 		log:          appLogger,
 		sessionStore: sessionStore,
@@ -91,7 +94,7 @@ func (s *Server) Run() {
 
 	v1.Use(s.verifyAuthMiddleware)
 	v1.GET("/clipboard", s.getClipboardHandler)
-	v1.GET("/clipboard/status", s.getClipboardStatusHandler)
+	v1.GET("/clipboard/events", s.getClipboardEventsHandler)
 	v1.POST("/clipboard", s.updateClipboardHandler)
 
 	// Static files from embedded frontend
@@ -158,7 +161,30 @@ func (s *Server) getClipboardHandler(c *gin.Context) {
 	})
 }
 
-func (s *Server) getClipboardStatusHandler(c *gin.Context) {
+func (s *Server) currentClipboardStatus(sub string) ClipboardStatus {
+	cb := s.wall.Get(sub)
+	if cb == nil {
+		return ClipboardStatus{Index: 0}
+	}
+	return ClipboardStatus{
+		Index:      cb.Index,
+		Type:       cb.Type,
+		ClientName: cb.ClientName,
+	}
+}
+
+const sseHeartbeatInterval = 25 * time.Second
+
+func writeSSEData(w http.ResponseWriter, status ClipboardStatus) error {
+	payload, err := json.Marshal(status)
+	if err != nil {
+		return err
+	}
+	_, err = fmt.Fprintf(w, "data: %s\n\n", payload)
+	return err
+}
+
+func (s *Server) getClipboardEventsHandler(c *gin.Context) {
 	subject, ok := c.Get("subject")
 	if !ok {
 		c.JSON(http.StatusNotFound, gin.H{"message": "Subject not found"})
@@ -169,21 +195,51 @@ func (s *Server) getClipboardStatusHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "Subject type assert failed"})
 		return
 	}
-
-	// The status must not be cached by browsers or proxies.
-	c.Header("Cache-Control", "no-store")
-
-	cb := s.wall.Get(sub)
-	if cb == nil {
-		c.JSON(http.StatusOK, gin.H{"index": 0})
+	if s.notifier == nil {
+		c.Status(http.StatusServiceUnavailable)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"index":      cb.Index,
-		"type":       cb.Type,
-		"clientName": cb.ClientName,
-	})
+	ch, unsubscribe, ok := s.notifier.Subscribe(sub)
+	if !ok {
+		c.JSON(http.StatusTooManyRequests, gin.H{"message": "Too many open event streams"})
+		return
+	}
+	defer unsubscribe()
+
+	c.Header("Content-Type", "text/event-stream")
+	c.Header("Cache-Control", "no-store")
+	c.Header("Connection", "keep-alive")
+	// Disable proxy response buffering (e.g. Nginx) so events flush immediately.
+	c.Header("X-Accel-Buffering", "no")
+	c.Status(http.StatusOK)
+
+	// Push initial status immediately so the client gets current state on connect.
+	if err := writeSSEData(c.Writer, s.currentClipboardStatus(sub)); err != nil {
+		return
+	}
+	c.Writer.Flush()
+
+	heartbeat := time.NewTicker(sseHeartbeatInterval)
+	defer heartbeat.Stop()
+
+	ctx := c.Request.Context()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case status := <-ch:
+			if err := writeSSEData(c.Writer, status); err != nil {
+				return
+			}
+			c.Writer.Flush()
+		case <-heartbeat.C:
+			if _, err := fmt.Fprint(c.Writer, ": ping\n\n"); err != nil {
+				return
+			}
+			c.Writer.Flush()
+		}
+	}
 }
 
 func (s *Server) updateClipboardHandler(c *gin.Context) {
@@ -276,6 +332,14 @@ func (s *Server) updateClipboardHandler(c *gin.Context) {
 	}
 	s.wall.Set(sub, cb)
 	s.clipboardMu.Unlock()
+
+	if s.notifier != nil {
+		s.notifier.Notify(sub, ClipboardStatus{
+			Index:      cb.Index,
+			Type:       cb.Type,
+			ClientName: cb.ClientName,
+		})
+	}
 
 	s.log.Analytics("sync_upload", sub, logrus.Fields{
 		"type":  cb.Type,
