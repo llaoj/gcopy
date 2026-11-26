@@ -41,6 +41,7 @@ fmt:
 
 test: vet fmt
 	go test -timeout=1m -v -race -short ./...
+	cd frontend && npm test && cd ..
 
 bin/gcopy: frontend-build
 	@mkdir -p bin

@@ -43,7 +43,7 @@ const HistoryItem = memo(function HistoryItem({
   isNew,
 }: HistoryItemProps) {
   const t = useTranslations("SyncClipboard");
-  const ulRef = useRef<HTMLUListElement>(null);
+  const menuRef = useRef<HTMLUListElement>(null);
   const [sharing, setSharing] = useState<boolean>(false);
   const [feedback, setFeedback] = useState<"copied" | "downloaded" | null>(
     null,
@@ -69,7 +69,7 @@ const HistoryItem = memo(function HistoryItem({
   // 使用 useCallback 缓存事件处理函数
   const handleUse = useCallback(async () => {
     try {
-      ulRef.current?.blur();
+      menuRef.current?.blur();
 
       if (!item.dataArrayBuffer) {
         return;
@@ -123,7 +123,7 @@ const HistoryItem = memo(function HistoryItem({
     if (sharing) {
       return;
     }
-    ulRef.current?.blur();
+    menuRef.current?.blur();
     setSharing(true);
     try {
       await onShare(item);
@@ -135,7 +135,7 @@ const HistoryItem = memo(function HistoryItem({
   const handlePin = useCallback(async () => {
     const count = await db.history.where("pin").equals("true").count();
     if (count >= HISTORY_PIN_LIMIT) {
-      ulRef.current?.blur();
+      menuRef.current?.blur();
       addLog({
         message: t("logs.pinLimit"),
         level: LogLevel.Warn,
@@ -151,7 +151,7 @@ const HistoryItem = memo(function HistoryItem({
 
   const handleDelete = useCallback(async () => {
     await db.history.delete(item.createdAt!);
-    ulRef.current?.blur();
+    menuRef.current?.blur();
   }, [item.createdAt]);
 
   return (
@@ -226,7 +226,7 @@ const HistoryItem = memo(function HistoryItem({
           <ul
             tabIndex={0}
             className="dropdown-content menu bg-base-100 rounded-box z-[1] w-32 p-2 shadow-lg border border-base-300"
-            ref={ulRef}
+            ref={menuRef}
           >
             <li>
               <a className="hover:bg-base-300 opacity-70" onClick={handleUse}>

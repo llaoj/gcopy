@@ -1,4 +1,4 @@
-import { Clipboard } from "@/lib/clipboard";
+import type { Clipboard } from "../lib/clipboard";
 
 export const HISTORY_RECENT_LIMIT = 20;
 export const HISTORY_PIN_LIMIT = 10;

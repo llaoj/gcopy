@@ -16,7 +16,7 @@
     "etc": "等等.",
     "protectPrivacy": "GCopy保护您的隐私, 它仅在内存中临时存储最新剪切板数据. GCopy并不持久化存储您的数据."
   },
-  "Avator": {
+  "Avatar": {
     "logout": "登出",
     "scanQRLogin": "扫码在其他设备登录",
     "copyLink": "复制链接",
@@ -94,7 +94,7 @@
       "uploadNetworkError": "网络连接失败, 请检查网络后重试.",
       "uploaded": "已上传 {type}.",
       "historyItemEmpty": "这条历史记录没有可上传的内容.",
-      "received": "已从 {clientname} 获取 {type}.",
+      "received": "已从 {clientName} 获取 {type}.",
       "unsupportedFormat": "暂不支持这种格式: {format}.",
       "emptyClipboard": "剪切板中没有内容.",
       "recommendedBrowsers": "在 {os} 上, 推荐使用 {browsers} 浏览器.",

@@ -8,6 +8,7 @@
     "start": "next start -p 3375",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
+    "test": "rm -rf .test-dist && tsc -p tsconfig.test.json && node --test .test-dist/tests/*.test.js; status=$?; rm -rf .test-dist; exit $status",
     "prettier": "prettier --write --ignore-unknown .",
     "prettier:check": "prettier --check --ignore-unknown ."
   },

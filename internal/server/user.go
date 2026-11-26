@@ -7,6 +7,17 @@ import (
 	"github.com/llaoj/gcopy/internal/server/auth"
 )
 
+const contextKeyUserID = "userId"
+
+func getUserIDFromContext(c *gin.Context) (string, bool) {
+	value, ok := c.Get(contextKeyUserID)
+	if !ok {
+		return "", false
+	}
+	userID, ok := value.(string)
+	return userID, ok && userID != ""
+}
+
 func (s *Server) logoutHandler(c *gin.Context) {
 	session, err := auth.GetSession(s.sessionStore, c.Request, auth.UserSessionName)
 	if err != nil {
@@ -31,7 +42,7 @@ func (s *Server) getUserHandler(c *gin.Context) {
 		return
 	}
 
-	userId, ok := auth.GetUserIdFromSession(session)
+	userID, ok := auth.GetUserIDFromSession(session)
 	if ok && auth.IsAuthenticated(session) {
 		// Refresh session (sliding expiration)
 		if err = session.Save(c.Request, c.Writer); err != nil {
@@ -39,11 +50,11 @@ func (s *Server) getUserHandler(c *gin.Context) {
 			return
 		}
 
-		s.log.Analytics("active", userId, nil)
+		s.log.Analytics("active", userID, nil)
 
 		// Unified response format
 		c.JSON(http.StatusOK, gin.H{
-			"userId":   userId,
+			"userId":   userID,
 			"loggedIn": true,
 		})
 		return
@@ -64,7 +75,7 @@ func (s *Server) verifyAuthMiddleware(c *gin.Context) {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"message": "Invalid authorization token"})
 			return
 		}
-		c.Set("subject", token)
+		c.Set(contextKeyUserID, token)
 		c.Next()
 		return
 	}
@@ -75,7 +86,7 @@ func (s *Server) verifyAuthMiddleware(c *gin.Context) {
 		return
 	}
 
-	userId, ok := auth.GetUserIdFromSession(session)
+	userID, ok := auth.GetUserIDFromSession(session)
 	if ok && auth.IsAuthenticated(session) {
 		// Refresh session (sliding expiration)
 		if err := session.Save(c.Request, c.Writer); err != nil {
@@ -83,7 +94,7 @@ func (s *Server) verifyAuthMiddleware(c *gin.Context) {
 		}
 
 		// Set unified user identifier
-		c.Set("subject", userId)
+		c.Set(contextKeyUserID, userID)
 		c.Next()
 		return
 	}

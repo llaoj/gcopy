@@ -19,7 +19,7 @@ func New(base *logrus.Logger, secret string) *Logger {
 }
 
 // Analytics records a pseudonymous usage event.
-func (l *Logger) Analytics(event, subject string, fields logrus.Fields) {
+func (l *Logger) Analytics(event, userID string, fields logrus.Fields) {
 	if l == nil || l.Logger == nil {
 		return
 	}
@@ -27,6 +27,6 @@ func (l *Logger) Analytics(event, subject string, fields logrus.Fields) {
 		fields = logrus.Fields{}
 	}
 	fields["event"] = event
-	fields["user"] = utils.HashID(l.secret, subject)
+	fields["user"] = utils.HashID(l.secret, userID)
 	l.WithFields(fields).Info("ANALYTICS")
 }

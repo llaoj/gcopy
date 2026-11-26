@@ -115,68 +115,63 @@ func (s *Server) Run() {
 }
 
 func (s *Server) getClipboardHandler(c *gin.Context) {
-	subject, ok := c.Get("subject")
+	userID, ok := getUserIDFromContext(c)
 	if !ok {
-		c.JSON(http.StatusNotFound, gin.H{"message": "Subject not found"})
+		c.JSON(http.StatusUnauthorized, gin.H{"message": "Unauthorized"})
 		return
 	}
-	sub, ok := subject.(string)
-	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": "Subject type assert failed"})
-		return
-	}
-	cb := s.wall.Get(sub)
-	if cb == nil {
-		c.Header("X-Index", "0")
+	clipboard := s.wall.Get(userID)
+	if clipboard == nil {
+		c.Header(gcopy.HeaderIndex, "0")
 		c.Status(http.StatusOK)
 		return
 	}
-	index, _ := strconv.Atoi(c.Request.Header.Get("X-Index"))
-	if index == cb.Index {
-		c.Header("X-Index", strconv.Itoa(cb.Index))
+	index, _ := strconv.Atoi(c.Request.Header.Get(gcopy.HeaderIndex))
+	if index == clipboard.Index {
+		c.Header(gcopy.HeaderIndex, strconv.Itoa(clipboard.Index))
 		c.Status(http.StatusOK)
 		return
 	}
 
 	c.Status(http.StatusOK)
-	c.Header("Content-Type", cb.MIMEType)
-	c.Header("Content-Length", strconv.Itoa(len(cb.Data)))
-	c.Header("X-Index", strconv.Itoa(cb.Index))
-	c.Header("X-Type", cb.Type)
-	c.Header("X-FileName", cb.FileName)
-	c.Header("X-ClientName", cb.ClientName)
+	c.Header("Content-Type", clipboard.MIMEType)
+	c.Header("Content-Length", strconv.Itoa(len(clipboard.Data)))
+	c.Header(gcopy.HeaderIndex, strconv.Itoa(clipboard.Index))
+	c.Header(gcopy.HeaderType, clipboard.Type)
+	c.Header(gcopy.HeaderFileName, clipboard.FileName)
+	c.Header(gcopy.HeaderClientName, clipboard.ClientName)
 	// 强制浏览器下载文件而不是渲染，对 iOS Safari 特别重要
-	if cb.Type == gcopy.TypeFile {
-		c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", cb.FileName))
+	if clipboard.Type == gcopy.TypeFile {
+		c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", clipboard.FileName))
 	}
-	if _, err := c.Writer.Write(cb.Data); err != nil {
+	if _, err := c.Writer.Write(clipboard.Data); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "Write data failed"})
 		s.log.Error(err)
 		return
 	}
 
-	s.log.Analytics("sync_download", sub, logrus.Fields{
-		"type":  cb.Type,
-		"index": cb.Index,
+	s.log.Analytics("sync_download", userID, logrus.Fields{
+		"type":  clipboard.Type,
+		"index": clipboard.Index,
 	})
 }
 
-func (s *Server) currentClipboardStatus(sub string) ClipboardStatus {
-	cb := s.wall.Get(sub)
-	if cb == nil {
-		return ClipboardStatus{Index: 0}
+func (s *Server) currentClipboardEvent(userID string) ClipboardEvent {
+	clipboard := s.wall.Get(userID)
+	if clipboard == nil {
+		return ClipboardEvent{Index: 0}
 	}
-	return ClipboardStatus{
-		Index:      cb.Index,
-		Type:       cb.Type,
-		ClientName: cb.ClientName,
+	return ClipboardEvent{
+		Index:      clipboard.Index,
+		Type:       clipboard.Type,
+		ClientName: clipboard.ClientName,
 	}
 }
 
 const sseHeartbeatInterval = 25 * time.Second
 
-func writeSSEData(w http.ResponseWriter, status ClipboardStatus) error {
-	payload, err := json.Marshal(status)
+func writeClipboardEvent(w http.ResponseWriter, event ClipboardEvent) error {
+	payload, err := json.Marshal(event)
 	if err != nil {
 		return err
 	}
@@ -185,14 +180,9 @@ func writeSSEData(w http.ResponseWriter, status ClipboardStatus) error {
 }
 
 func (s *Server) getClipboardEventsHandler(c *gin.Context) {
-	subject, ok := c.Get("subject")
+	userID, ok := getUserIDFromContext(c)
 	if !ok {
-		c.JSON(http.StatusNotFound, gin.H{"message": "Subject not found"})
-		return
-	}
-	sub, ok := subject.(string)
-	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": "Subject type assert failed"})
+		c.JSON(http.StatusUnauthorized, gin.H{"message": "Unauthorized"})
 		return
 	}
 	if s.notifier == nil {
@@ -200,7 +190,7 @@ func (s *Server) getClipboardEventsHandler(c *gin.Context) {
 		return
 	}
 
-	ch, unsubscribe, ok := s.notifier.Subscribe(sub)
+	listener, unsubscribe, ok := s.notifier.Subscribe(userID)
 	if !ok {
 		c.JSON(http.StatusTooManyRequests, gin.H{"message": "Too many open event streams"})
 		return
@@ -214,8 +204,8 @@ func (s *Server) getClipboardEventsHandler(c *gin.Context) {
 	c.Header("X-Accel-Buffering", "no")
 	c.Status(http.StatusOK)
 
-	// Push initial status immediately so the client gets current state on connect.
-	if err := writeSSEData(c.Writer, s.currentClipboardStatus(sub)); err != nil {
+	// Push initial event immediately so the client gets current state on connect.
+	if err := writeClipboardEvent(c.Writer, s.currentClipboardEvent(userID)); err != nil {
 		return
 	}
 	c.Writer.Flush()
@@ -228,8 +218,8 @@ func (s *Server) getClipboardEventsHandler(c *gin.Context) {
 		select {
 		case <-ctx.Done():
 			return
-		case status := <-ch:
-			if err := writeSSEData(c.Writer, status); err != nil {
+		case event := <-listener:
+			if err := writeClipboardEvent(c.Writer, event); err != nil {
 				return
 			}
 			c.Writer.Flush()
@@ -243,14 +233,9 @@ func (s *Server) getClipboardEventsHandler(c *gin.Context) {
 }
 
 func (s *Server) updateClipboardHandler(c *gin.Context) {
-	subject, ok := c.Get("subject")
+	userID, ok := getUserIDFromContext(c)
 	if !ok {
-		c.JSON(http.StatusNotFound, gin.H{"message": "Subject not found"})
-		return
-	}
-	sub, ok := subject.(string)
-	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": "Subject type assert failed"})
+		c.JSON(http.StatusUnauthorized, gin.H{"message": "Unauthorized"})
 		return
 	}
 
@@ -273,24 +258,24 @@ func (s *Server) updateClipboardHandler(c *gin.Context) {
 		return
 	}
 
-	xType := c.Request.Header.Get("X-Type")
-	xFileName := c.Request.Header.Get("X-FileName")
+	clipboardType := c.Request.Header.Get(gcopy.HeaderType)
+	fileName := c.Request.Header.Get(gcopy.HeaderFileName)
 	mimeType := c.Request.Header.Get("Content-Type")
 
 	// Infer X-Type when omitted so simple curl / Shortcuts requests don't have
 	// to pass extra headers for common text, image, or named-file uploads.
-	if xType == "" {
+	if clipboardType == "" {
 		switch {
-		case xFileName != "":
-			xType = gcopy.TypeFile
+		case fileName != "":
+			clipboardType = gcopy.TypeFile
 		case strings.HasPrefix(mimeType, "image/"):
-			xType = gcopy.TypeScreenshot
+			clipboardType = gcopy.TypeScreenshot
 		default:
-			xType = gcopy.TypeText
+			clipboardType = gcopy.TypeText
 		}
 	}
 
-	switch xType {
+	switch clipboardType {
 	case gcopy.TypeText:
 		if mimeType == "" || strings.HasPrefix(mimeType, "application/x-www-form-urlencoded") {
 			mimeType = "text/plain; charset=utf-8"
@@ -300,7 +285,7 @@ func (s *Server) updateClipboardHandler(c *gin.Context) {
 			mimeType = "image/png"
 		}
 	case gcopy.TypeFile:
-		if xFileName == "" {
+		if fileName == "" {
 			c.JSON(http.StatusBadRequest, gin.H{"message": "Request header invalid"})
 			return
 		}
@@ -318,35 +303,35 @@ func (s *Server) updateClipboardHandler(c *gin.Context) {
 	// uploads don't collide on the same index.
 	s.clipboardMu.Lock()
 	index := 0
-	if prev := s.wall.Get(sub); prev != nil {
+	if prev := s.wall.Get(userID); prev != nil {
 		index = prev.Index
 	}
-	cb := &gcopy.Clipboard{
+	clipboard := &gcopy.Clipboard{
 		Index:      index + 1,
-		Type:       xType,
-		FileName:   xFileName,
+		Type:       clipboardType,
+		FileName:   fileName,
 		Data:       data,
 		CreatedAt:  time.Now(),
 		ClientName: clientName,
 		MIMEType:   mimeType,
 	}
-	s.wall.Set(sub, cb)
+	s.wall.Set(userID, clipboard)
 	s.clipboardMu.Unlock()
 
 	if s.notifier != nil {
-		s.notifier.Notify(sub, ClipboardStatus{
-			Index:      cb.Index,
-			Type:       cb.Type,
-			ClientName: cb.ClientName,
+		s.notifier.Notify(userID, ClipboardEvent{
+			Index:      clipboard.Index,
+			Type:       clipboard.Type,
+			ClientName: clipboard.ClientName,
 		})
 	}
 
-	s.log.Analytics("sync_upload", sub, logrus.Fields{
-		"type":  cb.Type,
-		"index": cb.Index,
+	s.log.Analytics("sync_upload", userID, logrus.Fields{
+		"type":  clipboard.Type,
+		"index": clipboard.Index,
 	})
 
-	c.Header("X-Index", strconv.Itoa(cb.Index))
+	c.Header(gcopy.HeaderIndex, strconv.Itoa(clipboard.Index))
 	c.JSON(http.StatusOK, gin.H{"message": "Success"})
 }
 

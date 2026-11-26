@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"flag"
 	"log"
 	"os"
@@ -41,6 +42,25 @@ func EnvOr[T any](name string, fallback T) T {
 	}
 }
 
+func (c *Config) Validate() error {
+	if c.AppKey == "" {
+		return errors.New("app-key cannot be empty")
+	}
+	if len(c.AppKey) < 16 {
+		return errors.New("app-key must be at least 16 characters")
+	}
+	if c.MaxContentLength <= 0 {
+		return errors.New("max-content-length must be positive")
+	}
+	if c.MaxMemory < 0 {
+		return errors.New("max-memory cannot be negative")
+	}
+	if c.MaxMemory > 0 && c.MaxMemory < c.MaxContentLength {
+		return errors.New("max-memory must be greater than or equal to max-content-length (or 0 for unlimited)")
+	}
+	return nil
+}
+
 func Get() *Config {
 	if cfg != nil {
 		return cfg
@@ -63,23 +83,8 @@ func Get() *Config {
 		version.PrintVersion()
 		return nil
 	}
-	if *appKey == "" {
-		log.Fatal("app-key cannot be empty")
-	}
-	if len(*appKey) < 16 {
-		log.Fatal("app-key must be at least 16 characters")
-	}
-	if *maxContentLength <= 0 {
-		log.Fatal("max-content-length must be positive")
-	}
-	if *maxMemory < 0 {
-		log.Fatal("max-memory cannot be negative")
-	}
-	if *maxMemory > 0 && *maxMemory < *maxContentLength {
-		log.Fatal("max-memory must be greater than or equal to max-content-length (or 0 for unlimited)")
-	}
 
-	cfg = &Config{
+	candidate := &Config{
 		Debug:            *debug,
 		AppKey:           *appKey,
 		Listen:           *listen,
@@ -88,5 +93,10 @@ func Get() *Config {
 		MaxContentLength: *maxContentLength,
 		MaxMemory:        *maxMemory,
 	}
+	if err := candidate.Validate(); err != nil {
+		log.Fatal(err)
+	}
+
+	cfg = candidate
 	return cfg
 }

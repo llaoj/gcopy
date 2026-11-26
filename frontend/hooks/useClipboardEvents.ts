@@ -1,17 +1,18 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { loadClipboardState } from "@/lib/clipboard-state";
+import type { ClipboardType } from "@/lib/clipboard";
+import { loadClipboardCursor } from "@/lib/clipboard-cursor";
 
-export interface RemoteClipboardStatus {
+export interface ClipboardEvent {
   index: number;
-  type?: string;
+  type?: ClipboardType;
   clientName?: string;
 }
 
 // Listen to `/api/v1/clipboard/events` (SSE) while the tab is visible; close
 // the stream when hidden so background tabs hold zero server connections.
-export default function useRemoteClipboardStatus({
+export default function useClipboardEvents({
   userId,
   enabled,
   paused,
@@ -21,8 +22,7 @@ export default function useRemoteClipboardStatus({
   paused: boolean;
 }) {
   const [hasNew, setHasNew] = useState(false);
-  const [remoteStatus, setRemoteStatus] =
-    useState<RemoteClipboardStatus | null>(null);
+  const [latestEvent, setLatestEvent] = useState<ClipboardEvent | null>(null);
   const latestIndexRef = useRef<number>(0);
 
   const recomputeHasNew = useCallback(
@@ -32,27 +32,27 @@ export default function useRemoteClipboardStatus({
         return;
       }
       setHasNew(
-        remoteIndex > 0 && remoteIndex !== loadClipboardState(userId).ci,
+        remoteIndex > 0 && remoteIndex !== loadClipboardCursor(userId).index,
       );
     },
     [userId],
   );
 
-  const applyStatus = useCallback(
-    (data: RemoteClipboardStatus) => {
-      if (typeof data.index !== "number") {
+  const applyEvent = useCallback(
+    (event: ClipboardEvent) => {
+      if (typeof event.index !== "number") {
         return;
       }
-      latestIndexRef.current = data.index;
-      setRemoteStatus((prev) =>
+      latestIndexRef.current = event.index;
+      setLatestEvent((prev) =>
         prev &&
-        prev.index === data.index &&
-        prev.type === data.type &&
-        prev.clientName === data.clientName
+        prev.index === event.index &&
+        prev.type === event.type &&
+        prev.clientName === event.clientName
           ? prev
-          : data,
+          : event,
       );
-      recomputeHasNew(data.index);
+      recomputeHasNew(event.index);
     },
     [recomputeHasNew],
   );
@@ -99,25 +99,25 @@ export default function useRemoteClipboardStatus({
       if (document.visibilityState !== "visible" || eventSource) {
         return;
       }
-      const es = new EventSource("/api/v1/clipboard/events", {
+      const stream = new EventSource("/api/v1/clipboard/events", {
         withCredentials: true,
       });
-      eventSource = es;
+      eventSource = stream;
 
-      es.onmessage = (ev) => {
+      stream.onmessage = (message) => {
         try {
-          applyStatus(JSON.parse(ev.data) as RemoteClipboardStatus);
+          applyEvent(JSON.parse(message.data) as ClipboardEvent);
         } catch {
           // Ignore malformed event payloads.
         }
       };
 
-      es.onerror = () => {
+      stream.onerror = () => {
         // When the server rejects with non-200 (e.g. 401/429), browsers mark
         // readyState CLOSED; clear the reference so `online`/`pageshow` can
         // reconnect cleanly later. For transient network drops, readyState is
         // CONNECTING and EventSource reconnects automatically on its own.
-        if (es.readyState === EventSource.CLOSED) {
+        if (stream.readyState === EventSource.CLOSED) {
           eventSource = null;
         }
       };
@@ -149,7 +149,7 @@ export default function useRemoteClipboardStatus({
       window.removeEventListener("online", onReconnectTrigger);
       window.removeEventListener("pageshow", onReconnectTrigger);
     };
-  }, [enabled, paused, userId, applyStatus]);
+  }, [enabled, paused, userId, applyEvent]);
 
-  return { hasNew, remoteStatus };
+  return { hasNew, latestEvent };
 }

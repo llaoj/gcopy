@@ -32,18 +32,21 @@ func (r *tokenRegistry) reserve() (string, error) {
 	}
 }
 
+func (r *tokenRegistry) sweepExpired(now time.Time) {
+	r.tokens.Range(func(key, value any) bool {
+		if reservedAt, ok := value.(time.Time); ok && now.Sub(reservedAt) > tokenTTL {
+			r.tokens.Delete(key)
+		}
+		return true
+	})
+}
+
 // housekeeping periodically drops expired reservations.
 func (r *tokenRegistry) housekeeping() {
 	ticker := time.NewTicker(time.Minute)
 	defer ticker.Stop()
 
 	for range ticker.C {
-		now := time.Now()
-		r.tokens.Range(func(key, value any) bool {
-			if reservedAt, ok := value.(time.Time); ok && now.Sub(reservedAt) > tokenTTL {
-				r.tokens.Delete(key)
-			}
-			return true
-		})
+		r.sweepExpired(time.Now())
 	}
 }

@@ -12,20 +12,22 @@ function isPermissionError(err: unknown) {
   );
 }
 
+export type ClipboardType = "text" | "screenshot" | "file";
+
+export function isClipboardType(
+  value: string | null | undefined,
+): value is ClipboardType {
+  return value === "text" || value === "screenshot" || value === "file";
+}
+
 export interface Clipboard {
-  index: string;
+  index: number;
   data: Blob;
   blobId?: string;
-  type?: string;
+  type?: ClipboardType;
   fileName?: string;
   clientName?: string;
 }
-
-export const initTmpClipboard: Clipboard = {
-  blobId: "",
-  index: "",
-  data: new Blob([]),
-};
 
 export function clipboardWriteBlob(blob: Blob) {
   return navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);

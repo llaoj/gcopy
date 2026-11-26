@@ -6,17 +6,17 @@ import { useDevice } from "@/hooks/useDevice";
 import type { PendingPrompt } from "@/lib/sync-prompt";
 
 export default function SyncButton({
-  syncFunc,
+  onSync,
   hasNew,
   prompt,
   onCancelPrompt,
 }: {
-  syncFunc: () => Promise<void>;
+  onSync: () => Promise<void>;
   hasNew?: boolean;
   prompt?: PendingPrompt | null;
   onCancelPrompt?: () => void;
 }) {
-  const [clicked, setClicked] = useState<boolean>(false);
+  const [syncing, setSyncing] = useState<boolean>(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const t = useTranslations("SyncClipboard");
   const { isDesktop, isMacOs } = useDevice();
@@ -27,15 +27,15 @@ export default function SyncButton({
       : prompt
         ? t("prompt.syncButtonPressAgain")
         : t("syncButtonText");
-  const onClick = async () => {
+  const handleClick = async () => {
     if (prompt === "paste") {
       onCancelPrompt?.();
       return;
     }
 
-    setClicked(true);
-    await syncFunc();
-    setClicked(false);
+    setSyncing(true);
+    await onSync();
+    setSyncing(false);
   };
 
   // shortcut
@@ -73,7 +73,7 @@ export default function SyncButton({
     <>
       <button
         ref={buttonRef}
-        disabled={clicked}
+        disabled={syncing}
         className={clsx(
           "btn col-span-9 md:col-span-2 h-full min-h-16 md:min-h-0 rounded-box content-center",
           prompt
@@ -81,7 +81,7 @@ export default function SyncButton({
             : "btn-outline btn-primary bg-base-100",
         )}
         title={label}
-        onClick={onClick}
+        onClick={handleClick}
       >
         <span className="flex items-center gap-2 whitespace-nowrap">
           <CursorArrowRippleIcon className="h-6 w-6" />

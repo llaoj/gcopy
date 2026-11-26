@@ -9,6 +9,11 @@ import (
 // UserSessionName is the session cookie name.
 const UserSessionName = "user_session"
 
+const (
+	SessionKeyUserID   = "userId"
+	SessionKeyLoggedIn = "loggedIn"
+)
+
 // sessionMaxAge is the session lifetime in seconds.
 const sessionMaxAge = 7 * 24 * 3600
 
@@ -29,15 +34,15 @@ func GetSession(store sessions.Store, r *http.Request, name string) (*sessions.S
 	return session, nil
 }
 
-// GetUserIdFromSession extracts the unified userId from session.
-// Only token-shaped ids are accepted so stale non-token sessions are discarded.
-func GetUserIdFromSession(session *sessions.Session) (string, bool) {
-	userId, ok := session.Values["userId"].(string)
-	return userId, ok && tokenPattern.MatchString(userId)
+// GetUserIDFromSession extracts the unified userID from session.
+// Only token-shaped IDs are accepted so stale non-token sessions are discarded.
+func GetUserIDFromSession(session *sessions.Session) (string, bool) {
+	userID, ok := session.Values[SessionKeyUserID].(string)
+	return userID, ok && tokenPattern.MatchString(userID)
 }
 
 // IsAuthenticated checks if the session has valid authentication
 func IsAuthenticated(session *sessions.Session) bool {
-	_, ok := GetUserIdFromSession(session)
-	return ok && session.Values["loggedIn"] == true
+	_, ok := GetUserIDFromSession(session)
+	return ok && session.Values[SessionKeyLoggedIn] == true
 }

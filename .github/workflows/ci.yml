@@ -66,6 +66,9 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      - name: Run unit tests
+        run: npm test
+
       - name: Build static export
         run: npm run build
 

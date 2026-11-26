@@ -5,9 +5,9 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { getLoginPath, redirectToLogin } from "@/lib/navigation";
 
-export default function Avator() {
-  const t = useTranslations("Avator");
-  const [clicked, setClicked] = useState(false);
+export default function Avatar() {
+  const t = useTranslations("Avatar");
+  const [loggingOut, setLoggingOut] = useState(false);
   const [copied, setCopied] = useState<"link" | "token" | null>(null);
   const copiedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const router = useRouter();
@@ -51,7 +51,7 @@ export default function Avator() {
   const qrCodeUrl = getQRCodeUrl();
 
   const handleLogout = async () => {
-    setClicked(true);
+    setLoggingOut(true);
     await logout();
     redirectToLogin(router);
   };
@@ -136,7 +136,7 @@ export default function Avator() {
           </button>
         </li>
         <li>
-          <button disabled={clicked} onClick={handleLogout}>
+          <button disabled={loggingOut} onClick={handleLogout}>
             {t("logout")}
           </button>
         </li>

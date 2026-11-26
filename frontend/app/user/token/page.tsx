@@ -9,7 +9,7 @@ function TokenLoginForm() {
   const searchParams = useSearchParams();
   const tokenParam = searchParams.get("token");
   const [showVerifyForm, setShowVerifyForm] = useState<boolean>(!!tokenParam);
-  const [clicked, setClicked] = useState<boolean>(false);
+  const [submitting, setSubmitting] = useState<boolean>(false);
   const [generatedToken, setGeneratedToken] = useState<string>("");
   const [inputToken, setInputToken] = useState<string>(tokenParam || "");
   const [copied, setCopied] = useState<boolean>(false);
@@ -25,10 +25,10 @@ function TokenLoginForm() {
   }, [tokenParam]);
 
   const generateToken = async () => {
-    setClicked(true);
+    setSubmitting(true);
     setErrorMessage("");
 
-    const res = await fetch("/api/v1/user/token/generate", {
+    const response = await fetch("/api/v1/user/token/generate", {
       headers: {
         accept: "application/json",
         "content-type": "application/json",
@@ -36,26 +36,26 @@ function TokenLoginForm() {
       method: "POST",
     });
 
-    if (res.status == 200) {
-      const data = await res.json();
+    if (response.status == 200) {
+      const data = await response.json();
       setGeneratedToken(data.userId);
-      setClicked(false);
+      setSubmitting(false);
       return;
     }
 
     setErrorMessage(t("generateFailed"));
-    setClicked(false);
+    setSubmitting(false);
   };
 
   const verifyToken = async (event: FormEvent) => {
     event.preventDefault();
-    setClicked(true);
+    setSubmitting(true);
     setErrorMessage("");
 
     // 前端校验：长度必须为8
     if (!inputToken || inputToken.length !== 8) {
       setErrorMessage(t("invalidToken"));
-      setClicked(false);
+      setSubmitting(false);
       return;
     }
 
@@ -63,11 +63,11 @@ function TokenLoginForm() {
     const tokenPattern = /^[A-Za-z0-9]{8}$/;
     if (!tokenPattern.test(inputToken)) {
       setErrorMessage(t("invalidToken"));
-      setClicked(false);
+      setSubmitting(false);
       return;
     }
 
-    const res = await fetch("/api/v1/user/token/verify", {
+    const response = await fetch("/api/v1/user/token/verify", {
       headers: {
         accept: "application/json",
         "content-type": "application/json",
@@ -76,19 +76,19 @@ function TokenLoginForm() {
       body: JSON.stringify({ token: inputToken }),
     });
 
-    if (res.status == 200) {
+    if (response.status == 200) {
       router.push(`/`);
       return;
     }
 
     // 处理后端返回的错误
     try {
-      const data = await res.json();
+      const data = await response.json();
       setErrorMessage(data.message || t("verifyFailed"));
     } catch {
       setErrorMessage(t("verifyFailed"));
     }
-    setClicked(false);
+    setSubmitting(false);
   };
 
   return (
@@ -161,7 +161,7 @@ function TokenLoginForm() {
               <button
                 type="submit"
                 className="btn btn-primary"
-                disabled={clicked}
+                disabled={submitting}
               >
                 {t("verifyButton")}
               </button>
@@ -178,7 +178,7 @@ function TokenLoginForm() {
                   <button
                     type="button"
                     className="btn btn-primary btn-lg flex-1"
-                    disabled={clicked}
+                    disabled={submitting}
                     onClick={generateToken}
                   >
                     {t("generateButton")}

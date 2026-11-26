@@ -20,37 +20,37 @@ func newSilentLogger() *applog.Logger {
 
 func TestWallLRUEvictionAndPromotion(t *testing.T) {
 	// Cap at 250 bytes; each clipboard below has 100 bytes of data.
-	w := NewWall(newSilentLogger(), 250)
+	wall := NewWall(newSilentLogger(), 250)
 
-	mk := func(idx int, size int) *gcopy.Clipboard {
+	newClipboard := func(index int, size int) *gcopy.Clipboard {
 		return &gcopy.Clipboard{
-			Index:     idx,
+			Index:     index,
 			Data:      bytes.Repeat([]byte("a"), size),
 			CreatedAt: time.Now(),
 		}
 	}
 
-	w.Set("u1", mk(1, 100))
-	w.Set("u2", mk(1, 100))
-	if w.Len() != 2 || w.UsedBytes() != 200 {
-		t.Fatalf("got len=%d used=%d, want len=2 used=200", w.Len(), w.UsedBytes())
+	wall.Set("u1", newClipboard(1, 100))
+	wall.Set("u2", newClipboard(1, 100))
+	if wall.Len() != 2 || wall.UsedBytes() != 200 {
+		t.Fatalf("got len=%d used=%d, want len=2 used=200", wall.Len(), wall.UsedBytes())
 	}
 
 	// Reading u1 updates its usage order so u2 becomes least-recently-used.
-	if got := w.Get("u1"); got == nil {
+	if got := wall.Get("u1"); got == nil {
 		t.Fatalf("expected u1 to exist")
 	}
 
 	// Inserting u3 (100 bytes) pushes total to 300 > 250, evicting u2 (not u1).
-	w.Set("u3", mk(1, 100))
-	if w.Get("u2") != nil {
+	wall.Set("u3", newClipboard(1, 100))
+	if wall.Get("u2") != nil {
 		t.Fatalf("expected least-recently-used u2 to be evicted")
 	}
-	if w.Get("u1") == nil || w.Get("u3") == nil {
+	if wall.Get("u1") == nil || wall.Get("u3") == nil {
 		t.Fatalf("expected u1 and u3 to remain")
 	}
-	if w.UsedBytes() != 200 {
-		t.Fatalf("usedBytes = %d, want 200", w.UsedBytes())
+	if wall.UsedBytes() != 200 {
+		t.Fatalf("usedBytes = %d, want 200", wall.UsedBytes())
 	}
 }
 
@@ -104,6 +104,20 @@ func TestWallTTLExpiration(t *testing.T) {
 	if w.Get("fresh") == nil {
 		t.Fatalf("expected fresh clipboard to remain")
 	}
+
+	// Lazy expiration on Get without calling ExpireStale, plus nil Set no-op and Housekeeping stop.
+	w.Set("lazy", &gcopy.Clipboard{
+		Index:     1,
+		Data:      []byte("lazy"),
+		CreatedAt: time.Now().Add(-time.Second),
+	})
+	w.Set("lazy", nil)
+	if w.Get("lazy") != nil {
+		t.Fatalf("expected expired clipboard to be evicted lazily on Get")
+	}
+
+	stop := w.Housekeeping()
+	stop()
 }
 
 func TestWallConcurrentAccess(t *testing.T) {

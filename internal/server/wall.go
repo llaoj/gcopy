@@ -18,7 +18,7 @@ type Wall struct {
 	mu         sync.Mutex
 	clipboards map[string]*gcopy.Clipboard
 	lastUsed   map[string]uint64
-	seq        uint64
+	order      uint64
 	usedBytes  int64
 	maxBytes   int64
 	ttl        time.Duration
@@ -34,18 +34,18 @@ func NewWall(log *applog.Logger, maxBytes int64) *Wall {
 	}
 }
 
-func clipboardSize(cb *gcopy.Clipboard) int64 {
-	if cb == nil {
+func clipboardSize(clipboard *gcopy.Clipboard) int64 {
+	if clipboard == nil {
 		return 0
 	}
-	return int64(len(cb.Data) + len(cb.FileName) + len(cb.Type) + len(cb.ClientName) + len(cb.MIMEType))
+	return int64(len(clipboard.Data) + len(clipboard.FileName) + len(clipboard.Type) + len(clipboard.ClientName) + len(clipboard.MIMEType))
 }
 
-func (w *Wall) Set(key string, cb *gcopy.Clipboard) {
-	if cb == nil {
+func (w *Wall) Set(userID string, clipboard *gcopy.Clipboard) {
+	if clipboard == nil {
 		return
 	}
-	size := clipboardSize(cb)
+	size := clipboardSize(clipboard)
 	if w.maxBytes > 0 && size > w.maxBytes {
 		if w.log != nil {
 			w.log.Warnf("Clipboard (%d bytes) exceeds wall memory limit (%d bytes), skipped", size, w.maxBytes)
@@ -56,39 +56,39 @@ func (w *Wall) Set(key string, cb *gcopy.Clipboard) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
-	if old, ok := w.clipboards[key]; ok {
-		w.deleteLocked(key, old)
+	if old, ok := w.clipboards[userID]; ok {
+		w.deleteLocked(userID, old)
 	}
 
 	for w.maxBytes > 0 && w.usedBytes+size > w.maxBytes && len(w.clipboards) > 0 {
 		w.evictLeastRecentlyUsedLocked()
 	}
 
-	w.seq++
-	w.clipboards[key] = cb
-	w.lastUsed[key] = w.seq
+	w.order++
+	w.clipboards[userID] = clipboard
+	w.lastUsed[userID] = w.order
 	w.usedBytes += size
 }
 
-func (w *Wall) Get(key string) *gcopy.Clipboard {
+func (w *Wall) Get(userID string) *gcopy.Clipboard {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
-	cb, ok := w.clipboards[key]
+	clipboard, ok := w.clipboards[userID]
 	if !ok {
 		return nil
 	}
-	if w.isExpired(cb) {
-		w.deleteLocked(key, cb)
+	if w.isExpired(clipboard) {
+		w.deleteLocked(userID, clipboard)
 		if w.log != nil {
 			w.log.Info("Clipboard expired")
 		}
 		return nil
 	}
 
-	w.seq++
-	w.lastUsed[key] = w.seq
-	return cb
+	w.order++
+	w.lastUsed[userID] = w.order
+	return clipboard
 }
 
 func (w *Wall) UsedBytes() int64 {
@@ -103,33 +103,33 @@ func (w *Wall) Len() int {
 	return len(w.clipboards)
 }
 
-func (w *Wall) isExpired(cb *gcopy.Clipboard) bool {
-	return w.ttl > 0 && !cb.CreatedAt.IsZero() && time.Since(cb.CreatedAt) > w.ttl
+func (w *Wall) isExpired(clipboard *gcopy.Clipboard) bool {
+	return w.ttl > 0 && !clipboard.CreatedAt.IsZero() && time.Since(clipboard.CreatedAt) > w.ttl
 }
 
-func (w *Wall) deleteLocked(key string, cb *gcopy.Clipboard) {
-	delete(w.clipboards, key)
-	delete(w.lastUsed, key)
-	w.usedBytes -= clipboardSize(cb)
+func (w *Wall) deleteLocked(userID string, clipboard *gcopy.Clipboard) {
+	delete(w.clipboards, userID)
+	delete(w.lastUsed, userID)
+	w.usedBytes -= clipboardSize(clipboard)
 	if w.usedBytes < 0 {
 		w.usedBytes = 0
 	}
 }
 
 func (w *Wall) evictLeastRecentlyUsedLocked() {
-	var oldestKey string
-	var oldestSeq uint64
+	var oldestUserID string
+	var oldestOrder uint64
 	first := true
 
-	for k, seq := range w.lastUsed {
-		if first || seq < oldestSeq {
-			oldestKey = k
-			oldestSeq = seq
+	for userID, order := range w.lastUsed {
+		if first || order < oldestOrder {
+			oldestUserID = userID
+			oldestOrder = order
 			first = false
 		}
 	}
 	if !first {
-		w.deleteLocked(oldestKey, w.clipboards[oldestKey])
+		w.deleteLocked(oldestUserID, w.clipboards[oldestUserID])
 		if w.log != nil {
 			w.log.Info("Clipboard evicted by wall memory limit")
 		}
@@ -141,9 +141,9 @@ func (w *Wall) ExpireStale() int {
 	defer w.mu.Unlock()
 
 	expired := 0
-	for key, cb := range w.clipboards {
-		if w.isExpired(cb) {
-			w.deleteLocked(key, cb)
+	for userID, clipboard := range w.clipboards {
+		if w.isExpired(clipboard) {
+			w.deleteLocked(userID, clipboard)
 			expired++
 			if w.log != nil {
 				w.log.Info("Clipboard expired")

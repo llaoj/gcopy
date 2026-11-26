@@ -94,8 +94,8 @@ func (a *TokenAuth) generateTokenHandler(c *gin.Context) {
 		return
 	}
 
-	session.Values["userId"] = token
-	session.Values["loggedIn"] = true
+	session.Values[SessionKeyUserID] = token
+	session.Values[SessionKeyLoggedIn] = true
 	// Set session to expire in 7 days
 	session.Options.MaxAge = sessionMaxAge
 
@@ -131,8 +131,8 @@ func (a *TokenAuth) verifyTokenHandler(c *gin.Context) {
 		return
 	}
 
-	session.Values["userId"] = req.Token
-	session.Values["loggedIn"] = true
+	session.Values[SessionKeyUserID] = req.Token
+	session.Values[SessionKeyLoggedIn] = true
 	// Set session to expire in 7 days
 	session.Options.MaxAge = sessionMaxAge
 

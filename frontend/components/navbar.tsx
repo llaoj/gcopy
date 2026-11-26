@@ -1,6 +1,6 @@
 "use client";
 
-import Avator from "@/components/avator";
+import Avatar from "@/components/avatar";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useLocale } from "@/lib/i18n";
@@ -97,7 +97,7 @@ export default function Navbar() {
           </svg>
         </a>
         {loggedIn ? (
-          <Avator />
+          <Avatar />
         ) : systemInfo ? (
           <Link className="btn" href={getLoginPath()}>
             {t("signIn")}

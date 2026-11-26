@@ -3,23 +3,27 @@
 import LogBox from "@/components/log-box";
 import useAuth from "@/lib/auth";
 import useSystemInfo from "@/hooks/useSystemInfo";
-import useRemoteClipboardStatus from "@/hooks/useRemoteClipboardStatus";
+import useClipboardEvents from "@/hooks/useClipboardEvents";
 import { LogLevel, useLog, SyncDirection } from "@/lib/log";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
-  initTmpClipboard,
   clipboardWriteBlob,
   clipboardWriteBlobPromise,
   hashBlob,
   toTextBlob,
   toPngBlob,
   Clipboard,
+  ClipboardType,
+  isClipboardType,
   clipboardRead,
   ClipboardPermissionError,
 } from "@/lib/clipboard";
-import { loadClipboardState, saveClipboardState } from "@/lib/clipboard-state";
+import {
+  loadClipboardCursor,
+  saveClipboardCursor,
+} from "@/lib/clipboard-cursor";
 import { redirectToLogin } from "@/lib/navigation";
 // Chrome | Safari | Mobile Safari
 import { browserName, isAndroid, isMobile } from "react-device-detect";
@@ -48,10 +52,12 @@ import type { PendingPrompt } from "@/lib/sync-prompt";
 export default function SyncClipboard() {
   const t = useTranslations("SyncClipboard");
   // 最近一次 push（上传）出去的文件名
-  const [fileName, setFileName] = useState<string>("");
+  const [syncedFileName, setSyncedFileName] = useState<string>("");
   const [fileUploading, setFileUploading] = useState<boolean>(false);
   const fileUploadingRef = useRef<boolean>(false);
-  const [tmpClipboard, setTmpClipboard] = useState<Clipboard>(initTmpClipboard);
+  const [pendingClipboard, setPendingClipboard] = useState<Clipboard | null>(
+    null,
+  );
   // 快捷输入框内容
   const [quickText, setQuickText] = useState<string>("");
   // 需要用户下一步操作的挂起状态：
@@ -71,7 +77,7 @@ export default function SyncClipboard() {
   const { logs, addLog, resetLog, updateProgressLog } = useLog();
 
   // 后台检查远端是否有更新; 同步中或等待用户操作时暂停.
-  const { hasNew } = useRemoteClipboardStatus({
+  const { hasNew } = useClipboardEvents({
     userId,
     enabled: loggedIn,
     paused: syncDirection !== null,
@@ -86,7 +92,7 @@ export default function SyncClipboard() {
     (reason: "canceled" | "timeout") => {
       setPendingPrompt(null);
       setSyncDirection(null);
-      setTmpClipboard(initTmpClipboard);
+      setPendingClipboard(null);
       addLog({
         message: t(reason === "timeout" ? "prompt.timeout" : "prompt.canceled"),
         level: LogLevel.Warn,
@@ -115,8 +121,8 @@ export default function SyncClipboard() {
   }, [prompt, clearPrompt]);
 
   // 清空"最近上传文件名"的显示
-  const resetFile = () => {
-    setFileName("");
+  const clearSyncedFileName = () => {
+    setSyncedFileName("");
   };
 
   const addHistoryItem = useCallback(
@@ -164,10 +170,10 @@ export default function SyncClipboard() {
   const pushBlobToServer = useCallback(
     async (
       blob: Blob,
-      xtype: "text" | "screenshot" | "file",
+      type: ClipboardType,
       fileName: string,
       blobId: string,
-    ): Promise<{ index: string; blobId: string } | null> => {
+    ): Promise<{ index: number; blobId: string } | null> => {
       addLog({ message: t("logs.uploading"), isProgress: true });
 
       setSyncDirection("out");
@@ -177,8 +183,8 @@ export default function SyncClipboard() {
           blob,
           headers: {
             "Content-Type": blob.type,
-            "X-Type": xtype,
-            "X-FileName": xtype == "file" ? encodeURIComponent(fileName) : "",
+            "X-Type": type,
+            "X-FileName": type === "file" ? encodeURIComponent(fileName) : "",
           },
           onProgress: (progress) => {
             updateProgressLog(`${t("logs.uploading")} ${progress}%`);
@@ -206,12 +212,12 @@ export default function SyncClipboard() {
           return null;
         }
 
-        const xindex = response.headers.get("x-index");
-        if (xindex == null || xindex == "0") {
+        const index = Number(response.headers.get("x-index"));
+        if (!Number.isInteger(index) || index <= 0) {
           return null;
         }
 
-        return { index: xindex, blobId };
+        return { index, blobId };
       } catch (err) {
         if (err instanceof UploadError) {
           addLog({
@@ -238,18 +244,18 @@ export default function SyncClipboard() {
    */
   const uploadClipboardBlob = useCallback(
     async (blob: Blob): Promise<boolean> => {
-      let xtype: "text" | "screenshot";
+      let type: "text" | "screenshot";
       let processedBlob = blob;
 
       // 确定类型并转换格式
       if (blob.type.startsWith("image/")) {
-        xtype = "screenshot";
+        type = "screenshot";
         // 如果不是 PNG，转换为 PNG（浏览器剪贴板标准格式）
         if (blob.type !== "image/png") {
           processedBlob = await toPngBlob(blob);
         }
       } else if (blob.type.startsWith("text/")) {
-        xtype = "text";
+        type = "text";
         processedBlob = await toTextBlob(blob);
       } else {
         addLog({
@@ -260,20 +266,20 @@ export default function SyncClipboard() {
       }
 
       const nextBlobId = await hashBlob(processedBlob);
-      const { cbi } = loadClipboardState(userId);
+      const { blobId: lastBlobId } = loadClipboardCursor(userId);
 
       // 检查是否与当前剪贴板内容相同
-      if (nextBlobId === cbi) {
+      if (nextBlobId === lastBlobId) {
         addLog({ message: t("logs.unchanged") });
         return false;
       }
 
       // Reset file states when uploading text or screenshot
-      resetFile();
+      clearSyncedFileName();
 
       const uploaded = await pushBlobToServer(
         processedBlob,
-        xtype,
+        type,
         "",
         nextBlobId,
       );
@@ -281,21 +287,18 @@ export default function SyncClipboard() {
         return false;
       }
 
-      saveClipboardState(userId, {
-        ci: Number(uploaded.index),
-        cbi: uploaded.blobId,
-      });
+      saveClipboardCursor(userId, uploaded);
 
       await addHistoryItem({
         index: uploaded.index,
         blobId: uploaded.blobId,
         data: processedBlob,
-        type: xtype,
+        type,
       });
 
       addLog({
         message: t("logs.uploaded", {
-          type: t(xtype),
+          type: t(type),
           index: uploaded.index,
         }),
         level: LogLevel.Success,
@@ -308,7 +311,7 @@ export default function SyncClipboard() {
 
   /**
    * 将历史记录直接发送到服务器，不修改本机剪贴板，也不新增历史记录。
-   * 该动作是用户显式触发的，因此不做 cbi 去重。
+   * 该动作是用户显式触发的，因此不做 blobId 去重。
    */
   const shareHistoryItem = useCallback(
     async (item: HistoryItemEntity): Promise<boolean> => {
@@ -321,10 +324,10 @@ export default function SyncClipboard() {
         return false;
       }
 
-      const xtype = item.type;
-      if (xtype !== "text" && xtype !== "screenshot" && xtype !== "file") {
+      const type = item.type;
+      if (!isClipboardType(type)) {
         addLog({
-          message: t("logs.unsupportedFormat", { format: xtype ?? "" }),
+          message: t("logs.unsupportedFormat", { format: type ?? "" }),
           level: LogLevel.Error,
         });
         return false;
@@ -335,9 +338,9 @@ export default function SyncClipboard() {
           type: item.dataType,
         });
 
-        if (xtype == "text") {
+        if (type === "text") {
           processedBlob = await toTextBlob(processedBlob);
-        } else if (xtype == "screenshot") {
+        } else if (type === "screenshot") {
           processedBlob = await toPngBlob(processedBlob);
         }
 
@@ -361,7 +364,7 @@ export default function SyncClipboard() {
         const blobId = await hashBlob(processedBlob);
         const uploaded = await pushBlobToServer(
           processedBlob,
-          xtype,
+          type,
           item.fileName ?? "",
           blobId,
         );
@@ -369,16 +372,16 @@ export default function SyncClipboard() {
           return false;
         }
 
-        // 共享不会修改本机剪贴板，因此只推进服务端 index，保留 cbi。
-        const { cbi } = loadClipboardState(userId);
-        saveClipboardState(userId, {
-          ci: Number(uploaded.index),
-          cbi,
+        // 共享不会修改本机剪贴板，因此只推进服务端 index，保留本地 blobId。
+        const { blobId: lastBlobId } = loadClipboardCursor(userId);
+        saveClipboardCursor(userId, {
+          index: uploaded.index,
+          blobId: lastBlobId,
         });
 
         addLog({
           message: t("logs.uploaded", {
-            type: t(xtype),
+            type: t(type),
             index: uploaded.index,
           }),
           level: LogLevel.Success,
@@ -451,7 +454,7 @@ export default function SyncClipboard() {
       return;
     }
 
-    const handlePaste = async (e: ClipboardEvent) => {
+    const handlePaste = async (e: globalThis.ClipboardEvent) => {
       const target = e.target as HTMLElement | null;
       if (
         target &&
@@ -565,7 +568,8 @@ export default function SyncClipboard() {
   const pullClipboard = async () => {
     resetLog();
     addLog({ message: t("logs.fetching"), isProgress: true });
-    const { ci: localIndex, cbi: localCbi } = loadClipboardState(userId);
+    const { index: localIndex, blobId: localBlobId } =
+      loadClipboardCursor(userId);
 
     // 使用带进度的fetch
     const { response, blob: getBlob } = await fetchWithProgress(
@@ -590,14 +594,13 @@ export default function SyncClipboard() {
       addLog({ message: body.message, level: LogLevel.Error });
       return;
     }
-    const xindex = response.headers.get("x-index");
-    const xtype = response.headers.get("x-type");
+    const remoteIndex = Number(response.headers.get("x-index"));
+    const rawType = response.headers.get("x-type");
     if (
-      xindex == null ||
-      xindex == "0" ||
-      Number(xindex) === localIndex ||
-      xtype == "" ||
-      xtype == null
+      !Number.isInteger(remoteIndex) ||
+      remoteIndex <= 0 ||
+      remoteIndex === localIndex ||
+      !isClipboardType(rawType)
     ) {
       addLog({ message: t("logs.upToDate") });
 
@@ -612,48 +615,49 @@ export default function SyncClipboard() {
       await pushClipboard();
       return;
     }
-    const xclientname = response.headers.get("x-clientname");
+    const type = rawType;
+    const clientName = response.headers.get("x-clientname");
     setSyncDirection("in");
     addLog({
       message: t("logs.received", {
-        type: t(xtype),
-        index: xindex,
-        clientname: xclientname ?? "UNKNOWN",
+        type: t(type),
+        index: remoteIndex,
+        clientName: clientName ?? "UNKNOWN",
       }),
     });
 
     let blob = await getBlob();
 
-    if (xtype == "text" || xtype == "screenshot") {
+    if (type === "text" || type === "screenshot") {
       // Format or rebuild blob
-      if (xtype == "text") {
+      if (type === "text") {
         blob = await toTextBlob(blob);
-      } else if (xtype == "screenshot") {
+      } else if (type === "screenshot") {
         // Convert image to PNG for clipboard compatibility
         blob = await toPngBlob(blob);
       }
 
       const nextBlobId: string = await hashBlob(blob);
-      if (nextBlobId === localCbi) {
+      if (nextBlobId === localBlobId) {
         // Same content under a new index: remember the index so we don't fetch
         // it again (and so the "new content" hint clears), but don't rewrite
         // the clipboard.
-        saveClipboardState(userId, {
-          ci: Number(xindex),
-          cbi: nextBlobId,
+        saveClipboardCursor(userId, {
+          index: remoteIndex,
+          blobId: nextBlobId,
         });
         return;
       }
 
       // Reset file states when receiving text or screenshot
-      resetFile();
+      clearSyncedFileName();
 
       if (browserName.includes("Safari")) {
-        setTmpClipboard({
+        setPendingClipboard({
           blobId: nextBlobId,
-          index: xindex,
+          index: remoteIndex,
           data: blob,
-          type: xtype,
+          type,
         });
         setSyncDirection("in");
         setPendingPrompt("safari-write");
@@ -676,7 +680,7 @@ export default function SyncClipboard() {
       // Although they are the same,
       // the blob read from the clipboard is different from
       // the blob just fetched from the server.
-      let nextCbi = nextBlobId;
+      let syncedBlobId = nextBlobId;
       let shadowBlob: Blob | null = null;
       try {
         shadowBlob = await clipboardRead();
@@ -686,30 +690,30 @@ export default function SyncClipboard() {
         }
       }
       if (shadowBlob) {
-        nextCbi = await hashBlob(shadowBlob);
+        syncedBlobId = await hashBlob(shadowBlob);
       } else {
         console.warn("Failed to read back clipboard after writing");
       }
 
-      saveClipboardState(userId, { ci: Number(xindex), cbi: nextCbi });
+      saveClipboardCursor(userId, { index: remoteIndex, blobId: syncedBlobId });
 
       await addHistoryItem({
-        index: xindex,
-        blobId: nextCbi,
+        index: remoteIndex,
+        blobId: syncedBlobId,
         data: blob,
-        type: xtype,
+        type,
       });
 
       return;
     }
 
-    if (xtype == "file") {
-      let xfilename = response.headers.get("x-filename");
-      if (xfilename == null || xfilename == "") {
+    if (type === "file") {
+      let fileName = response.headers.get("x-filename");
+      if (!fileName) {
         return;
       }
       try {
-        xfilename = decodeURIComponent(xfilename);
+        fileName = decodeURIComponent(fileName);
       } catch {
         // Keep raw header value if a CLI caller sent an unencoded '%' character.
       }
@@ -717,27 +721,27 @@ export default function SyncClipboard() {
       // 先将 blob 转换为 ArrayBuffer，避免在异步操作中被垃圾回收
       const arrayBuffer = await blob.arrayBuffer();
       // iOS Safari: 强制使用 application/octet-stream 避免 Safari 渲染 PDF 等文件
-      let downloadedFile = new File([arrayBuffer], xfilename, {
+      const downloadedFile = new File([arrayBuffer], fileName, {
         type: "application/octet-stream",
       });
 
       // 先插入历史记录，确保数据安全保存
       const fileBlobId = await hashBlob(downloadedFile);
-      saveClipboardState(userId, {
-        ci: Number(xindex),
-        cbi: fileBlobId,
+      saveClipboardCursor(userId, {
+        index: remoteIndex,
+        blobId: fileBlobId,
       });
       await addHistoryItem({
-        index: xindex,
+        index: remoteIndex,
         blobId: fileBlobId,
         data: downloadedFile,
-        type: xtype,
-        fileName: xfilename,
+        type,
+        fileName,
       });
 
       // 接收到的文件直接触发下载，不在"同步文件"框里显示，同时清空该框
-      downloadBlob(downloadedFile, xfilename);
-      resetFile();
+      downloadBlob(downloadedFile, fileName);
+      clearSyncedFileName();
       addLog({ message: t("logs.autoDownload"), level: LogLevel.Success });
 
       return;
@@ -817,7 +821,7 @@ export default function SyncClipboard() {
     }
   };
 
-  const uploadFileHandler = async (file: File) => {
+  const uploadFile = async (file: File) => {
     // Validate file size
     if (systemInfo) {
       const validation = validateFileSize(file, systemInfo.maxContentLength);
@@ -833,25 +837,27 @@ export default function SyncClipboard() {
       }
     }
 
-    const fileHash = await hashBlob(file);
-    const { cbi } = loadClipboardState(userId);
-    if (fileHash === cbi) {
+    const fileBlobId = await hashBlob(file);
+    const { blobId: lastBlobId } = loadClipboardCursor(userId);
+    if (fileBlobId === lastBlobId) {
       addLog({ message: t("logs.fileUnchanged") });
       return;
     }
 
-    const uploaded = await pushBlobToServer(file, "file", file.name, fileHash);
+    const uploaded = await pushBlobToServer(
+      file,
+      "file",
+      file.name,
+      fileBlobId,
+    );
     if (!uploaded) {
       return;
     }
 
-    saveClipboardState(userId, {
-      ci: Number(uploaded.index),
-      cbi: uploaded.blobId,
-    });
+    saveClipboardCursor(userId, uploaded);
 
     // 只显示文件名 不自动下载文件
-    setFileName(file.name);
+    setSyncedFileName(file.name);
 
     await addHistoryItem({
       index: uploaded.index,
@@ -886,12 +892,12 @@ export default function SyncClipboard() {
       }
 
       if (!multiple) {
-        await uploadFileHandler(files[0]);
+        await uploadFile(files[0]);
         return;
       }
 
       const zipFile = await createZipFile(files);
-      await uploadFileHandler(zipFile);
+      await uploadFile(zipFile);
     } catch (err) {
       addLog({ message: String(err), level: LogLevel.Error });
     } finally {
@@ -900,7 +906,7 @@ export default function SyncClipboard() {
     }
   };
 
-  const syncFunc = async () => {
+  const handleSync = async () => {
     try {
       if (!(await ensureLoggedIn())) {
         return;
@@ -925,27 +931,27 @@ export default function SyncClipboard() {
 
       // Safari requires that every call to the clipboard API must be triggered by the user.
       // So we have to interrupt before the next call to the clipboard API.
-      if (prompt === "safari-write") {
-        await clipboardWriteBlobPromise(tmpClipboard.data);
+      if (prompt === "safari-write" && pendingClipboard) {
+        await clipboardWriteBlobPromise(pendingClipboard.data);
         // Known bug:
         //   This blobId is hashed by the fetched blob
         //   which is different from the blob read from clipboard.
         //   So this will upload the blob back to the server once.
-        saveClipboardState(userId, {
-          ci: Number(tmpClipboard.index),
-          cbi: tmpClipboard.blobId ?? "",
+        saveClipboardCursor(userId, {
+          index: pendingClipboard.index,
+          blobId: pendingClipboard.blobId ?? "",
         });
 
         await addHistoryItem({
-          index: tmpClipboard.index,
-          blobId: tmpClipboard.blobId,
-          data: tmpClipboard.data,
-          type: tmpClipboard.type,
+          index: pendingClipboard.index,
+          blobId: pendingClipboard.blobId,
+          data: pendingClipboard.data,
+          type: pendingClipboard.type,
         });
 
         addLog({ message: t("logs.writeSuccess"), level: LogLevel.Success });
 
-        setTmpClipboard(initTmpClipboard);
+        setPendingClipboard(null);
         setPendingPrompt(null);
         setSyncDirection(null);
         return;
@@ -967,7 +973,7 @@ export default function SyncClipboard() {
     } catch (err) {
       addLog({ message: String(err), level: LogLevel.Error });
       setPendingPrompt(null);
-      setTmpClipboard(initTmpClipboard);
+      setPendingClipboard(null);
       setSyncDirection(null);
     }
   };
@@ -982,7 +988,7 @@ export default function SyncClipboard() {
         </div>
         <div className="grid grid-cols-9 gap-3 w-full">
           <SyncButton
-            syncFunc={syncFunc}
+            onSync={handleSync}
             hasNew={hasNew}
             prompt={prompt}
             onCancelPrompt={cancelPrompt}
@@ -992,7 +998,7 @@ export default function SyncClipboard() {
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-stretch">
         <SyncFile
-          fileName={fileName}
+          fileName={syncedFileName}
           uploading={fileUploading}
           onFilesChange={handleFilesChange}
         />

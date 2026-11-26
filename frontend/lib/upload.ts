@@ -19,12 +19,14 @@ export interface UploadResponse {
   body: string;
 }
 
-interface UploadOptions {
+export interface UploadOptions {
   url: string;
   blob: Blob;
   headers: Record<string, string>;
   onProgress?: (progress: number) => void;
   onRetry?: () => void;
+  idleTimeoutMs?: number;
+  retryBaseDelayMs?: number;
 }
 
 function uploadWithProgress({
@@ -32,7 +34,11 @@ function uploadWithProgress({
   blob,
   headers,
   onProgress,
-}: Omit<UploadOptions, "onRetry">): Promise<UploadResponse> {
+  idleTimeoutMs = UPLOAD_IDLE_TIMEOUT_MS,
+}: Omit<
+  UploadOptions,
+  "onRetry" | "retryBaseDelayMs"
+>): Promise<UploadResponse> {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open("POST", url);
@@ -64,7 +70,7 @@ function uploadWithProgress({
       timeoutId = setTimeout(() => {
         fail("timeout");
         xhr.abort();
-      }, UPLOAD_IDLE_TIMEOUT_MS);
+      }, idleTimeoutMs);
     };
 
     xhr.upload.onprogress = (event) => {
@@ -135,13 +141,15 @@ export async function uploadBlobWithRetry({
   headers,
   onProgress,
   onRetry,
+  idleTimeoutMs = UPLOAD_IDLE_TIMEOUT_MS,
+  retryBaseDelayMs = 1000,
 }: UploadOptions): Promise<UploadResponse> {
   for (let attempt = 0; attempt <= UPLOAD_MAX_RETRIES; attempt += 1) {
     if (attempt > 0) {
       onRetry?.();
       onProgress?.(0);
       await new Promise((resolve) =>
-        setTimeout(resolve, 1000 * 2 ** (attempt - 1)),
+        setTimeout(resolve, retryBaseDelayMs * 2 ** (attempt - 1)),
       );
     }
 
@@ -151,6 +159,7 @@ export async function uploadBlobWithRetry({
         blob,
         headers,
         onProgress,
+        idleTimeoutMs,
       });
 
       if (shouldRetry(response.status) && attempt < UPLOAD_MAX_RETRIES) {

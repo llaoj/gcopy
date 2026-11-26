@@ -16,47 +16,47 @@ import (
 )
 
 func TestNotifierSubscribeCoalesceAndCap(t *testing.T) {
-	n := NewNotifier()
+	notifier := NewNotifier()
 
-	ch1, unsub1, ok := n.Subscribe("G8K2P9X4")
+	listener1, unsubscribe1, ok := notifier.Subscribe("G8K2P9X4")
 	if !ok {
 		t.Fatalf("expected first subscribe to succeed")
 	}
-	ch2, unsub2, ok := n.Subscribe("G8K2P9X4")
+	listener2, unsubscribe2, ok := notifier.Subscribe("G8K2P9X4")
 	if !ok {
 		t.Fatalf("expected second subscribe to succeed")
 	}
-	if got := n.SubscriberCount("G8K2P9X4"); got != 2 {
+	if got := notifier.SubscriberCount("G8K2P9X4"); got != 2 {
 		t.Fatalf("SubscriberCount = %d, want 2", got)
 	}
 
 	// Rapid updates without reading should coalesce to the latest index without blocking.
-	n.Notify("G8K2P9X4", ClipboardStatus{Index: 1, Type: "text"})
-	n.Notify("G8K2P9X4", ClipboardStatus{Index: 2, Type: "screenshot", ClientName: "macOS Chrome"})
+	notifier.Notify("G8K2P9X4", ClipboardEvent{Index: 1, Type: "text"})
+	notifier.Notify("G8K2P9X4", ClipboardEvent{Index: 2, Type: "screenshot", ClientName: "macOS Chrome"})
 
-	got1 := <-ch1
-	got2 := <-ch2
+	got1 := <-listener1
+	got2 := <-listener2
 	if got1.Index != 2 || got2.Index != 2 {
 		t.Fatalf("expected coalesced Index=2, got %+v and %+v", got1, got2)
 	}
 
 	// Enforce per-user cap (maxSubscribersPerUser = 16; 2 already active).
-	unsubs := []func(){unsub1, unsub2}
+	unsubscribes := []func(){unsubscribe1, unsubscribe2}
 	for i := 2; i < maxSubscribersPerUser; i++ {
-		_, u, ok := n.Subscribe("G8K2P9X4")
+		_, unsubscribe, ok := notifier.Subscribe("G8K2P9X4")
 		if !ok {
 			t.Fatalf("subscribe #%d failed unexpectedly", i+1)
 		}
-		unsubs = append(unsubs, u)
+		unsubscribes = append(unsubscribes, unsubscribe)
 	}
-	if _, _, ok := n.Subscribe("G8K2P9X4"); ok {
+	if _, _, ok := notifier.Subscribe("G8K2P9X4"); ok {
 		t.Fatalf("expected subscribe beyond maxSubscribersPerUser to be rejected")
 	}
 
-	for _, u := range unsubs {
-		u()
+	for _, unsubscribe := range unsubscribes {
+		unsubscribe()
 	}
-	if got := n.SubscriberCount("G8K2P9X4"); got != 0 {
+	if got := notifier.SubscriberCount("G8K2P9X4"); got != 0 {
 		t.Fatalf("SubscriberCount after cleanup = %d, want 0", got)
 	}
 }
@@ -96,7 +96,7 @@ func TestClipboardEventsSSEStream(t *testing.T) {
 	}()
 
 	reader := bufio.NewReader(pr)
-	readEvent := func() ClipboardStatus {
+	readEvent := func() ClipboardEvent {
 		t.Helper()
 		for {
 			line, err := reader.ReadString('\n')
@@ -105,11 +105,11 @@ func TestClipboardEventsSSEStream(t *testing.T) {
 			}
 			if strings.HasPrefix(line, "data: ") {
 				raw := strings.TrimSpace(strings.TrimPrefix(line, "data: "))
-				var st ClipboardStatus
-				if err := json.Unmarshal([]byte(raw), &st); err != nil {
+				var event ClipboardEvent
+				if err := json.Unmarshal([]byte(raw), &event); err != nil {
 					t.Fatalf("decode SSE JSON %q: %v", raw, err)
 				}
-				return st
+				return event
 			}
 		}
 	}
