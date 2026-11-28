@@ -31,6 +31,9 @@ func TestFrontendHandlerServesTrailingSlashPages(t *testing.T) {
 		"user/token/index.html": {Data: []byte("<html>token</html>")},
 		"user/token/index.txt":  {Data: []byte("rsc payload")},
 		"_next/static/app.js":   {Data: []byte("console.log(1)")},
+		"manifest.json":         {Data: []byte(`{"name":"GCopy"}`)},
+		"sw.js":                 {Data: []byte("// sw")},
+		"apple-touch-icon.png":  {Data: []byte("png")},
 	}
 	r := newFrontendTestRouter(assetFS)
 
@@ -45,6 +48,9 @@ func TestFrontendHandlerServesTrailingSlashPages(t *testing.T) {
 		{"/user/token/index.html", http.StatusMovedPermanently, ""},
 		{"/user/token/index.txt", http.StatusOK, "rsc payload"},
 		{"/_next/static/app.js", http.StatusOK, "console.log(1)"},
+		{"/manifest.json", http.StatusOK, `{"name":"GCopy"}`},
+		{"/sw.js", http.StatusOK, "// sw"},
+		{"/apple-touch-icon.png", http.StatusOK, "png"},
 		{"/nope/", http.StatusNotFound, ""},
 		{"/nope", http.StatusNotFound, ""},
 	}

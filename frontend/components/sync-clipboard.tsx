@@ -17,6 +17,7 @@ import {
   Clipboard,
   ClipboardType,
   isClipboardType,
+  usesWebKitClipboardGesture,
   clipboardRead,
   ClipboardPermissionError,
 } from "@/lib/clipboard";
@@ -26,7 +27,7 @@ import {
 } from "@/lib/clipboard-cursor";
 import { redirectToLogin } from "@/lib/navigation";
 // Chrome | Safari | Mobile Safari
-import { browserName, isAndroid, isMobile } from "react-device-detect";
+import { browserName, isAndroid, isIOS, isMobile } from "react-device-detect";
 import SyncButton from "@/components/sync-button";
 import SyncShortcut from "@/components/sync-shortcut";
 import SyncFile from "@/components/sync-file";
@@ -75,6 +76,7 @@ export default function SyncClipboard() {
   const { systemInfo } = useSystemInfo();
   const router = useRouter();
   const { logs, addLog, resetLog, updateProgressLog } = useLog();
+  const isWebKitClipboard = usesWebKitClipboardGesture(isIOS, browserName);
 
   // 后台检查远端是否有更新; 同步中或等待用户操作时暂停.
   const { hasNew } = useClipboardEvents({
@@ -604,7 +606,7 @@ export default function SyncClipboard() {
     ) {
       addLog({ message: t("logs.upToDate") });
 
-      if (browserName.includes("Safari")) {
+      if (isWebKitClipboard) {
         setSyncDirection("pending");
         setPendingPrompt("safari-read");
         addLog({ message: t("logs.pressAgain"), level: LogLevel.Warn });
@@ -652,7 +654,7 @@ export default function SyncClipboard() {
       // Reset file states when receiving text or screenshot
       clearSyncedFileName();
 
-      if (browserName.includes("Safari")) {
+      if (isWebKitClipboard) {
         setPendingClipboard({
           blobId: nextBlobId,
           index: remoteIndex,
@@ -913,7 +915,7 @@ export default function SyncClipboard() {
       }
 
       // Ask for permission
-      if (!browserName.includes("Safari")) {
+      if (!isWebKitClipboard) {
         try {
           const permissionClipboardRead: PermissionName =
             "clipboard-read" as PermissionName;

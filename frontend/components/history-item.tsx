@@ -7,9 +7,13 @@ import { HISTORY_PIN_LIMIT, HistoryItemEntity } from "@/models/history";
 import moment from "moment";
 import { db } from "@/models/db";
 import { Log, LogLevel } from "@/lib/log";
-import { clipboardWriteBlob, clipboardWriteBlobPromise } from "@/lib/clipboard";
+import {
+  clipboardWriteBlob,
+  clipboardWriteBlobPromise,
+  usesWebKitClipboardGesture,
+} from "@/lib/clipboard";
 import { downloadBlob } from "@/lib/file-utils";
-import { browserName } from "react-device-detect";
+import { browserName, isIOS } from "react-device-detect";
 
 type HistoryItemProps = {
   item: HistoryItemEntity;
@@ -94,7 +98,7 @@ const HistoryItem = memo(function HistoryItem({
           type: item.dataType,
         });
 
-        if (browserName.includes("Safari")) {
+        if (usesWebKitClipboardGesture(isIOS, browserName)) {
           await clipboardWriteBlobPromise(blob);
         } else {
           await clipboardWriteBlob(blob);

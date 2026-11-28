@@ -7,6 +7,7 @@ import {
   isClipboardType,
   isValidURL,
   toTextBlob,
+  usesWebKitClipboardGesture,
 } from "../lib/clipboard";
 
 describe("clipboard utilities", () => {
@@ -29,6 +30,15 @@ describe("clipboard utilities", () => {
     assert.equal(isClipboardType(""), false);
     assert.equal(isClipboardType(null), false);
     assert.equal(isClipboardType(undefined), false);
+  });
+
+  it("detects WebKit clipboard gesture requirement across Safari and iOS browsers", () => {
+    assert.equal(usesWebKitClipboardGesture(true, "Mobile Safari"), true);
+    assert.equal(usesWebKitClipboardGesture(true, "Chrome"), true);
+    assert.equal(usesWebKitClipboardGesture(true, "Edge"), true);
+    assert.equal(usesWebKitClipboardGesture(false, "Safari"), true);
+    assert.equal(usesWebKitClipboardGesture(false, "Chrome"), false);
+    assert.equal(usesWebKitClipboardGesture(false, "Edge"), false);
   });
 
   it("computes deterministic 16-char SHA-256 hex digest for Blobs", async () => {

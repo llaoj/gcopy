@@ -33,6 +33,14 @@ GCopy is a web-based cross-platform clipboard synchronization tool. Without inst
 - Synchronized items are cached **only in your local browser's IndexedDB** (never persisted on the server).
 - Click the `...` menu on any history item to copy it back to your local clipboard, re-share it to other devices, **Pin** important snippets so they aren't evicted, or delete them at any time.
 
+## Install as a Desktop or Mobile App (PWA)
+
+GCopy ships as an installable Progressive Web App so you can launch it in its own window without hunting through browser tabs:
+
+- **macOS / Windows (Chrome or Edge)**: Click the **Install GCopy** icon on the right side of the address bar to pin GCopy to your Dock or taskbar.
+- **iOS (Safari)**: Tap **Share** → **Add to Home Screen** to launch GCopy full-screen from your iPhone or iPad Home Screen (note: iOS isolates Home Screen app storage from Safari tabs, so enter your 8-character token once on first launch).
+- **Android (Chrome or Edge)**: Tap the browser menu `⋮` → **Install app** / **Add to Home screen**.
+
 ## Next Steps
 
 - Want to host your own private instance? Check out [Deploy by Docker](/deploy-by-docker) or [Deploy from Source](/deploy-from-source).

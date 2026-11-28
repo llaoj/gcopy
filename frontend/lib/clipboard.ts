@@ -20,6 +20,16 @@ export function isClipboardType(
   return value === "text" || value === "screenshot" || value === "file";
 }
 
+// All browsers on iOS (Safari, Chrome, Edge, etc.) use Apple WebKit, which
+// drops transient user activation across async network boundaries and does not
+// support `navigator.permissions.query({ name: "clipboard-read" })`.
+export function usesWebKitClipboardGesture(
+  isIOSDevice: boolean,
+  currentBrowserName: string,
+): boolean {
+  return isIOSDevice || currentBrowserName.includes("Safari");
+}
+
 export interface Clipboard {
   index: number;
   data: Blob;
