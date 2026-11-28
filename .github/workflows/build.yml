@@ -100,6 +100,17 @@ jobs:
         run: |
           docker buildx imagetools inspect ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }}
 
+      - name: Trigger Render deployment
+        env:
+          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -n "$RENDER_DEPLOY_HOOK_URL" ]; then
+            curl -fsS -X POST "$RENDER_DEPLOY_HOOK_URL" >/dev/null
+            echo "Triggered Render deployment for ${{ steps.version.outputs.version }}"
+          else
+            echo "RENDER_DEPLOY_HOOK_URL not set, skipping Render deploy trigger"
+          fi
+
   sync-to-acr:
     needs: merge
     runs-on: ubuntu-latest
